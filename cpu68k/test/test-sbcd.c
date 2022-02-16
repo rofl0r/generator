@@ -33,10 +33,18 @@ int main(int argc, char *argv[])
   sint16 precalc = dstdata - srcdata - XFLAG;
   sint16 outdata_tmp = precalc;
 
-  if (outdata_low < 0)
-    outdata_tmp-= 0x06;
+  printf("outdata_tmp = %x, outdata_low = %x\n", outdata_tmp, outdata_low);
   if (outdata_tmp < 0) {
     outdata_tmp-= 0x60;
+    NFLAG = 1;
+  } else {
+    NFLAG = 0;
+  }
+  printf("outdata_tmp = %x, outdata_low = %x\n", outdata_tmp, outdata_low);
+  if (outdata_low < 0)
+    outdata_tmp-= 0x06;
+  printf("outdata_tmp = %x, outdata_low = %x\n", outdata_tmp, outdata_low);
+  if (outdata_tmp < 0) {
     CFLAG = 1;
     XFLAG = 1;
   } else {
@@ -45,7 +53,6 @@ int main(int argc, char *argv[])
   }
   outdata = outdata_tmp;
   if (outdata) printf("ZFLAG = 0\n");
-  NFLAG = ((sint8)outdata) < 0;
   VFLAG = (precalc & 1<<7) && ((outdata & 1<<7) == 0);
   printf("CFLAG = %d\n", CFLAG);
   printf("XFLAG = %d\n", XFLAG);

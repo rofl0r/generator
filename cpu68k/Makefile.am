@@ -18,12 +18,12 @@ head_SOURCES = def68k-iibs.h def68k-funcs.h def68k-proto.h
 
 head$(EXEEXT):	def68k-iibs.h def68k-funcs.h def68k-proto.h
 
-def68k-iibs.h:	def68k def68k.def
-	./def68k
-def68k-funcs.h:	def68k def68k.def
-	./def68k
-def68k-proto.h:	def68k def68k.def
-	./def68k
+def68k-iibs.h:	def68k$(EXEEXT) def68k.def
+	./def68k$(EXEEXT)
+def68k-funcs.h:	def68k$(EXEEXT) def68k.def
+	./def68k$(EXEEXT)
+def68k-proto.h:	def68k$(EXEEXT) def68k.def
+	./def68k$(EXEEXT)
 
 ## stage two - create cpu C files and create library
 
@@ -39,35 +39,35 @@ lib68k_a_DEPENDENCIES = def68k-iibs.h
 
 MOSTLYCLEANFILES = ${lib68k_a_SOURCES} ${head_SOURCES}
 
-cpu68k-0.c:	gen68k
-	./gen68k
-cpu68k-1.c:	gen68k
-	./gen68k
-cpu68k-2.c:	gen68k
-	./gen68k
-cpu68k-3.c:	gen68k
-	./gen68k
-cpu68k-4.c:	gen68k
-	./gen68k
-cpu68k-5.c:	gen68k
-	./gen68k
-cpu68k-6.c:	gen68k
-	./gen68k
-cpu68k-7.c:	gen68k
-	./gen68k
-cpu68k-8.c:	gen68k
-	./gen68k
-cpu68k-9.c:	gen68k
-	./gen68k
-cpu68k-a.c:	gen68k
-	./gen68k
-cpu68k-b.c:	gen68k
-	./gen68k
-cpu68k-c.c:	gen68k
-	./gen68k
-cpu68k-d.c:	gen68k
-	./gen68k
-cpu68k-e.c:	gen68k
-	./gen68k
-cpu68k-f.c:	gen68k
-	./gen68k
+cpu68k-0.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-1.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-2.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-3.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-4.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-5.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-6.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-7.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-8.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-9.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-a.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-b.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-c.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-d.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-e.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)
+cpu68k-f.c:	gen68k$(EXEEXT)
+	./gen68k$(EXEEXT)

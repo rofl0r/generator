@@ -236,3 +236,10 @@
          [68000]   Make TAS not write (Steve Snake) fixes Gargoyles, Ex Mutant
          [68000]   Re-write ABCD,etc based on info from Bart Trzynadlowski
          [68000]   Implement missing BTST op-code (fixes NHL Hockey 94)
+
+0.36     [68000]   RESET shouldn't error (Nicholas Van Veen & Sunder), fixes
+                   Dragons Revenge
+         [68000]   ASR logic bug when source 0 or count 0 (Mathias Roslund)
+         [68000]   ASL logic bug when count 0 (Mathias Roslund)
+         [68000]   ASL V flag calculation error (Mathias Roslund)
+         [68000]   LSR calculation bug with excessive shifts (Mathias Roslund)

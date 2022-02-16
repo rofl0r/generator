@@ -33,9 +33,8 @@ int main(int argc, char *argv[])
   uint16 precalc = dstdata + srcdata + XFLAG;
   uint16 outdata_tmp = precalc;
 
-  if (outdata_low > 0x09)
-    outdata_tmp+= 0x06;
-  if (outdata_tmp > 0x90) {
+  printf("outdata_tmp = %x, outdata_low = %x\n", outdata_tmp, outdata_low);
+  if (outdata_tmp > 0x99) {
     outdata_tmp+= 0x60;
     CFLAG = 1;
     XFLAG = 1;
@@ -43,6 +42,10 @@ int main(int argc, char *argv[])
     CFLAG = 0;
     XFLAG = 0;
   }
+  printf("outdata_tmp = %x, outdata_low = %x\n", outdata_tmp, outdata_low);
+  if (outdata_low > 0x09)
+    outdata_tmp+= 0x06;
+  printf("outdata_tmp = %x, outdata_low = %x\n", outdata_tmp, outdata_low);
   outdata = outdata_tmp;
   if (outdata) printf("ZFLAG = 0\n");
   NFLAG = ((sint8)outdata) < 0;
