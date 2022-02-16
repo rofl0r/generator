@@ -33,6 +33,7 @@ unsigned int gen_debugmode = 0;
 unsigned int gen_loglevel = 1;  /* 2 = NORMAL, 1 = CRITICAL */
 unsigned int gen_autodetect = 1; /* 0 = no, 1 = yes */
 unsigned int gen_musiclog = 0; /* 0 = no, 1 = GYM, 2 = GNM */
+unsigned int gen_modifiedrom = 0; /* 0 = no, 1 = yes */
 t_cartinfo gen_cartinfo;
 char gen_leafname[128];
 
@@ -292,6 +293,7 @@ char *gen_loadimage(const char *filename)
                gen_cartinfo.name_overseas, gen_cartinfo.version,
                gen_cartinfo.checksum, gen_cartinfo.country));
 
+  gen_modifiedrom = 0;
   return NULL;
 }
 
@@ -398,7 +400,7 @@ uint16 gen_checksum(uint8 *start, unsigned int length)
 
   if (length & 1) {
     length &= ~1;
-    LOG_CRITICAL(("checksum routines given odd length (%d)", length));
+    LOG_VERBOSE(("checksum routines given odd length (%d)", length));
   }
 
   for (; length; length -= 2, start += 2) {

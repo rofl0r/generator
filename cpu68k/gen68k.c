@@ -917,13 +917,13 @@ void generate(FILE *output, int topnibble)
 	OUT("\n");
 	OUT("  uint8 outdata_low = (dstdata & 0xF) + (srcdata & 0xF) ");
 	OUT("+ XFLAG;\n");
-	OUT("  uint8 outdata_high = (dstdata>>4) + (srcdata>>4);\n");
-	OUT("\n");
-	OUT("  if (outdata_low > 9) {\n");
-	OUT("    outdata_low-=10; outdata_high++;\n");
-	OUT("  }\n");
-	OUT("  if (outdata_high > 9) {\n");
-	OUT("    outdata_high-=10;\n");
+        OUT("  uint16 precalc = dstdata + srcdata + XFLAG;\n");
+        OUT("  uint16 outdata_tmp = precalc;\n");
+        OUT("\n");
+        OUT("  if (outdata_low > 0x09)\n");
+        OUT("    outdata_tmp+= 0x06;\n");
+        OUT("  if (outdata_tmp > 0x90) {\n");
+        OUT("    outdata_tmp+= 0x60;\n");
 	if (flags && iib->flags.set & IIB_FLAG_C)
 	  OUT("    CFLAG = 1;\n");
 	if (flags && iib->flags.set & IIB_FLAG_X)
@@ -934,9 +934,13 @@ void generate(FILE *output, int topnibble)
 	if (flags && iib->flags.set & IIB_FLAG_X)
 	  OUT("    XFLAG = 0;\n");
 	OUT("  }\n");
-	OUT("  outdata = outdata_low | (outdata_high << 4);\n");
+        OUT("  outdata = outdata_tmp;\n");
 	if (flags && iib->flags.set & IIB_FLAG_Z)
 	  OUT("  if (outdata) ZFLAG = 0;\n");
+	if (flags && iib->flags.set & IIB_FLAG_N)
+          generate_stdflag_n(output, iib);
+	if (flags && iib->flags.set & IIB_FLAG_V)
+          OUT("  VFLAG = ((precalc & 1<<7) == 0) && (outdata & 1<<7);\n");
 	generate_eastore(output, iib, tp_dst);
 	break;
 
@@ -947,16 +951,15 @@ void generate(FILE *output, int topnibble)
 	generate_eaval(output, iib, tp_dst);
 	generate_outdata(output, iib, NULL);
 	OUT("\n");
-	OUT("  sint8 outdata_low = (sint8)(dstdata & 0xF) -");
-	OUT("(sint8)(srcdata & 0xF) - XFLAG;\n");
-	OUT("  sint8 outdata_high = (sint8)(dstdata>>4) - ");
-	OUT("(sint8)(srcdata>>4);\n");
-	OUT("\n");
-	OUT("  if (outdata_low < 0) {\n");
-	OUT("    outdata_low+=10; outdata_high--;\n");
-	OUT("  }\n");
-	OUT("  if (outdata_high < 0) {\n");
-	OUT("    outdata_high+=10;\n");
+	OUT("  sint8 outdata_low = (dstdata & 0xF) - (srcdata & 0xF) ");
+	OUT("- XFLAG;\n");
+        OUT("  sint16 precalc = dstdata - srcdata - XFLAG;\n");
+        OUT("  sint16 outdata_tmp = precalc;\n");
+        OUT("\n");
+        OUT("  if (outdata_low < 0)\n");
+        OUT("    outdata_tmp-= 0x06;\n");
+        OUT("  if (outdata_tmp < 0) {\n");
+        OUT("    outdata_tmp-= 0x60;\n");
 	if (flags && iib->flags.set & IIB_FLAG_C)
 	  OUT("    CFLAG = 1;\n");
 	if (flags && iib->flags.set & IIB_FLAG_X)
@@ -967,10 +970,13 @@ void generate(FILE *output, int topnibble)
 	if (flags && iib->flags.set & IIB_FLAG_X)
 	  OUT("    XFLAG = 0;\n");
 	OUT("  }\n");
-	OUT("  outdata = (uint8)outdata_low | ");
-	OUT("((uint8)outdata_high << 4);\n");
+        OUT("  outdata = outdata_tmp;\n");
 	if (flags && iib->flags.set & IIB_FLAG_Z)
 	  OUT("  if (outdata) ZFLAG = 0;\n");
+	if (flags && iib->flags.set & IIB_FLAG_N)
+          generate_stdflag_n(output, iib);
+	if (flags && iib->flags.set & IIB_FLAG_V)
+          OUT("  VFLAG = (precalc & 1<<7) && ((outdata & 1<<7) == 0);\n");
 	generate_eastore(output, iib, tp_dst);
 	break;
 
@@ -979,14 +985,14 @@ void generate(FILE *output, int topnibble)
 	generate_eaval(output, iib, tp_src);
 	generate_outdata(output, iib, NULL);
 	OUT("\n");
-	OUT("  sint8 outdata_low = 0 - (sint8)(srcdata & 0xF) - XFLAG;\n");
-	OUT("  sint8 outdata_high = 0 - (sint8)(srcdata>>4);\n");
-	OUT("\n");
-	OUT("  if ((sint8)outdata_low < 0) {\n");
-	OUT("    outdata_low+=10; outdata_high--;\n");
-	OUT("  }\n");
-	OUT("  if ((sint8)outdata_high < 0) {\n");
-	OUT("    outdata_high+=10;\n");
+	OUT("  sint8 outdata_low = - (srcdata & 0xF) - XFLAG;\n");
+        OUT("  sint16 precalc = - srcdata - XFLAG;\n");
+        OUT("  sint16 outdata_tmp = precalc;\n");
+        OUT("\n");
+        OUT("  if (outdata_low < 0)\n");
+        OUT("    outdata_tmp-= 0x06;\n");
+        OUT("  if (outdata_tmp < 0) {\n");
+        OUT("    outdata_tmp-= 0x60;\n");
 	if (flags && iib->flags.set & IIB_FLAG_C)
 	  OUT("    CFLAG = 1;\n");
 	if (flags && iib->flags.set & IIB_FLAG_X)
@@ -997,10 +1003,13 @@ void generate(FILE *output, int topnibble)
 	if (flags && iib->flags.set & IIB_FLAG_X)
 	  OUT("    XFLAG = 0;\n");
 	OUT("  }\n");
-	OUT("  outdata = (uint8)outdata_low |");
-	OUT("((uint8)outdata_high << 4);\n");
+        OUT("  outdata = outdata_tmp;\n");
 	if (flags && iib->flags.set & IIB_FLAG_Z)
 	  OUT("  if (outdata) ZFLAG = 0;\n");
+	if (flags && iib->flags.set & IIB_FLAG_N)
+          generate_stdflag_n(output, iib);
+	if (flags && iib->flags.set & IIB_FLAG_V)
+          OUT("  VFLAG = (precalc & 1<<7) && ((outdata & 1<<7) == 0);\n");
 	generate_eastore(output, iib, tp_src);
 	break;
 
@@ -1125,6 +1134,7 @@ void generate(FILE *output, int topnibble)
 	  generate_stdflag_n(output, iib);
 	if (flags && iib->flags.set & IIB_FLAG_Z)
 	  generate_stdflag_z(output, iib);
+#ifndef BROKEN_TAS
 	switch(iib->size) {
 	case sz_byte:
 	  OUT("  outdata|= 1<<7;\n");
@@ -1140,6 +1150,7 @@ void generate(FILE *output, int topnibble)
 	  break;
 	}
 	generate_eastore(output, iib, tp_src);
+#endif
 	break;
 
       case i_CHK:
@@ -2068,24 +2079,24 @@ void generate_eastore(FILE *o, t_iib *iib, t_type type)
     case sz_byte:
       if (type == tp_src)
         fprintf(o, "  DATAREG(srcreg) = (DATAREG(srcreg) & ~0xff) | "
-		"outdata;\n");
+                "outdata;\n");
       else
-	fprintf(o, "  DATAREG(dstreg) = (DATAREG(dstreg) & ~0xff) | "
-		"outdata;\n");
+        fprintf(o, "  DATAREG(dstreg) = (DATAREG(dstreg) & ~0xff) | "
+                "outdata;\n");
       break;
     case sz_word:
       if (type == tp_src)
-	fprintf(o, "  DATAREG(srcreg) = (DATAREG(srcreg) & ~0xffff) | "
-		"outdata;\n");
+        fprintf(o, "  DATAREG(srcreg) = (DATAREG(srcreg) & ~0xffff) | "
+                "outdata;\n");
       else
-	fprintf(o, "  DATAREG(dstreg) = (DATAREG(dstreg) & ~0xffff) | "
-		"outdata;\n");
+        fprintf(o, "  DATAREG(dstreg) = (DATAREG(dstreg) & ~0xffff) | "
+                "outdata;\n");
       break;
     case sz_long:
       if (type == tp_src)
-	fprintf(o, "  DATAREG(srcreg) = outdata;\n");
+        fprintf(o, "  DATAREG(srcreg) = outdata;\n");
       else
-	fprintf(o, "  DATAREG(dstreg) = outdata;\n");
+        fprintf(o, "  DATAREG(dstreg) = outdata;\n");
       break;
     default:
       fprintf(o, "ERROR size\n");
@@ -2096,34 +2107,62 @@ void generate_eastore(FILE *o, t_iib *iib, t_type type)
     switch(iib->size) {
     case sz_byte:
       if (type == tp_src)
-	fprintf(o, "  ADDRREG(srcreg) = (ADDRREG(srcreg) & ~0xff) | "
-		"outdata;\n");
+        fprintf(o, "  ADDRREG(srcreg) = (ADDRREG(srcreg) & ~0xff) | "
+                "outdata;\n");
       else
-	fprintf(o, "  ADDRREG(dstreg) = (ADDRREG(dstreg) & ~0xff) | "
-		"outdata;\n");
+        fprintf(o, "  ADDRREG(dstreg) = (ADDRREG(dstreg) & ~0xff) | "
+                "outdata;\n");
       break;
     case sz_word:
       if (type == tp_src)
-	fprintf(o, "  ADDRREG(srcreg) = (ADDRREG(srcreg) & ~0xffff) | "
-		"outdata;\n");
+        fprintf(o, "  ADDRREG(srcreg) = (ADDRREG(srcreg) & ~0xffff) | "
+                "outdata;\n");
       else
-	fprintf(o, "  ADDRREG(dstreg) = (ADDRREG(dstreg) & ~0xffff) | "
-		"outdata;\n");
+        fprintf(o, "  ADDRREG(dstreg) = (ADDRREG(dstreg) & ~0xffff) | "
+                "outdata;\n");
       break;
     case sz_long:
       if (type == tp_src)
-	fprintf(o, "  ADDRREG(srcreg) = outdata;\n");
+        fprintf(o, "  ADDRREG(srcreg) = outdata;\n");
       else
-	fprintf(o, "  ADDRREG(dstreg) = outdata;\n");
+        fprintf(o, "  ADDRREG(dstreg) = outdata;\n");
       break;
     default:
       fprintf(o, "ERROR size\n");
       break;
     }
     break;
+  case dt_Adec:
+    switch(iib->size) {
+    case sz_byte:
+      if (type == tp_src)
+        fprintf(o, "  storebyte(srcaddr, outdata);\n");
+      else
+        fprintf(o, "  storebyte(dstaddr, outdata);\n");
+      break;
+    case sz_word:
+      if (type == tp_src)
+        fprintf(o, "  storeword(srcaddr, outdata);\n");
+      else
+        fprintf(o, "  storeword(dstaddr, outdata);\n");
+      break;
+    case sz_long:
+      fprintf(o, "  /* pre-decrement long store must write low 16 bits\n"
+                 "     in -2 first, then upper 16 bits in -4 second */\n");
+      if (type == tp_src) {
+        fprintf(o, "  storeword(srcaddr + 2, (uint16)outdata);\n");
+        fprintf(o, "  storeword(srcaddr, (uint16)(outdata >> 16));\n");
+      } else {
+        fprintf(o, "  storeword(dstaddr + 2, (uint16)outdata);\n");
+        fprintf(o, "  storeword(dstaddr, (uint16)(outdata >> 16));\n");
+      }
+      break;
+    default:
+      fprintf(o, "ERROR size\n");
+    }
+    break;
   case dt_Aind:
   case dt_Ainc:
-  case dt_Adec:
   case dt_Adis:
   case dt_Aidx:
   case dt_AbsW:
@@ -2133,21 +2172,21 @@ void generate_eastore(FILE *o, t_iib *iib, t_type type)
     switch(iib->size) {
     case sz_byte:
       if (type == tp_src)
-	fprintf(o, "  storebyte(srcaddr, outdata);\n");
+        fprintf(o, "  storebyte(srcaddr, outdata);\n");
       else
-	fprintf(o, "  storebyte(dstaddr, outdata);\n");
+        fprintf(o, "  storebyte(dstaddr, outdata);\n");
       break;
     case sz_word:
       if (type == tp_src)
-	fprintf(o, "  storeword(srcaddr, outdata);\n");
+        fprintf(o, "  storeword(srcaddr, outdata);\n");
       else
-	fprintf(o, "  storeword(dstaddr, outdata);\n");
+        fprintf(o, "  storeword(dstaddr, outdata);\n");
       break;
     case sz_long:
       if (type == tp_src)
-	fprintf(o, "  storelong(srcaddr, outdata);\n");
+        fprintf(o, "  storelong(srcaddr, outdata);\n");
       else
-	fprintf(o, "  storelong(dstaddr, outdata);\n");
+        fprintf(o, "  storelong(dstaddr, outdata);\n");
       break;
     default:
       fprintf(o, "ERROR size\n");

@@ -6,4 +6,7 @@ fifo / other dma freezing
 figure out why sonic 3d's bonus stage has glitches
 step code calls fetchword twice
 Arrow Flash, amongst others, dies when generator does a hard reset.
+move pointer away from gtk version should pause game
+Landstalker
 
+single line glitch on Comix Zone title screen

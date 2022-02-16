@@ -351,7 +351,7 @@ t_ipclist *cpu68k_makeipclist(uint32 pc)
       ipc = ((t_ipc *) (list + 1)) + instrs - 1;
     }
     if (!(iib = cpu68k_iibtable[fetchword(pc)])) {
-      ui_err("Invalid instruction @ %08X", pc);
+      ui_err("Invalid instruction @ %08X [%04X]", pc, fetchword(pc));
     }
     cpu68k_ipc(pc, mem68k_memptr[pc >> 12] (pc), iib, ipc);
     list->clocks += iib->clocks;
@@ -392,6 +392,18 @@ t_ipclist *cpu68k_makeipclist(uint32 pc)
   }
   /* fprintf("Cached %08X to %08X\n", list->pc, pc-((iib->wordlen)<<1)); */
   return list;
+}
+
+void cpu68k_clearcache(void)
+{
+  int i;
+
+  for (i = 0; i < LEN_IPCLISTTABLE; i++) {
+    if (ipclist[i]) {
+      free(ipclist[i]);
+      ipclist[i] = NULL;
+    }
+  }
 }
 
 void cpu68k_reset(void)

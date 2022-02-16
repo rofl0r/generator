@@ -15,11 +15,13 @@
  * Original copyright (C) 1997 Edward Massey
  */
 
+#include <generator.h>
+
 #define FALSE 0
 #define TRUE 1
 
 #ifdef WORDS_BIGENDIAN
-#define HOST_TO_LE16(y) ((((y>>8)&0x00FF)+((((y)<<8)&0xFF00)))
+#define HOST_TO_LE16(y) ( (((y)>>8)&0x00FF) + (((y)<<8)&0xFF00) )
 #else
 #define HOST_TO_LE16(y) (y)
 #endif

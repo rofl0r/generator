@@ -1,0 +1,33 @@
+Generator outputs AVI files in two formats:
+
+1. 24-bit raw uncompressed
+2. jpeg compressed (so called M-JPEG)
+
+Quicktime player is probably the best thing at playing these files, I've
+had really poor results from Windows Media Player which usually just tells
+you the file is unsupported.  Great.
+
+If you are on Windows any avi to mpeg compressor will do the job (I got
+one with my USB video capture jobby).
+
+On linux you do this, which creates an mpeg with 256kbps sound and 2048kbps
+variable bit-rate (VBR) video:
+
+1. install the mjpegtools package
+2. modify lav2wav.c to remove the bit rate check so that it will let you
+   do 22050 sample rate.
+3. lav2wav vid.avi >vid.wav
+4. mp2enc -r 44100 -b 256 -o vid.mp2 <vid.wav
+5. lav2yuv vid.avi | mpeg2enc -q 6 -r 24 -b 2048 -n n -o vid.m1v
+6. mplex -V vid.mp2 vid.m1v -o vid.mpg
+
+You may need to specify '+n' to lav2wav to specify NTSC normalisation, or
+'+p' if you've recorded PAL.
+
+These are the standard frame rates that mpeg 2 supports:
+  24 (film), 25 (pal), 30 (ntsc), 50 (pal), 60 (ntsc)
+
+If you try and use something else you may have problems - the mpegtools
+do not support other framerates so you must set the frame skip to 1
+(50/60 fps) or 2 (25/30 fps) in Generator.  If you use another avi to
+mpeg program then it may support a different input to output framerate.

@@ -127,7 +127,7 @@ void cpuz80_sync(void)
 {
   int cpu68k_wanted = cpu68k_clocks - cpuz80_lastsync;
   int wanted = (cpu68k_wanted < 0 ? 0 : cpu68k_wanted) * 7 / 15;
-  int acheived;
+  int achieved;
 
   if (cpuz80_pending && z80_get_reg(Z80_REG_IFF1)) {
     z80_raise_IRQ(0xff);
@@ -137,8 +137,8 @@ void cpuz80_sync(void)
   if (cpuz80_on && cpuz80_active && !cpuz80_resetting) {
     /* ui_log(LOG_USER, "executing %d z80 clocks @ %X", wanted,
        cpuz80_z80.z80pc); */
-    acheived = z80_emulate(wanted);
-    cpuz80_lastsync = cpuz80_lastsync + acheived * 15 / 7;
+    achieved = z80_emulate(wanted);
+    cpuz80_lastsync = cpuz80_lastsync + achieved * 15 / 7;
   } else {
     cpuz80_lastsync = cpu68k_clocks;
   }

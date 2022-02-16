@@ -122,9 +122,10 @@ generator_allegro_LDADD = ${LDADD} -lalleg
 
 generator_gtk_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c snprintf.c \
-    ui-gtk.c uiplot.c gensoundp-unix.c initcart.c
+    ui-gtk.c uiplot.c gensoundp-unix.c initcart.c patch.c \
+    dib.c avi.c diss68k.c
 
-generator_gtk_LDADD = ${LDADD} @GTK_LIBS@ @SDL_LIBS@ ../glade/libglade.a ../gtkopts/libgtkopts.a
+generator_gtk_LDADD = ${LDADD} @GTK_LIBS@ @SDL_LIBS@ ../glade/libglade.a ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
 subdir = main
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
@@ -149,11 +150,12 @@ am_generator_gtk_OBJECTS = cpu68k.$(OBJEXT) mem68k.$(OBJEXT) \
 	state.$(OBJEXT) cpuz80.$(OBJEXT) vdp.$(OBJEXT) \
 	gensound.$(OBJEXT) memz80.$(OBJEXT) snprintf.$(OBJEXT) \
 	ui-gtk.$(OBJEXT) uiplot.$(OBJEXT) gensoundp-unix.$(OBJEXT) \
-	initcart.$(OBJEXT)
+	initcart.$(OBJEXT) patch.$(OBJEXT) dib.$(OBJEXT) avi.$(OBJEXT) \
+	diss68k.$(OBJEXT)
 generator_gtk_OBJECTS = $(am_generator_gtk_OBJECTS)
 generator_gtk_DEPENDENCIES = ../cpu68k/lib68k.a ../ym2612/libym2612.a \
 	../sn76496/libsn76496.a ../glade/libglade.a \
-	../gtkopts/libgtkopts.a
+	../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
 generator_gtk_LDFLAGS =
 am_generator_svgalib_OBJECTS = cpu68k.$(OBJEXT) mem68k.$(OBJEXT) \
 	reg68k.$(OBJEXT) event.$(OBJEXT) logo.$(OBJEXT) font.$(OBJEXT) \
@@ -181,19 +183,20 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/cpu68k.Po $(DEPDIR)/cpuz80.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/avi.Po $(DEPDIR)/cpu68k.Po \
+@AMDEP_TRUE@	$(DEPDIR)/cpuz80.Po $(DEPDIR)/dib.Po \
 @AMDEP_TRUE@	$(DEPDIR)/diss68k.Po $(DEPDIR)/event.Po \
 @AMDEP_TRUE@	$(DEPDIR)/font.Po $(DEPDIR)/generator.Po \
 @AMDEP_TRUE@	$(DEPDIR)/gensound.Po \
 @AMDEP_TRUE@	$(DEPDIR)/gensoundp-allegro.Po \
 @AMDEP_TRUE@	$(DEPDIR)/gensoundp-unix.Po $(DEPDIR)/initcart.Po \
 @AMDEP_TRUE@	$(DEPDIR)/logo.Po $(DEPDIR)/mem68k.Po \
-@AMDEP_TRUE@	$(DEPDIR)/memz80.Po $(DEPDIR)/reg68k.Po \
-@AMDEP_TRUE@	$(DEPDIR)/snprintf.Po $(DEPDIR)/state.Po \
-@AMDEP_TRUE@	$(DEPDIR)/ui-console.Po $(DEPDIR)/ui-gtk.Po \
-@AMDEP_TRUE@	$(DEPDIR)/ui-tcltk.Po $(DEPDIR)/uip-allegro.Po \
-@AMDEP_TRUE@	$(DEPDIR)/uip-svgalib.Po $(DEPDIR)/uiplot.Po \
-@AMDEP_TRUE@	$(DEPDIR)/vdp.Po
+@AMDEP_TRUE@	$(DEPDIR)/memz80.Po $(DEPDIR)/patch.Po \
+@AMDEP_TRUE@	$(DEPDIR)/reg68k.Po $(DEPDIR)/snprintf.Po \
+@AMDEP_TRUE@	$(DEPDIR)/state.Po $(DEPDIR)/ui-console.Po \
+@AMDEP_TRUE@	$(DEPDIR)/ui-gtk.Po $(DEPDIR)/ui-tcltk.Po \
+@AMDEP_TRUE@	$(DEPDIR)/uip-allegro.Po $(DEPDIR)/uip-svgalib.Po \
+@AMDEP_TRUE@	$(DEPDIR)/uiplot.Po $(DEPDIR)/vdp.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -208,7 +211,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  main/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
@@ -257,8 +260,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/avi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/cpu68k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/cpuz80.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/dib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/diss68k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/event.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/font.Po@am__quote@
@@ -270,6 +275,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/logo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/mem68k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/memz80.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/patch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/reg68k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/snprintf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/state.Po@am__quote@

@@ -205,7 +205,7 @@ void state_transfer32(const char *mod, const char *name, uint8 instance,
 
 /*** state_dotransfer - do transfer of data, either save or load ***/
 
-int state_dotransfer(unsigned int mode)
+static void state_dotransfer(unsigned int mode)
 {
   uint8 i8, i8b;
   uint16 i16;
@@ -373,15 +373,18 @@ int state_loadfile(const char *filename)
   }
   if ((f = fopen(filename, "rb")) == NULL) {
     LOG_CRITICAL(("Failed to open '%s': %s", filename, strerror(errno)));
+    free(blk);
     return -1;
   }
   if (fread(blk, statbuf.st_size, 1, f) != 1) {
     if (feof(f)) {
       LOG_CRITICAL(("EOF whilst reading save state file '%s'", filename));
+      free(blk);
       return -1;
     }
     LOG_CRITICAL(("Error whilst reading save state file '%s': %s", filename,
                   strerror(errno)));
+    free(blk);
     return -1;
   }
   fclose(f);
@@ -430,6 +433,14 @@ int state_loadfile(const char *filename)
 
   state_dotransfer(1); /* load into place */
 
+  /* free memory */
+  free(blk);
+  while (state_statelist) {
+    ent = state_statelist;
+    state_statelist = state_statelist->next;
+    free(ent);
+  }
+
   if (state_major != 2) {
     LOG_CRITICAL(("Save state file '%s' is version %d, and we're version 2",
                   filename, state_major));
@@ -445,6 +456,12 @@ int state_loadfile(const char *filename)
 OVERRUN:
   LOG_CRITICAL(("Invalid state file '%s': overrun encountered", filename));
   errno = EINVAL;
+  free(blk);
+  while (state_statelist) {
+    ent = state_statelist;
+    state_statelist = state_statelist->next;
+    free(ent);
+  }
   return -1;
 }
 

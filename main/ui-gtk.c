@@ -15,9 +15,6 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkx.h>
 
-/* need Xlib.h for XAutoRepeatOff - how poo is X */
-#include "X11/Xlib.h"
-
 #include "SDL.h"
 
 #include "generator.h"
@@ -39,6 +36,9 @@
 #include "event.h"
 #include "state.h"
 #include "initcart.h"
+#include "patch.h"
+#include "dib.h"
+#include "avi.h"
 
 #define HBORDER_MAX 32
 #define HBORDER_DEFAULT 8
@@ -51,6 +51,8 @@
 
 #define HSIZE (320 + 2 * ui_hborder)
 #define VSIZE ((vdp_vislines ? vdp_vislines : 224) + 2 * ui_vborder)
+
+#define DISSWIN_MAX 64
 
 typedef struct {
   unsigned int a;
@@ -80,6 +82,7 @@ static GtkWidget *ui_win_main;  /* main window */
 static GtkWidget *ui_win_about; /* about window */
 static GtkWidget *ui_win_console;       /* console window */
 static GtkWidget *ui_win_opts;  /* options window */
+static GtkWidget *ui_win_codes; /* game genie codes window */
 static GtkWidget *ui_win_filesel;       /* file selection window */
 static int ui_filesel_type;     /* selection type: 0=rom, 1=state */
 static int ui_filesel_save;     /* 0=load, 1=save */
@@ -96,8 +99,16 @@ static int ui_locksurface;      /* lock SDL surface? */
 static unsigned int ui_hborder = HBORDER_DEFAULT;       /* horizontal border */
 static unsigned int ui_vborder = VBORDER_DEFAULT;       /* vertical border */
 static int ui_query_response = -1; /* query response */
-t_gtkkeys ui_cont[2];           /* keyboard key codes */
+static t_gtkkeys ui_cont[2];    /* keyboard key codes */
 static int ui_musicfile = -1;   /* fd of output file for GYM/GNM logging */
+static int ui_joysticks = 0;    /* number of joysticks */
+static SDL_Joystick *js_handle[2] = { NULL, NULL };     /* SDL handles */
+static t_aviinfo ui_aviinfo;    /* AVI information */
+static t_avi *ui_avi = NULL;    /* Current AVI writer if applicable */
+static uint8 *ui_avivideo;      /* video buffer */
+static uint8 *ui_aviaudio;      /* audio buffer */
+static GtkWidget *ui_disswins[DISSWIN_MAX];     /* disassembly windows */
+static GdkFont *ui_dissfont;    /* disassembly window font */
 
 static enum {
   SCREEN_100, SCREEN_200, SCREEN_FULL
@@ -120,18 +131,24 @@ static void ui_gtk_opts_from_window(void);
 static int ui_gtk_query(const char *msg, int style);
 static void ui_gtk_opts_to_menu(void);
 static void ui_simpleplot(void);
+static void ui_sdl_events(void);
 
 /*** Program entry point ***/
 
 int ui_init(int argc, char *argv[])
 {
-  char ch;
+  int ch;
   GtkWidget *button, *draw, *obj;
   struct passwd *passwd;
   struct stat statbuf;
+  int i;
+  const char *name;
 
   gtk_set_locale();
   gtk_init(&argc, &argv);
+
+  fprintf(stderr, "Generator is (c) James Ponder 1997-2003, all rights "
+          "reserved. v" VERSION "\n\n");
 
   while ((ch = getopt(argc, argv, "?dc:w:")) != -1) {
     switch (ch) {
@@ -182,6 +199,7 @@ int ui_init(int argc, char *argv[])
   ui_win_about = create_about();
   ui_win_console = create_console();
   ui_win_opts = create_opts();
+  ui_win_codes = create_codes();
   ui_win_filesel = gtk_file_selection_new("Select file...");
   button = GTK_FILE_SELECTION(ui_win_filesel)->ok_button;
   gtk_signal_connect(GTK_OBJECT(button), "clicked",
@@ -190,6 +208,17 @@ int ui_init(int argc, char *argv[])
   gtk_signal_connect_object(GTK_OBJECT(button), "clicked",
                             GTK_SIGNAL_FUNC(gtk_widget_hide),
                             GTK_OBJECT(ui_win_filesel));
+
+  /* load our font */
+  ui_dissfont = gdk_font_load
+      ("-*-fixed-medium-r-normal-*-*-*-*-*-*-80-iso8859-1");
+  gdk_font_ref(ui_dissfont);
+ 
+  /* set codes window so that code list is reorderable */
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  gtk_clist_set_reorderable(GTK_CLIST(obj), 1);
 
   /* open main window */
 
@@ -209,10 +238,22 @@ int ui_init(int argc, char *argv[])
              GDK_WINDOW_XWINDOW(draw->window));
     putenv(SDL_windowhack);
   }
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+  if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_JOYSTICK) < 0) {
     fprintf(stderr, "Couldn't initialise SDL: %s\n", SDL_GetError());
     return -1;
   }
+  ui_joysticks = SDL_NumJoysticks();
+  /* Print information about the joysticks */
+  fprintf(stderr, "%d joysticks detected\n", ui_joysticks);
+  for (i = 0; i < ui_joysticks; i++) {
+    name = SDL_JoystickName(i);
+    fprintf(stderr, "Joystick %d: %s\n", i,
+                    name ? name : "Unknown Joystick");
+  }
+  js_handle[0] = SDL_JoystickOpen(0);
+  js_handle[1] = SDL_JoystickOpen(1);
+  SDL_JoystickEventState(SDL_ENABLE);
+
   ui_gtk_sizechange();
   ui_gtk_newoptions();
   ui_gtk_opts_to_menu();
@@ -228,13 +269,12 @@ int ui_init(int argc, char *argv[])
   ui_screen1 = ui_screen[1];
   ui_newscreen = ui_screen[2];
   ui_whichbank = 0;             /* viewing 0 */
+  fprintf(stderr, "Please use the GTK menu to quit this program properly.\n");
   return 0;
 }
 
 static void ui_usage(void)
 {
-  fprintf(stderr, "Generator is (c) James Ponder 1997-2001, all rights "
-          "reserved. v" VERSION "\n\n");
   fprintf(stderr, "generator [options] [<rom>]\n\n");
   fprintf(stderr, "  -d                     debug mode\n");
   fprintf(stderr, "  -w <work dir>          set work directory\n");
@@ -246,7 +286,10 @@ static void ui_usage(void)
 
 void ui_final(void)
 {
+  gdk_font_unref(ui_dissfont);
+  gdk_key_repeat_restore();
   SDL_Quit();
+  gtk_exit(0);
 }
 
 int ui_loop(void)
@@ -264,6 +307,7 @@ int ui_loop(void)
     if (ui_running) {
       while (gtk_events_pending())
         gtk_main_iteration_do(0);
+      ui_sdl_events();
       ui_newframe();
       event_doframe();
     } else {
@@ -472,15 +516,82 @@ static void ui_simpleplot(void)
   }
 }
 
+static void ui_makeavivideo(void)
+{
+  unsigned int line;
+  SDL_PixelFormat *f = screen->format;
+  uint8 *linep = ui_newscreen;
+  uint8 *video;
+  uint32 c;
+  unsigned int x;
+
+  video = ui_avivideo;
+  switch (screen->format->BytesPerPixel) {
+  case 2:
+    for (line = 0; line < ui_avi->info.height; line++) {
+      for (x = 0; x < ui_avi->info.width; x++) {
+        c = ((uint16 *)linep)[x];
+        *video++ = ((c & f->Rmask) >> f->Rshift) << f->Rloss;
+        *video++ = ((c & f->Gmask) >> f->Gshift) << f->Gloss;
+        *video++ = ((c & f->Bmask) >> f->Bshift) << f->Bloss;
+      }
+      linep+= (HMAXSIZE * 2);
+    }
+    break;
+  case 4:
+    for (line = 0; line < ui_avi->info.height; line++) {
+      for (x = 0; x < ui_avi->info.width; x++) {
+        c = ((uint32 *)linep)[x];
+        *video++ = ((c & f->Rmask) >> f->Rshift) << f->Rloss;
+        *video++ = ((c & f->Gmask) >> f->Gshift) << f->Gloss;
+        *video++ = ((c & f->Bmask) >> f->Bshift) << f->Bloss;
+      }
+      linep+= (HMAXSIZE * 4);
+    }
+    break;
+  }
+  avi_video(ui_avi, ui_avivideo);
+}
+
+static void ui_makeaviaudio(void)
+{
+  unsigned int i;
+
+  /* 22050 doesn't divide nicely into 60 fields - that means 367.50 samples
+     per field.  So we need to compensate by adding in a byte every now and
+     again */
+
+  /* audio buffer gensound_soundbuf is in local endian - avi is little */
+  for (i = 0; i < sound_sampsperfield; i++) {
+    ((uint16 *)ui_aviaudio)[i * 2] = LOCENDIAN16L(sound_soundbuf[0][i]);
+    ((uint16 *)ui_aviaudio)[i * 2 + 1] = LOCENDIAN16L(sound_soundbuf[1][i]);
+  }
+  /* duplicate last byte */
+  ((uint16 *)ui_aviaudio)[i * 2] = LOCENDIAN16L(sound_soundbuf[0][i - 1]);
+  ((uint16 *)ui_aviaudio)[i * 2 + 1] = LOCENDIAN16L(sound_soundbuf[1][i - 1]);
+
+  /* get partial bytes per second we should be outputting in 1000ths */
+  ui_avi->error+= (ui_avi->info.sampspersec * 1000 / vdp_framerate) % 1000;
+  if (ui_avi->error > 1000) {
+    ui_avi->error-= 1000;
+    avi_audio(ui_avi, ui_aviaudio, sound_sampsperfield + 1);
+  } else {
+    avi_audio(ui_avi, ui_aviaudio, sound_sampsperfield);
+  }
+}
+
 /*** ui_endfield - end of field reached ***/
 
 void ui_endfield(void)
 {
   static int counter = 0;
 
-  if (ui_plotfield) {
+  if (ui_avi)
+    ui_makeaviaudio();
+
+  if (ui_plotfield)
     ui_rendertoscreen();        /* plot ui_newscreen to screen */
-  }
+
   if (ui_frameskip == 0) {
     /* dynamic frame skipping */
     counter++;
@@ -612,6 +723,8 @@ void ui_rendertoscreen(void)
   if (ui_locksurface)
     SDL_UnlockSurface(screen);
   SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
+  if (ui_avi)
+    ui_makeavivideo();
   ui_whichbank ^= 1;
 //  if (ui_vsync)
 //    uip_vsync();
@@ -690,7 +803,7 @@ char *ui_setinfo(t_cartinfo *cartinfo)
 
 /*** gtk functions ***/
 
-gint ui_gtk_configuremain(GtkWidget * widget, GdkEventConfigure * event)
+gint ui_gtk_configuremain(GtkWidget *widget, GdkEventConfigure *event)
 {
   (void)widget;
   (void)event;
@@ -701,13 +814,14 @@ gint ui_gtk_configuremain(GtkWidget * widget, GdkEventConfigure * event)
   return TRUE;
 }
 
-void ui_gtk_filesel_ok(GtkFileSelection * obj, gpointer user_data)
+void ui_gtk_filesel_ok(GtkFileSelection *obj, gpointer user_data)
 {
   char msg[512];
   char buf[8];
   char *file, *p;
   int fd;
   struct stat s;
+  int avi_skip, avi_jpeg;
 
   (void)obj;
   (void)user_data;
@@ -736,6 +850,12 @@ void ui_gtk_filesel_ok(GtkFileSelection * obj, gpointer user_data)
       snprintf(msg, sizeof(msg), "There is no ROM currently in memory to "
                "save!");
       break;
+    }
+    if (gen_modifiedrom) {
+      if (ui_gtk_query("The ROM in memory has been modified by cheat "
+                       "codes - are you really sure you want to save"
+                      "this ROM?", 0) != 0)
+        break;
     }
     if ((fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0777)) == -1
         || write(fd, cpu68k_rom, cpu68k_romlen) == -1 || close(fd) == -1) {
@@ -782,6 +902,42 @@ void ui_gtk_filesel_ok(GtkFileSelection * obj, gpointer user_data)
     write(ui_musicfile, buf, 4);
     gen_musiclog = 2;
     break;
+  case 8:
+    if (stat(file, &s) != 0) {
+      snprintf(msg, sizeof(msg), "%s: %s", file, strerror(errno));
+      break;
+    }
+    if (patch_loadfile(file) != 0)
+      snprintf(msg, sizeof(msg), "An error occured whilst trying to load "
+               "state from '%s': %s", file, strerror(errno));
+    break;
+  case 9:
+    if (patch_savefile(file) != 0)
+      snprintf(msg, sizeof(msg), "An error occured whilst trying to save "
+               "state to '%s': %s", file, strerror(errno));
+    break;
+  case 11:
+    if (ui_avi) {
+      snprintf(msg, sizeof(msg), "There is already an avi in progress");
+      break;
+    }
+    avi_skip = atoi(gtkopts_getvalue("aviframeskip"));
+    avi_jpeg = !strcasecmp(gtkopts_getvalue("aviformat"), "jpeg");
+    ui_aviinfo.width = HSIZE;
+    ui_aviinfo.height = VSIZE;
+    ui_aviinfo.sampspersec = sound_speed;
+    ui_aviinfo.fps = (vdp_framerate * 1000) / avi_skip;
+    ui_aviinfo.jpegquality = atoi(gtkopts_getvalue("jpegquality"));
+    if ((ui_avi = avi_open(file, &ui_aviinfo, avi_jpeg)) == NULL) {
+      snprintf(msg, sizeof(msg), "An error occured whilst trying to start "
+               "the AVI: %s", strerror(errno));
+      break;
+    }
+    if ((ui_aviaudio = malloc((sound_sampsperfield + 1) * 4)) == NULL ||
+        (ui_avivideo = malloc(ui_avi->linebytes * VSIZE)) == NULL)
+      ui_err("out of memory");
+    ui_frameskip = avi_skip;
+    break;
   default:
     strcpy(msg, "Not implemented.");
     break;
@@ -817,7 +973,8 @@ static void ui_gtk_response(GtkButton *button, gpointer func_data)
 {
   (void)button;
   ui_query_response = GPOINTER_TO_INT(func_data);
-  gtk_main_quit();
+  if (gtk_main_level() > 0)
+    gtk_main_quit();
 }
 
 /* ask a question and return 0 for OK/Yes, -1 for Cancel/No */
@@ -915,7 +1072,8 @@ void ui_gtk_console(void)
 void ui_gtk_quit(void)
 {
   gen_quit = 1;
-  gtk_main_quit();
+  if (gtk_main_level() > 0)
+    gtk_main_quit();
 }
 
 void ui_gtk_closeconsole(void)
@@ -936,7 +1094,8 @@ void ui_gtk_play(void)
   /* start running the game */
   ui_running = 1;
   ui_gtk_sizechange();
-  gtk_main_quit();
+  if (gtk_main_level() > 0)
+    gtk_main_quit();
 }
 
 void ui_gtk_pause(void)
@@ -1058,6 +1217,9 @@ void ui_gtk_newoptions(void)
 
   v = gtkopts_getvalue("sound_maxfields");
   sound_maxfields = atoi(v);
+
+  v = gtkopts_getvalue("lowpassfilter");
+  sound_filter = atoi(v);
 
   v = gtkopts_getvalue("loglevel");
   gen_loglevel = atoi(v);
@@ -1228,7 +1390,7 @@ static void ui_gtk_opts_from_window(void)
            gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(obj)));
   gtkopts_setvalue("sound_minfields", buf);
 
-  /* sound - min fields */
+  /* sound - max fields */
 
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
                                        "spinbutton_maxfields"));
@@ -1236,7 +1398,15 @@ static void ui_gtk_opts_from_window(void)
            gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(obj)));
   gtkopts_setvalue("sound_maxfields", buf);
 
-  /* info - verbosity */
+  /* sound - filter */
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "spinbutton_filter"));
+  snprintf(buf, sizeof(buf), "%d",
+           gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(obj)));
+  gtkopts_setvalue("lowpassfilter", buf);
+
+  /* logging - verbosity */
 
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
                                        "optionmenu_level"));
@@ -1247,7 +1417,7 @@ static void ui_gtk_opts_from_window(void)
            g_list_index(GTK_MENU_SHELL(obj)->children, active));
   gtkopts_setvalue("loglevel", buf);
 
-  /* info - sound */
+  /* logging - sound */
 
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
                                        "checkbutton_debugsound"));
@@ -1256,13 +1426,38 @@ static void ui_gtk_opts_from_window(void)
   else
     gtkopts_setvalue("debugsound", "off");
 
-  /* info - status bar */
+  /* logging - status bar */
+
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
                                        "checkbutton_statusbar"));
   if (GTK_TOGGLE_BUTTON(obj)->active)
     gtkopts_setvalue("statusbar", "on");
   else
     gtkopts_setvalue("statusbar", "off");
+
+  /* logging - avi format */
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "optionmenu_aviformat"));
+  /* now get active widget on menu */
+  obj = GTK_BIN(GTK_OPTION_MENU(obj))->child;
+  gtkopts_setvalue("aviformat", GTK_LABEL(obj)->label);
+
+  /* logging - avi frame skip */
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "hscale_avi"));
+  snprintf(buf, sizeof(buf), "%d",
+           (int)(gtk_range_get_adjustment(GTK_RANGE(obj))->value));
+  gtkopts_setvalue("aviframeskip", buf);
+
+  /* logging - jpeg quality */
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "spinbutton_jpegquality"));
+  snprintf(buf, sizeof(buf), "%d",
+           gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(obj)));
+  gtkopts_setvalue("jpegquality", buf);
 
   /* controls */
 
@@ -1431,7 +1626,17 @@ static void ui_gtk_opts_to_window(void)
     i = 1;
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(obj), i);
 
-  /* info - verbosity */
+  /* sound - filter */
+
+  v = gtkopts_getvalue("lowpassfilter");
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "spinbutton_filter"));
+  i = atoi(v);
+  if (i < 1)
+    i = 1;
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(obj), i);
+
+  /* logging - verbosity */
 
   v = gtkopts_getvalue("loglevel");
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
@@ -1439,19 +1644,52 @@ static void ui_gtk_opts_to_window(void)
   i = atoi(v);
   gtk_option_menu_set_history(GTK_OPTION_MENU(obj), i);
 
-  /* info - sound */
+  /* logging - sound */
 
   v = gtkopts_getvalue("debugsound");
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
                                        "checkbutton_debugsound"));
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), !strcasecmp(v, "on"));
 
-  /* info - status bar */
+  /* logging - status bar */
 
   v = gtkopts_getvalue("statusbar");
   obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
                                        "checkbutton_statusbar"));
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), !strcasecmp(v, "on"));
+
+  /* logging - avi format */
+
+  v = gtkopts_getvalue("aviformat");
+  if (!strcasecmp(v, "rgb")) {
+    i = 0;
+  } else {
+    i = 1;
+  }
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "optionmenu_aviformat"));
+  gtk_option_menu_set_history(GTK_OPTION_MENU(obj), i);
+
+  /* logging - avi frame skip */
+
+  i = atoi(gtkopts_getvalue("aviframeskip"));
+  if (i < 1)
+    i = 1;
+  if (i > 10)
+    i = 10;
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "hscale_avi"));
+  gtk_adjustment_set_value(gtk_range_get_adjustment(GTK_RANGE(obj)), i);
+  
+  /* logging - jpeg quality */
+
+  v = gtkopts_getvalue("jpegquality");
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_opts),
+                                       "spinbutton_jpegquality"));
+  i = atoi(v);
+  if (i < 1)
+    i = 1;
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(obj), i);
 
   /* controls */
 
@@ -1530,16 +1768,70 @@ void ui_gtk_key(unsigned long key, int press)
   }
 }
 
+static void ui_sdl_events (void)
+{
+	SDL_Event event;
+  #define	LEFT(event)	((event.jaxis.value < -16384) ? 1 : 0)
+  #define	RIGHT(event)	((event.jaxis.value > 16384) ? 1 : 0)
+  #define	UP(event)	((event.jaxis.value < -16384) ? 1 : 0)
+  #define	DOWN(event)	((event.jaxis.value > 16384) ? 1 : 0)
+  #define	PRESS(event)	((event.type == SDL_JOYBUTTONDOWN) ? 1 : 0)
+
+	while (SDL_PollEvent(&event)) {
+		switch (event.type) {
+		case SDL_JOYAXISMOTION:
+			if (event.jaxis.which > 1)
+				break;
+			switch (event.jaxis.axis) {
+			case 0:	/* left & right */
+				mem68k_cont[event.jaxis.which].left = LEFT(event);
+				mem68k_cont[event.jaxis.which].right = RIGHT(event);
+				break;
+			case 1: /* up & down */
+				mem68k_cont[event.jaxis.which].up = UP(event);
+				mem68k_cont[event.jaxis.which].down = DOWN(event);
+				break;
+			default:
+				break;
+			}
+			break;
+		case SDL_JOYBUTTONDOWN:
+		case SDL_JOYBUTTONUP:
+			if (event.jbutton.which > 1)
+				break;
+			switch (event.jbutton.button) {
+			case 0:
+				mem68k_cont[event.jbutton.which].a = PRESS(event);
+				break;
+			case 1:
+				mem68k_cont[event.jbutton.which].b = PRESS(event);
+				break;
+			case 2:
+				mem68k_cont[event.jbutton.which].c = PRESS(event);
+				break;
+			case 3:
+				mem68k_cont[event.jbutton.which].start = PRESS(event);
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+}	
+
 void ui_gtk_mainenter(void)
 {
   /* clear out current state */
   memset(mem68k_cont, 0, sizeof(mem68k_cont));
-  XAutoRepeatOff(GDK_DISPLAY());
+  gdk_key_repeat_disable();
 }
 
 void ui_gtk_mainleave(void)
 {
-  XAutoRepeatOn(GDK_DISPLAY());
+  gdk_key_repeat_restore();
 }
 
 static void ui_gtk_opts_to_menu(void)
@@ -1574,3 +1866,315 @@ void ui_gtk_closemusiclog(void)
   ui_musicfile = -1;
   gen_musiclog = 0;
 }
+
+static void ui_gtk_codes_to_window(void)
+{
+  GtkWidget *obj;
+  t_patchlist *ent;
+  char *data[2];
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  gtk_clist_clear(GTK_CLIST(obj));
+  for (ent = patch_patchlist; ent; ent = ent->next) {
+    data[0] = ent->code;
+    data[1] = ent->action;
+    gtk_clist_append(GTK_CLIST(obj), data);
+  }
+}
+
+void ui_gtk_codes(void)
+{
+  ui_gtk_codes_to_window();
+  gtk_widget_show(ui_win_codes);
+}
+
+void ui_gtk_codes_add(void)
+{
+  GtkWidget *obj;
+  char *data[2];
+  char *code, *action;
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "entry_code"));
+  code = gtk_entry_get_text(GTK_ENTRY(obj));
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "entry_action"));
+  action = gtk_entry_get_text(GTK_ENTRY(obj));
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  data[0] = (char *)code;
+  data[1] = (char *)action;
+  gtk_clist_append(GTK_CLIST(obj), data);
+}
+
+void ui_gtk_codes_delete(void)
+{
+  GtkWidget *obj;
+  GList *slist;
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  while ((slist = GTK_CLIST(obj)->selection) != NULL) {
+    gtk_clist_remove(GTK_CLIST(obj), (int)slist->data);
+  }
+}
+
+void ui_gtk_codes_deleteall(void)
+{
+  GtkWidget *obj;
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  gtk_clist_clear(GTK_CLIST(obj));
+}
+
+void ui_gtk_codes_clearsel(void)
+{
+  GtkWidget *obj;
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  gtk_clist_unselect_all(GTK_CLIST(obj));
+}
+
+void ui_gtk_codes_ok(void)
+{
+  GtkWidget *obj;
+  int i;
+  char *code, *action;
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  patch_clearlist();
+  for (i = 0;; i++) {
+    if (gtk_clist_get_text(GTK_CLIST(obj), i, 0, &code) != 1 ||
+        gtk_clist_get_text(GTK_CLIST(obj), i, 1, &action) != 1)
+      break;
+    patch_addcode(code, action);
+  }
+  gtk_widget_hide(ui_win_codes);
+}
+
+void ui_gtk_codes_apply(void)
+{
+  GtkWidget *obj;
+  GList *slist;
+  char *code, *action;
+  int failed = 0;
+
+  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_codes),
+                                       "clist_codes"));
+  slist = GTK_CLIST(obj)->selection;
+  for (; slist; slist = slist->next) {
+    if (gtk_clist_get_text(GTK_CLIST(obj), (int)slist->data, 0, &code) != 1 ||
+        gtk_clist_get_text(GTK_CLIST(obj), (int)slist->data, 1, &action) != 1) {
+      failed = 1;
+      break;
+    }
+    if (patch_apply(code, action) != 0)
+      failed = 1;
+  }
+  if (failed)
+    ui_gtk_dialog("Unable to apply one or more cheats (either invalid cheat "
+                  "code or out of bounds for currently loaded ROM)");
+  cpu68k_clearcache();
+}
+
+void ui_gtk_closeavi(void)
+{
+  if (ui_avi == NULL) {
+    ui_gtk_dialog("There is no avi to close");
+    return;
+  }
+  if (avi_close(ui_avi) != 0) {
+    ui_gtk_dialog(strerror(errno));
+    return;
+  }
+  free(ui_avivideo);
+  free(ui_aviaudio);
+  ui_avi = NULL;
+  ui_avivideo = NULL;
+  ui_aviaudio = NULL;
+  ui_gtk_newoptions(); /* restore ui_frameskip */
+}
+
+GtkWidget *ui_gtk_newdiss(unsigned int type)
+{
+  GtkWidget *disswin, *obj;
+  GtkStyle *style;
+  unsigned int i;
+  GtkWidget **dw;
+
+  disswin = create_diss();
+  gtk_object_set_data(GTK_OBJECT(disswin), "generator_diss_type", 
+                      GINT_TO_POINTER(type));
+  gtk_object_set_data(GTK_OBJECT(disswin), "generator_diss_offset",
+                      GINT_TO_POINTER(0));
+
+  /* store in our list */
+  dw = ui_disswins;
+  for (i = 0; i < DISSWIN_MAX; i++, dw++) {
+    if (*dw == NULL) {
+      *dw = disswin;
+      break;
+    }
+  }
+  if (i == DISSWIN_MAX) {
+    ui_gtk_dialog("Too many disassembly windows!");
+    gtk_widget_destroy(disswin);
+    return NULL;
+  }
+  return disswin;
+}
+
+int ui_gtk_destroydiss(GtkWidget *disswin)
+{
+  unsigned int i;
+  GtkWidget **dw;
+
+  dw = ui_disswins;
+  for (i = 0; i < DISSWIN_MAX; i++, dw++) {
+    if (*dw == disswin) {
+      gtk_widget_destroy(disswin);
+      *dw = NULL;
+      return 0;
+    }
+  }
+  return -1;
+}
+
+//{
+//  GtkWidget *adj, *scrollbar;
+//
+//  scrollbar = lookup_widget(disswin, "vscrollbar_diss");
+//  adj = gtk_range_get_adjustment(GTK_RANGE(scrollbar));
+//}
+//scrollbar = lookup_widget(disswin, "vscrollbar_diss");
+//gtk_signal_connect(GTK_OBJECT(GTK_RANGE(scrollbar)->adjustment),
+//                   "changed", GTK_SIGNAL_FUNC(on_adjustment_changed), NULL);
+
+void ui_gtk_redrawdiss(GtkWidget *canvas, GdkEventExpose *event)
+{
+  GdkRectangle *rect = &event->area;
+  GtkWidget *obj, *disswin;
+  signed int yoff = -2;
+  signed int y;
+  unsigned int y_start, y_end, fontheight, i;
+  uint8 *mem_where;
+  uint32 mem_start;
+  uint32 mem_len;
+  uint32 type, offset;
+  char dumpline[256];
+  char *p;
+  int words;
+
+  disswin = gtk_widget_get_toplevel(canvas);
+  offset = GPOINTER_TO_INT(gtk_object_get_data(GTK_OBJECT(disswin),
+                                               "generator_diss_offset"));
+  type = GPOINTER_TO_INT(gtk_object_get_data(GTK_OBJECT(disswin),
+                                             "generator_diss_type"));
+  switch (type) {
+  case 0:
+    mem_where = cpu68k_rom;
+    mem_start = 0;
+    mem_len = cpu68k_romlen;
+    break;
+  case 1:
+    mem_where = cpu68k_ram;
+    mem_start = 0xFF0000;
+    mem_len = 0x10000;
+    break;
+  case 2:
+    mem_where = vdp_vram;
+    mem_start = 0x0;
+    mem_len = LEN_VRAM;
+    break;
+  case 3:
+    mem_where = vdp_cram;
+    mem_start = 0x0;
+    mem_len = LEN_CRAM;
+    break;
+  case 4:
+    mem_where = vdp_vsram;
+    mem_start = 0x0;
+    mem_len = LEN_VSRAM;
+    break;
+  case 5:
+    mem_where = cpuz80_ram;
+    mem_start = 0x0;
+    mem_len = LEN_SRAM;
+    break;
+  default:
+    return;
+  }
+
+  fontheight = ui_dissfont->ascent + ui_dissfont->descent;
+  if ((y = rect->y - yoff) < 0)
+    y = 0;
+  y_start = y / fontheight;
+  y_end = (y + rect->height) / fontheight;
+  offset+= y_start * 2;
+  for (i = y_start; i <= y_end; i++) {
+    printf("offset=%X\n", offset);
+    p = dumpline;
+    *p++ = '>';
+    *p++ = ' ';
+    if (offset >= mem_len) {
+    } else {
+      words = diss68k_getdumpline(mem_start + offset, mem_where + offset, p);
+      offset+= words * 2;
+    }
+    gdk_draw_rectangle(canvas->window,
+                       canvas->style->bg_gc[GTK_WIDGET_STATE(canvas)],
+                       TRUE, 0, i * fontheight + yoff,
+                       4096, fontheight);
+    gdk_draw_text(canvas->window, ui_dissfont,
+                  canvas->style->fg_gc[GTK_WIDGET_STATE(canvas)],
+                  2, i * fontheight + yoff + fontheight, dumpline,
+                  strlen(dumpline));
+  }
+  /*
+  printf("x = %d\ny = %d\nwidth = %d\nheight = %d\noff=%f\n\n", rect->x,
+  rect->y, rect->width, rect->height, adj->value);
+  */
+
+
+}
+
+//void ui_gtk_redrawdiss(GtkWidget *canvas, GdkEventExpose *event)
+//{
+//  GdkRectangle *rect = &event->area;
+//  GtkWidget *obj, *disswin;
+//  GtkAdjustment *adj;
+//  signed int y, ypos;
+//  unsigned int y_start, y_end, fontheight, i;
+//
+//  disswin = gtk_widget_get_toplevel(canvas);
+//  obj = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(disswin), 
+//                                       "scrolledwindow_diss"));
+//  adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(obj));
+//
+//  fontheight = ui_dissfont->ascent + ui_dissfont->descent;
+//  if ((y = rect->y - 2) < 0)
+//    y = 0;
+//  printf("y = %d\n", y);
+//  y_start = (y + (int)adj->value) / fontheight;
+//  y_end = (y + (int)adj->value + rect->height) / fontheight;
+//  printf("val = %f start = %d height = %d\n", adj->value, y_start, fontheight);
+//  ypos = -adj->value + y_start * fontheight;
+//  printf("< %d %d >\n", y_start, y_end);
+//  for (i = y_start; i < y_end; i++, ypos+= fontheight) {
+//    gdk_draw_text(canvas->window, ui_dissfont,
+//                  cavas->style->fg_gc[GTK_WIDGET_STATE(canvas)],
+//                  0, ypos);
+//
+//    printf("[%d] %d\n", i, ypos);
+//  }
+//  /*
+//  printf("x = %d\ny = %d\nwidth = %d\nheight = %d\noff=%f\n\n", rect->x,
+//  rect->y, rect->width, rect->height, adj->value);
+//  */
+//
+//
+//}

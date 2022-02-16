@@ -1,0 +1,10 @@
+Generator supports Genecyst patch files.  The format is assumed to be:
+
+aabbcc:ddee<space><space><space><space><description>\r\n
+
+aabbcc is a 24 bit hex address to write to, and ddee is the 16 bit data to
+write.  Four spaces separate this information from the description.
+
+Each line is DOS-style ended with a CR, LF.  Generator will read in unix
+LF-only line endings but will always write in DOS format to maintain
+compatibility.

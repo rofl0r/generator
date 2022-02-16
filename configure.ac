@@ -1,8 +1,9 @@
 dnl Generator configure.in file - process with autoconf
 
   AC_INIT(cpu68k/def68k.c)
+  AC_PREREQ(2.52)
   AC_CANONICAL_SYSTEM
-  AM_INIT_AUTOMAKE(generator, 0.34)
+  AM_INIT_AUTOMAKE(generator, 0.35)
   AM_CONFIG_HEADER(config.h)
   optimum=yes
 
@@ -125,7 +126,9 @@ dnl Check for gcc options
       fi
       case $target_cpu in
         i?86) AC_MSG_RESULT(Turning on pentium optimisations)
-              CFLAGS="$CFLAGS -march=pentium -malign-double -malign-loops=5"
+              # cannot do malign-double as we link to other libraries and it
+              # would break binary compatibility
+              CFLAGS="$CFLAGS -march=pentium -malign-loops=5"
               CFLAGS="$CFLAGS -malign-jumps=5 -malign-functions=5"
               ;;
       esac
@@ -134,6 +137,8 @@ dnl Check for gcc options
       optimum=no
     fi
   fi
+  AC_CHECK_LIB(jpeg, jpeg_start_compress, 
+    [ MY_LIBS="-ljpeg $MY_LIBS"; AC_DEFINE(JPEG, 1, [JPEG features]) ])
 
 dnl Checks for programs.
 

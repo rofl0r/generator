@@ -114,7 +114,8 @@ inline void event_nextevent(void)
       cpuz80_interrupt();
     if (vdp_line == vdp_totlines) {
       /* the order of these is important */
-      sound_endfield(); /* must be before ui_endfield for GYM log */
+      sound_endfield(); /* must be before ui_endfield for GYM log and also
+                           for avi output */
       ui_endfield();
       vdp_endfield(); /* must be after ui_endfield as it alters state */
       cpuz80_endfield();

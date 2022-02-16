@@ -45,6 +45,7 @@ void cpu68k_step(void);
 void cpu68k_framestep(void);
 t_ipclist *cpu68k_makeipclist(uint32 pc);
 void cpu68k_endfield(void);
+void cpu68k_clearcache(void);
 
 #define V_RESETSSP   0
 #define V_RESETPC    1

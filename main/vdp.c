@@ -165,7 +165,7 @@ void vdp_reset(void)
   vdp_overflow = 0;
   vdp_vsync = 0;
   vdp_fifofull = 0;
-  vdp_fifoempty = 0;
+  vdp_fifoempty = 1;
   vdp_ctrlflag = 0;
   vdp_first = 0;
   vdp_second = 0;

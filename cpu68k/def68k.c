@@ -660,7 +660,9 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
   /* checks */
 
   if (expand_d_ea_e) {
-    if (e[ea_Imm]) {
+    /* BTST is weirdo and you can do BTST Dx, #nnnn where Dx is the source
+     * of the bit-position and #nnnn is the immediate data to test */
+    if (e[ea_Imm] && mnemonic_num != i_BTST ) {
       fprintf(stderr, "%d: Immediate data not allowed as dest\n", lineno);
       exit(1);
     }
@@ -1382,8 +1384,8 @@ int clocks_eacalc(t_datatype type, t_size size)
   case dt_Imm4:
   case dt_Imm8:
   case dt_Imm8s:
+  case dt_ImmV:
   case dt_Ill: return 0;
-  default:
   }
   printf("Invalid type for clocks\n");
   exit(1);

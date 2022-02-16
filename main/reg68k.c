@@ -11,6 +11,7 @@
 #include "reg68k.h"
 #include "cpu68k.h"
 #include "mem68k.h"
+#include "diss68k.h"
 #include "cpuz80.h"
 #include "vdp.h"
 #include "ui.h"
@@ -49,7 +50,8 @@ unsigned int reg68k_external_step(void)
       reg68k_internal_autovector(regs.pending);
 
     if (!(piib = cpu68k_iibtable[fetchword(reg68k_pc)]))
-      ui_err("Invalid instruction @ %08X\n", reg68k_pc);
+      ui_err("Invalid instruction @ %08X [%04X]\n", reg68k_pc,
+             fetchword(reg68k_pc));
 
     cpu68k_ipc(reg68k_pc,
                mem68k_memptr[(reg68k_pc >> 12) & 0xfff] (reg68k_pc &
@@ -137,8 +139,10 @@ unsigned int reg68k_external_execute(unsigned int clocks)
         }
         while (*(int *)ipc);
 #endif
-        clks -= list->clocks;
-        cpu68k_clocks += list->clocks;
+        do {
+          clks -= list->clocks;
+          cpu68k_clocks += list->clocks;
+        } while (list->norepeat && clks > 0);
       }
     }
     while (clks > 0);

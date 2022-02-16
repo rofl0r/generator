@@ -120,14 +120,6 @@ on_keyval_press_event             (GtkWidget       *widget,
                                    GdkEventKey     *event,
                                    gpointer         user_data);
 
-void
-on_button_save_clicked                 (GtkButton       *button,
-                                        gpointer         user_data);
-
-void
-on_button_ok_clicked                   (GtkButton       *button,
-                                        gpointer         user_data);
-
 gboolean
 on_console_remove                      (GtkWidget       *widget,
                                         GdkEvent        *event,
@@ -164,4 +156,80 @@ on_start_gnm_activate                  (GtkMenuItem     *menuitem,
 
 void
 on_stop_gnm_activate                   (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_load_patch_activate                 (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_save_patch_activate                 (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_game_genie_codes_activate           (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_button_opts_save_clicked            (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_opts_ok_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_ok_clicked             (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_add_clicked            (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_delete_clicked         (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_deleteall_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_delete_clicked         (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_apply_clicked          (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_codes_clearsel_clicked       (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_start_avi_activate                  (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_stop_avi_activate                   (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+gboolean
+on_text_diss_expose_event              (GtkWidget       *widget,
+                                        GdkEventExpose  *event,
+                                        gpointer         user_data);
+
+gboolean
+on_diss_configure_event                (GtkWidget       *widget,
+                                        GdkEventConfigure *event,
+                                        gpointer         user_data);
+
+gboolean
+on_drawingarea_diss_expose_event       (GtkWidget       *widget,
+                                        GdkEventExpose  *event,
+                                        gpointer         user_data);
+
+gboolean
+on_drawingarea_diss_expose_event       (GtkWidget       *widget,
+                                        GdkEventExpose  *event,
                                         gpointer         user_data);

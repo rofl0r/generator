@@ -98,6 +98,14 @@ static t_opts gtkopts_opts[] = {
     "keyboard player 2 right" },
   { "key2_start", "gdk keysym", "KP_Enter",
     "keyboard player 2 start button" },
+  { "aviframeskip", "integer", "2",
+    "AVI forced skip, e.g. 2 is 30fps" },
+  { "aviformat", "rgb, jpeg", "jpeg",
+    "Type of output to be written to AVI" },
+  { "jpegquality", "0-100", "100",
+    "JPEG quality - 100 is least compression but best picture" },
+  { "lowpassfilter", "0-100", "50",
+    "Low-pass sound filter - 0 turns it off, 100 filters too much" },
   { NULL, NULL, NULL, NULL }
 };
 

@@ -35,6 +35,7 @@ int sound_logsample = 0;        /* sample to log or -1 if none */
 unsigned int sound_on = 1;      /* sound enabled */
 unsigned int sound_psg = 1;     /* psg enabled */
 unsigned int sound_fm = 1;      /* fm enabled */
+unsigned int sound_filter = 50; /* low-pass filter percentage (0-100) */
 
 /* pal is lowest framerate */
 uint16 sound_soundbuf[2][SOUND_MAXRATE / 50];
@@ -123,7 +124,7 @@ int sound_start(void)
   if (sound_active)
     sound_stop();
   LOG_VERBOSE(("Starting sound..."));
-  if (soundp_start() == -1) {
+  if (soundp_start() != 0) {
     LOG_VERBOSE(("Failed to start sound hardware"));
     return -1;
   }
@@ -356,6 +357,9 @@ static void sound_process(void)
   uint16 sn76496buf[SOUND_MAXRATE / 50];        /* far too much but who cares */
   unsigned int samples = s2 - s1;
   unsigned int i;
+  static sint32 ll, rr;
+  uint32 factora = (0x10000 * sound_filter) / 100;
+  uint32 factorb = 0x10000 - factora;
 
   tbuf[0] = sound_soundbuf[0] + s1;
   tbuf[1] = sound_soundbuf[1] + s1;
@@ -367,22 +371,24 @@ static void sound_process(void)
 #else
       YM2612UpdateOne(0, tbuf, samples);
 #endif
-    if (sound_psg)
-      SN76496Update(0, sn76496buf, samples);
 
     /* SN76496 outputs sound in range -0x4000 to 0x3fff
        YM2612 ouputs sound in range -0x8000 to 0x7fff - therefore
        we take 3/4 of the YM2612 and add half the SN76496 */
 
+    /* this uses a single-pole low-pass filter (6 dB/octave) curtesy of
+       Jon Watte <hplus@mindcontrol.org> */
+
     if (sound_fm && sound_psg) {
+      SN76496Update(0, sn76496buf, samples);
       for (i = 0; i < samples; i++) {
-        sint16 snsample = sn76496buf[i] - 0x4000;
-        sint32 l = (tbuf[0][i] * 3) >> 2; /* left channel */
-        sint32 r = (tbuf[1][i] * 3) >> 2; /* right channel */
-        l += snsample >> 1;
-        r += snsample >> 1;
-        tbuf[0][i] = l;
-        tbuf[1][i] = r;
+        sint16 snsample = ((sint16)sn76496buf[i] - 0x4000) >> 1;
+        sint32 l = snsample + ((tbuf[0][i] * 3) >> 2); /* left channel */
+        sint32 r = snsample + ((tbuf[1][i] * 3) >> 2); /* right channel */
+        ll = (ll >> 16) * factora + (l * factorb);
+        rr = (rr >> 16) * factora + (r * factorb);
+        tbuf[0][i] = ll >> 16;
+        tbuf[1][i] = rr >> 16;
       }
     } else if (!sound_fm && !sound_psg) {
       /* no sound */
@@ -393,15 +399,20 @@ static void sound_process(void)
       for (i = 0; i < samples; i++) {
         sint32 l = (tbuf[0][i] * 3) >> 2; /* left channel */
         sint32 r = (tbuf[1][i] * 3) >> 2; /* right channel */
-        tbuf[0][i] = l;
-        tbuf[1][i] = r;
+        ll = (ll >> 16) * factora + (l * factorb);
+        rr = (rr >> 16) * factora + (r * factorb);
+        tbuf[0][i] = ll >> 16;
+        tbuf[1][i] = rr >> 16;
       }
     } else {
       /* psg only */
+      SN76496Update(0, sn76496buf, samples);
       for (i = 0; i < samples; i++) {
-        sint16 snsample = sn76496buf[i] - 0x4000;
-        tbuf[0][i] = snsample >> 1;
-        tbuf[1][i] = snsample >> 1;
+        sint16 snsample = ((sint16)(sn76496buf[i] - 0x4000)) >> 1;
+        ll = (ll >> 16) * factora + (snsample * factorb);
+        rr = (rr >> 16) * factora + (snsample * factorb);
+        tbuf[0][i] = ll >> 16;
+        tbuf[1][i] = rr >> 16;
       }
     }
   }

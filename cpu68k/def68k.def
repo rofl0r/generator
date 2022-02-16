@@ -94,8 +94,8 @@
 0000 nnn1 01 001 NNN	0 0	-----	-----	MOVEPMR.L  N(Adis),n(Dreg)
 0000 nnn1 10 001 NNN	0 0	-----	-----	MOVEPRM.W  n(Dreg),N(Adis)
 0000 nnn1 11 001 NNN	0 0	-----	-----	MOVEPRM.L  n(Dreg),N(Adis)
-; note 68000 book says immediate data is ok for BTST dynamic!
-0000 nnn1 00 eee EEE	0 0	-----	--Z--	BTST.B     n(Dreg),e(*,-Regs,-Imm)
+; you can do BTST Dx, #nnnn (bit-pos in reg) - weirdo instruction
+0000 nnn1 00 eee EEE	0 0	-----	--Z--	BTST.B     n(Dreg),e(*,-Regs)
 0000 nnn1 01 eee EEE	0 0	-----	--Z--	BCHG.B     n(Dreg),e(*,-Regs,-Imm,-PC)
 0000 nnn1 10 eee EEE	0 0	-----	--Z--	BCLR.B     n(Dreg),e(*,-Regs,-Imm,-PC)
 0000 nnn1 11 eee EEE	0 0	-----	--Z--	BSET.B     n(Dreg),e(*,-Regs,-Imm,-PC)
@@ -118,7 +118,7 @@
 0100 0100 11 eee EEE	0 0	-----	XNZVC	MOVETSR.B  e(*,-Areg)
 0100 0110 11 eee EEE	1 0	-----	XNZVC	MOVETSR.W  e(*,-Areg)
 
-0100 1000 00 eee EEE	0 0	X----	XxZxC	NBCD.B     e(*,-Areg,-Imm,-PC)
+0100 1000 00 eee EEE	0 0	X----	XNZVC	NBCD.B     e(*,-Areg,-Imm,-PC)
 0100 1000 01 eee EEE	0 0	-----	-NZ00	SWAP.L     e(Dreg)
 0100 1000 01 eee EEE	0 0	-----	-----	PEA.L      e(*,-Regs,-Imm,-Amod)
 0100 1000 10 eee EEE	0 0	-----	-NZ00	EXT.W      e(Dreg)
@@ -180,8 +180,8 @@
 1000 nnn1 zz eee EEE	0 0	-----	-NZ00	OR.z       n(Dreg),e(*,-Regs,-PC,-Imm)
 1000 nnn0 11 eee EEE	0 0	-----	-NZ0C	DIVU.W     e(*,-Areg),n(Dreg)
 1000 nnn1 11 eee EEE	0 0	-----	-NZ0C	DIVS.W     e(*,-Areg),n(Dreg)
-1000 nnn1 00 000 NNN	0 0	X-Z--	XxZxC	SBCD.B     N(Dreg),n(Dreg)
-1000 nnn1 00 001 NNN	0 0	X-Z--	XxZxC	SBCD.B     N(Adec),n(Adec)
+1000 nnn1 00 000 NNN	0 0	X-Z--	XNZVC	SBCD.B     N(Dreg),n(Dreg)
+1000 nnn1 00 001 NNN	0 0	X-Z--	XNZVC	SBCD.B     N(Adec),n(Adec)
 
 1001 nnn0 zz eee EEE	0 0	-----	XNZVC	SUB.z      e(*),n(Dreg)
 1001 nnn1 zz eee EEE	0 0	-----	XNZVC	SUB.z      n(Dreg),e(*,-Regs,-PC,-Imm)
@@ -200,8 +200,8 @@
 1100 nnn1 zz eee EEE	0 0	-----	-NZ00	AND.z      n(Dreg),e(*,-Regs,-PC,-Imm)
 1100 nnn0 11 eee EEE	0 0	-----	-NZ00	MULU.W     e(*,-Areg),n(Dreg)
 1100 nnn1 11 eee EEE	0 0	-----	-NZ00	MULS.W     e(*,-Areg),n(Dreg)
-1100 nnn1 00 000 NNN	0 0	X-Z--	XxZxC	ABCD.B     N(Dreg),n(Dreg)
-1100 nnn1 00 001 NNN	0 0	X-Z--	XxZxC	ABCD.B     N(Adec),n(Adec)
+1100 nnn1 00 000 NNN	0 0	X-Z--	XNZVC	ABCD.B     N(Dreg),n(Dreg)
+1100 nnn1 00 001 NNN	0 0	X-Z--	XNZVC	ABCD.B     N(Adec),n(Adec)
 1100 nnn1 01 000 NNN	0 0	-----	-----	EXG.L      N(Dreg),n(Dreg)
 1100 nnn1 01 001 NNN	0 0	-----	-----	EXG.L      N(Areg),n(Areg)
 1100 nnn1 10 001 NNN	0 0	-----	-----	EXG.L      n(Dreg),N(Areg)

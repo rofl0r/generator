@@ -11,6 +11,10 @@ If you see warnings about lack of optimisation then Generator will
 be running non-optimally.  If you are using gcc version 3 then
 read on for specific optimisations for this compiler.
 
+NOTE: gcc (GCC) 3.2.3 20030415 (Debian prerelease) does not compile
+      Generator properly when optimisations are turned on!  This may
+      be a problem with all gcc 3 versions!
+
 Generator version
 =================
 

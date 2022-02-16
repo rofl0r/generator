@@ -21,6 +21,8 @@ extern uint8 sound_keys[8];
 extern unsigned int sound_on;
 extern unsigned int sound_psg;
 extern unsigned int sound_fm;
+extern uint16 sound_soundbuf[2][SOUND_MAXRATE / 50];
+extern unsigned int sound_filter;
 
 int sound_start(void);
 void sound_stop(void);

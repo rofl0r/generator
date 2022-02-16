@@ -220,3 +220,19 @@
          [CORE]    Re-implemented save state with new block-based format
          [CORE]    Completely changed the way sound is saved
          [DOS]     Tweaked sound code to more compatible
+
+0.35     [CORE]    Support for Genecyst patch files / Game Genie
+         [CORE]    Support for AVI uncompressed and MJPEG output
+         [68000]   Re-added busy wait removal that got lost
+         [SOUND]   Added configurable single-pole low-pass filter
+         [CORE]    Added autoconf/automake version checks
+         [VDP]     Fix FIFO busy flag (Nicholas Van Veen)
+         [SOUND]   Various further endian improvements from Bastien Nocera
+                   and andi@fischlustig.de (Debian)
+         [SOUND]   Various BSD compatibility improvements from
+                   Alistair Crooks and Michael Core (NetBSD)
+         [UI]      SDL Joystick support from Matthew N. Dodd (FreeBSD)
+         [68000]   Do pre-decrement with two reads (Steve Snake)
+         [68000]   Make TAS not write (Steve Snake) fixes Gargoyles, Ex Mutant
+         [68000]   Re-write ABCD,etc based on info from Bart Trzynadlowski
+         [68000]   Implement missing BTST op-code (fixes NHL Hockey 94)

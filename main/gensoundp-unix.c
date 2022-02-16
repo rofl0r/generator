@@ -22,9 +22,13 @@
 #  include "fm.h"
 #endif
 
-#include <sys/soundcard.h>
-
-#define SOUND_DEVICE "/dev/dsp"
+#if defined(__NetBSD__) || defined(__OpenBSD__)
+  #include <soundcard.h>
+  #define SOUND_DEVICE "/dev/sound"
+#else
+  #include <sys/soundcard.h>
+  #define SOUND_DEVICE "/dev/dsp"
+#endif
 
 /*** variables externed ***/
 
@@ -59,7 +63,11 @@ int soundp_start(void)
     close(soundp_dev);
     return 1;
   }
+#ifdef WORDS_BIGENDIAN
+  soundp_format = AFMT_S16_BE;
+#else
   soundp_format = AFMT_S16_LE;
+#endif
   if (ioctl(soundp_dev, SNDCTL_DSP_SETFMT, &soundp_format) == -1) {
     LOG_CRITICAL(("Error setting sound device format: %s", strerror(errno)));
     close(soundp_dev);
@@ -157,7 +165,11 @@ void soundp_output(uint16 *left, uint16 *right, unsigned int samples)
     LOG_CRITICAL(("Too many samples passed to soundp_output!"));
     return;
   }
-  if (soundp_format == AFMT_S16_LE && endian == 0) {
+#ifdef WORDS_BIGENDIAN
+  if (soundp_format == AFMT_S16_BE) {
+#else  
+  if (soundp_format == AFMT_S16_LE) {
+#endif  
     /* device matches endianness of host */
     for (i = 0; i < samples; i++) {
       buffer[i * 2] = left[i];
@@ -171,7 +183,7 @@ void soundp_output(uint16 *left, uint16 *right, unsigned int samples)
     }
   }
   if (write(soundp_dev, buffer, samples * 4) == -1) {
-    if (errno != EINTR)
+    if (errno != EINTR && errno != EWOULDBLOCK)
       LOG_CRITICAL(("Error writing to sound device: %s", strerror(errno)));
   }
 }

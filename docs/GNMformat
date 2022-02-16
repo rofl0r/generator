@@ -25,8 +25,8 @@ while (!EOF) {
               interval=1; /* no change of register 0x2A */
     }
   } else {
-    /* unescaped sameple data and mark of interval */
-    ymport=0; ymreg=0x2A; ymdata=data; sample=1;
+    /* unescaped sample data and mark of interval */
+    ymport=0; ymreg=0x2A; ymdata=data; interval=1;
   }
   if (interval) {
     interval = 0;
