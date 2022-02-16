@@ -1,0 +1,16 @@
+int ui_init(int argc, char *argv[]);
+char *ui_setinfo(t_cartinfo *cartinfo);
+int ui_loop(void);
+void ui_line(unsigned int line);
+void ui_endfield(void);
+void ui_run(void);
+void ui_final(void);
+void ui_log_debug3(const char *text, ...);
+void ui_log_debug2(const char *text, ...);
+void ui_log_debug1(const char *text, ...);
+void ui_log_user(const char *text, ...);
+void ui_log_verbose(const char *text, ...);
+void ui_log_normal(const char *text, ...);
+void ui_log_critical(const char *text, ...);
+void ui_log_request(const char *text, ...);
+void ui_err(const char *text, ...);

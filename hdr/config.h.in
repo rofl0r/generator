@@ -1,0 +1,64 @@
+
+/*****************************************************************************/
+/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
+/*****************************************************************************/
+/*                                                                           */
+/* config.h                                                                  */
+/*                                                                           */
+/*****************************************************************************/
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if your processor stores words with the most significant
+   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
+#undef WORDS_BIGENDIAN
+
+/* The number of bytes in a unsigned char.  */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The number of bytes in a unsigned int.  */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The number of bytes in a unsigned short.  */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* The number of bytes in a unsigned long.  */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The number of bytes in a unsigned long long.  */
+#undef SIZEOF_UNSIGNED_LONG_LONG
+
+/* The number of bytes in a unsigned long long long.  */
+#undef SIZEOF_UNSIGNED_LONG_LONG_LONG
+
+/* Return type of the signal handler */
+#define RETSIGTYPE void
+
+/* Undefine if your processor can access 32 bits of data aligned to 16 bits */
+#define ALIGNLONGS 1
+
+/* headers */
+#undef HAVE_TCL8_0_H
+#undef HAVE_TCL_H
+#undef HAVE_TK8_0_H
+#undef HAVE_TK_H
+	
+/* Define your processor type if it's here */
+#undef PROCESSOR_SPARC
+#undef PROCESSOR_ARM
+#undef PROCESSOR_INTEL
+
+/* Define if your operating system is listed */
+#undef OS_ACORN
+
+/* Depending on the processor and/or C compiler the bit ordering within
+   a byte sometimes gets swapped around, this should be defined if you
+   use a SPARC, unset if you use an Intel */
+#undef BYTES_HIGHFIRST

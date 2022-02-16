@@ -1,0 +1,31 @@
+
+#############################################################################
+#     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       #
+#############################################################################
+#                                                                           #
+# Makefile.in -> Makefile                                                   #
+#                                                                           #
+#############################################################################
+
+default:	
+		@(cd ../src; make)
+
+all:
+		@(cd ../src; make precompile; make)
+
+precompile:
+		@(cd ../src; make precompile)
+
+clean:		
+		rm -f *.o *~ *.bak
+		rm -f config.cache config.status config.log configure
+		rm -f Makefile
+		(cd ../src; make clean; rm -f Makefile)
+		autoconf
+
+allclean:		
+		rm -f *.o *~ *.bak
+		rm -f config.cache config.status config.log configure
+		rm -f Makefile
+		(cd ../src; make allclean; rm -f Makefile)
+		autoconf

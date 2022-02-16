@@ -1,0 +1,185 @@
+dnl Generator configure.in file - process with autoconf
+
+  AC_INIT(../src/generator.c)
+  AC_CONFIG_HEADER(../hdr/config.h)
+
+dnl Checks for programs.
+
+  AC_PROG_CC
+  AC_PROG_CPP
+  AC_PROG_INSTALL
+  AC_PROG_MAKE_SET
+  AC_PROG_RANLIB
+  AC_TYPE_SIGNAL
+
+  HEADERS="-I. -Iz80 -I../hdr -I../src/snd"
+
+  program=""
+  AC_ARG_ENABLE(tcltk, [moo tcltk version], program="generator-tcltk")
+  AC_ARG_ENABLE(svgalib, [moo svgalib version], program="generator-svgalib")
+  AC_ARG_ENABLE(allegro, [moo svgalib version], program="generator-allegro")
+  if [[ "x$program" = "x" ]]; then
+    AC_MSG_ERROR(You must select the user interface type)
+  fi
+
+  if [[ "x$program" = "xgenerator-tcltk" ]]; then
+    AC_PATH_XTRA
+    if [[ "$no_x" ]]; then
+      AC_MSG_ERROR(X is not installed)
+    fi
+    HEADERS="$HEADERS -I- -I/usr/X11R6/include"
+    CPPFLAGS="$HEADERS"
+    CFLAGS="$CFLAGS $X_CFLAGS"
+    DEPFLAGS="$HEADERS $X_CFLAGS"
+    LIBS="$X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+    LDFLAGS="$X_LIBS -L/usr/lib -L/usr/local/lib -L/usr/X11R6/lib/"
+  fi
+
+  if [[ "x$program" = "xgenerator-svgalib" ]]; then
+    CPPFLAGS="$HEADERS"
+    DEPFLAGS="$HEADERS"
+    LIBS=""
+    LDFLAGS="-L/usr/lib -L/usr/local/lib"
+  fi
+  if [[ "x$program" = "xgenerator-allegro" ]]; then
+    HEADERS="$HEADERS"
+    CPPFLAGS="$HEADERS"
+    DEPFLAGS="$HEADERS"
+    LIBS=""
+    LDFLAGS="-L/usr/i586-pc-msdosdjgpp/lib"
+    LDFLAGS=""
+    CFLAGS="$CFLAGS -DALLEGRO"
+  fi
+
+  os=`uname -s 2>/dev/null | tr '[A-Z]' '[a-z]'`
+  case "$os" in
+    sunos)	OSLDFLAGS="-R/gnu/lib -R/usr/local/lib";;
+    *)		OSLDFLAGS="";;
+  esac
+
+  LDFLAGS="$LDFLAGS $OSLDFLAGS"
+
+dnl Checks for libraries.
+
+  AC_CHECK_LIB(m,cos,[LIBS="$LIBS -lm";lib=yes],lib=no)
+    if [[ $lib = no ]]; then
+    AC_MSG_WARN("No libm found!")
+  fi
+
+  AC_CHECK_LIB(dl,dlopen,[LIBS="$LIBS -ldl";lib=yes],lib=no)
+  if [[ $lib = no ]]; then
+    AC_MSG_WARN("No libdl found!")
+  fi
+  if [[ "x$program" = "xgenerator-tcltk" ]]; then
+    AC_CHECK_LIB(tcl8.0,Tcl_DoOneEvent,[LIBS="$LIBS -ltcl8.0"; lib=yes],lib=no)
+    if [[ $lib = no ]]; then
+      AC_CHECK_LIB(tcl,Tcl_DoOneEvent,[LIBS="$LIBS -ltcl"; lib=yes],lib=no)
+    fi
+    if [[ $lib = no ]]; then
+      AC_MSG_ERROR(Could not find or link with lib tcl)
+    fi
+    AC_CHECK_LIB(tk8.0,Tk_Init,[LIBS="$LIBS -ltk8.0"; lib=yes],lib=no)
+    if [[ $lib = no ]]; then
+      AC_CHECK_LIB(tk,Tk_Init,[LIBS="$LIBS -ltk"; lib=yes],lib=no)
+      if [[ $lib = no ]]; then
+        AC_MSG_ERROR(Could not find or link with lib tk)
+      fi
+    fi
+    OLDLIBS=$LIBS
+    LIBS="$LIBS -lXext";
+    AC_CHECK_LIB(Xxf86dga,XF86DGAQueryVersion,[
+      LIBS="$LIBS -lXxf86dga";CFLAGS="$CFLAGS -DXF86DGA";
+      lib=yes],LIBS=$OLDLIBS;lib=no)
+  fi
+
+  if [[ "x$program" = "xgenerator-svgalib" ]]; then
+    if [[ $cross_compiling = no ]]; then
+      AC_CHECK_LIB(vga,vga_init,[LIBS="$LIBS -lvga";lib=yes],lib=no)
+    else
+      AC_CHECK_LIB(dosvga,vga_init,[LIBS="$LIBS -ldosvga";lib=yes],lib=no)
+    fi
+    if [[ $lib = no ]]; then
+      AC_MSG_ERROR(Could not find or link with lib vga)
+    fi
+  fi
+
+  if [[ "x$program" = "xgenerator-allegro" ]]; then
+    AC_CHECK_LIB(alleg,allegro_exit,[LIBS="$LIBS -lalleg";lib=yes],lib=no)
+    if [[ $lib = no ]]; then
+      AC_MSG_ERROR(Could not find or link with lib alleg (allegro))
+    fi
+  fi
+
+dnl Checks for header files.
+
+  AC_HEADER_STDC
+
+  AC_CHECK_HEADER(fcntl.h,hdr=yes,hdr=no)
+  if [[ $hdr = no ]]; then
+    AC_MSG_ERROR(Could not find fcntl.h)
+  fi
+
+  AC_CHECK_HEADER(unistd.h,hdr=yes,hdr=no)
+  if [[ $hdr = no ]]; then
+    AC_MSG_ERROR(Could not find unistd.h)
+  fi
+
+  if [[ "x$program" = "xgenerator-tcltk" ]]; then
+    AC_CHECK_HEADERS(tk8.0.h,hdr=yes,hdr=no)
+    if [[ $hdr = no ]]; then
+      AC_CHECK_HEADERS(tk.h,hdr=yes,hdr=no)
+      if [[ $hdr = no ]]; then
+        AC_MSG_ERROR(Could not find tk.h)
+      fi
+    fi
+    AC_CHECK_HEADERS(tcl8.0.h,hdr=yes,hdr=no)
+    if [[ $hdr = no ]]; then
+      AC_CHECK_HEADERS(tcl.h,hdr=yes,hdr=no)
+      if [[ $hdr = no ]]; then
+        AC_MSG_ERROR(Could not find tcl.h)
+      fi
+    fi
+  fi
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+
+  if [[ $cross_compiling = no ]]; then
+    AC_C_BIGENDIAN
+  else
+    echo '** ASSUMING LITTLE ENDIAN'
+    # AC_DEFINE(WORDS_BIGENDIAN, 1)
+  fi
+  AC_C_CONST
+  AC_C_INLINE
+  AC_CHECK_SIZEOF(unsigned char, 1)
+  AC_CHECK_SIZEOF(unsigned short, 2)
+  AC_CHECK_SIZEOF(unsigned int, 4)
+  AC_CHECK_SIZEOF(unsigned long, 4)
+  AC_CHECK_SIZEOF(unsigned long long, 8)
+
+dnl Make CFLAGS not link and add additional stuff
+
+  if [[ "x$GCC" = "xyes" ]]; then
+    CFLAGS="$CFLAGS -Wall -Wno-unused -Wno-format -W"
+#    CFLAGS="$CFLAGS -Wmissing-prototypes -Wstrict-prototypes"
+    CFLAGS="$CFLAGS -Wstrict-prototypes"
+#    CFLAGS="$CFLAGS -fomit-frame-pointer
+  fi
+  CFLAGS="-c $CFLAGS"
+  if [[ "x$ac_cv_c_bigendian" = "xyes" ]]; then
+    AC_DEFINE(BYTES_HIGHFIRST, 1)
+  fi
+
+dnl Makefile substitutions
+
+  AC_SUBST(DEPFLAGS)
+  AC_SUBST(program)
+
+dnl Final stuff
+
+  AC_OUTPUT([Makefile ../src/Makefile])
+
+  echo "Configuration was successful."
+  echo "Now type: make"
+
+dnl Moooo.
