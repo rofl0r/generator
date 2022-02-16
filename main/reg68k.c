@@ -71,7 +71,7 @@ unsigned int reg68k_external_step(void)
 
 unsigned int reg68k_external_execute(unsigned int clocks)
 {
-  unsigned int index, i;
+  unsigned int index;
   t_ipclist *list;
   t_ipc *ipc;
   uint32 pc24;

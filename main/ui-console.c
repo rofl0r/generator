@@ -36,6 +36,7 @@
 #include "uip.h"
 #include "ui-console.h"
 #include "state.h"
+#include "uiplot.h"
 
 #define UI_LOGLINESIZE 128
 #define UI_LOGLINES 64
@@ -54,10 +55,8 @@ t_interlace ui_interlace = DEINTERLACE_WEAVEFILTER;
 /*** forward reference declarations ***/
 
 static void ui_usage(void);
-static void ui_plotline(unsigned int line, uint8 *gfx);
 void ui_exithandler(void);
 void ui_newframe(void);
-void ui_convertdata(uint8 *indata, uint16 *outdata, unsigned int pixels);
 void ui_plotsprite_acorn(uint16 *logo, uint16 width, uint16 height,
                          uint16 x, uint16 y);
 int ui_unpackfont(void);
@@ -67,15 +66,6 @@ void ui_plotsettings(void);
 void ui_drawbox(uint16 colour, uint16 x, uint16 y, uint16 width,
                 uint16 height);
 void ui_rendertoscreen(void);
-void ui_render_x1(uint16 *linedata, uint16 *olddata, uint8 *screen,
-                  unsigned int linewidth, unsigned int pixels);
-void ui_render_x2(uint16 *linedata, uint16 *olddata, uint8 *screen,
-                  unsigned int linewidth, unsigned int pixels);
-void ui_render_x2h(uint16 *linedata, uint16 *olddata, uint8 *screen,
-                   unsigned int linewidth, unsigned int pixels);
-void ui_irender_weavefilter(uint16 *evendata, uint16 *odddata,
-                            uint8 *screen, unsigned int linewidth,
-                            unsigned int pixels);
 void ui_basicbits(void);
 void ui_licensescreen(void);
 void ui_imagescreen(void);
@@ -90,9 +80,14 @@ int ui_saveimage(const char *type, char *filename, int buflen,
 int ui_setcolourbits(const char *str);
 int ui_setcontrollers(const char *str);
 
+static void ui_simpleplot(void);
+
 /* we store up log lines and dump them right at the end for allegro */
 #ifdef ALLEGRO
 void ui_printlog(void);
+static uint32 ui_logline = 0;
+static char ui_loglines[UI_LOGLINES][UI_LOGLINESIZE];
+static uint16 ui_logcount = 0;  /* log counter */
 #endif
 
 /*** static variables ***/
@@ -101,15 +96,11 @@ static uint8 ui_vga = 0;        /* flag for whether in VGA more or not */
 static uint8 ui_frameskip = 0;  /* 0 for dynamic */
 static uint8 ui_actualskip = 0; /* the last skip we did (1..) */
 static uint8 ui_state = 0;      /* 0=stop, 1=paused, 2=play */
-static uint32 ui_palcache[192];
 static char *ui_initload = NULL;        /* filename to load on init */
-static char ui_loglines[UI_LOGLINES][UI_LOGLINESIZE];
-static uint32 ui_logline = 0;
 static uint8 ui_plotfield = 0;  /* flag indicating plotting this field */
 static uint8 ui_plotprevfield = 0;      /* did we plot the previous field? */
 static uint16 *ui_font;         /* unpacked font */
 static uint8 bigbuffer[8192];   /* stupid no-vsnprintf platforms */
-static uint16 ui_logcount = 0;  /* log counter */
 static t_uipinfo ui_uipinfo;    /* uipinfo filled in by uip 'sub-system' */
 static uint16 *ui_screen0;      /* pointer to screen block for bank 0 */
 static uint16 *ui_screen1;      /* pointer to screen block for bank 1 */
@@ -117,7 +108,7 @@ static uint16 *ui_newscreen;    /* pointer to new screen block */
 static int ui_saverom;          /* flag to save rom and quit */
 static int ui_joysticks = 0;    /* number of joysticks */
 
-static uint16 ui_screen[3][320 * 240];  /* screen buffers */
+static uint16 ui_screen[3][320 * 240];     /* screen buffers */
 
 /*** Program entry point ***/
 
@@ -131,8 +122,11 @@ int ui_init(int argc, char *argv[])
   ui_bindings[1].joystick = -1; /* -1 = use keyboard */
   ui_bindings[1].keyboard = -1; /* -1 = no keyboard */
 
+  i = 0; /* supress warning */
+#ifdef ALLEGRO
   for (i = 0; i < UI_LOGLINES; i++)
     ui_loglines[i][0] = '\0';
+#endif
   if (ui_unpackfont() == -1) {
     fprintf(stderr, "Failed to unpack font, out of memory?\n");
     return 1;
@@ -256,7 +250,7 @@ int ui_init(int argc, char *argv[])
 void ui_usage(void)
 {
   fprintf(stderr, "Generator is (c) James Ponder 1997-2001, all rights "
-          "reserved. " VERSTRING "\n\n");
+          "reserved. " VERSION "\n\n");
   fprintf(stderr, "generator [options] <rom>\n\n");
   fprintf(stderr, "  -v <verbose level> can be: 0 = none, 1 = critical, "
           "2 = normal, 3 = verbose\n");
@@ -419,7 +413,8 @@ int ui_unpackfont(void)
   unsigned char packed;
   uint16 *cdata;
 
-  if ((ui_font = malloc(128 * 6 * 10 * 2)) == NULL)     /* 128 chars, 6x, 10y, 16bit */
+  /* 128 chars, 6x, 10y, 16bit */
+  if ((ui_font = malloc(128 * 6 * 10 * 2)) == NULL)
     return -1;
   for (c = 0; c < 128; c++) {   /* 128 characters */
     cdata = ui_font + c * 6 * 10;
@@ -477,7 +472,7 @@ void ui_plotsprite_acorn(uint16 *logo, uint16 width, uint16 height,
                          uint16 x, uint16 y)
 {
   uint16 a, b;
-  uint16 *p, *q;
+  uint16 *p;
   uint16 word;
   uint8 red, green, blue;
 
@@ -536,7 +531,7 @@ void ui_setupscreen(void)
   ;
   ui_plotstring("Generator is (c) James Ponder 1997-2001, "
                 "all rights reserved.", 0, 0);
-  ui_plotstring(VERSTRING, 640 - (strlen(VERSTRING) * 6), 0);
+  ui_plotstring(VERSION, 640 - (strlen(VERSION) * 6), 0);
   ;
   if (ui_bindings[0].joystick != -1) {
     ui_plotstring("Joystick", 0, 420);
@@ -549,7 +544,7 @@ void ui_setupscreen(void)
       ui_plotstring("[ARROWS]  D-pad", 0, 460);
       ui_plotstring("[ESCAPE]  QUIT", 0, 470);
     } else {
-      ui_plotstring("[ZXD]     1) A B C", 0, 420);
+      ui_plotstring("[ZXC]     1) A B C", 0, 420);
       ui_plotstring("[DGRF]    1) D-pad", 0, 430);
       ui_plotstring("[V]       1) Start", 0, 440);
       ui_plotstring("[,./]     2) A B C", 0, 450);
@@ -630,6 +625,8 @@ int ui_loop(void)
     LOG_CRITICAL(("Failed to start VGA mode"));
     return 1;
   }
+  uiplot_setshifts(ui_uipinfo.redshift, ui_uipinfo.greenshift,
+                   ui_uipinfo.blueshift);
   gen_quit = 0;
   while (!uip_checkkeyboard()) {
     switch (ui_state) {
@@ -686,7 +683,6 @@ void ui_newframe(void)
   static int skipcount = 0;
   static char frameplots[60];   /* 60 for NTSC, 50 for PAL */
   static unsigned int frameplots_i = 0;
-  char buf[8];
   unsigned int i;
   int fps;
   time_t t = time(NULL);
@@ -758,225 +754,52 @@ void ui_newframe(void)
    */
 }
 
-/* ui_checkpalcache goes through the CRAM memory in the Genesis and 
-   converts it to the ui_palcache table.  The Genesis has 64 colours,
-   but we store three versions of the colour table into ui_palcache - a
-   normal, hilighted and dim version.  The vdp_cramf buffer has 64
-   entries and is set to 1 when the game writes to CRAM, this means this
-   code skips entries that have not changed, unless 'flag' is set to 1 in
-   which case this updates all entries regardless. */
-
-void ui_checkpalcache(int flag)
-{
-  uint32 pal;
-  unsigned int col;
-  uint8 *p;
-
-  /* this code requires that there be at least 4 bits per colour, that
-     is, three bits that come from the console's palette, and one more bit
-     when we do a dim or bright colour, i.e. this code works with 12bpp
-     upwards */
-
-  /* the flag forces it to do the update despite the vdp_cramf buffer */
-
-  for (col = 0; col < 64; col++) {      /* the CRAM has 64 colours */
-    if (!flag && !vdp_cramf[col])
-      continue;
-    vdp_cramf[col] = 0;
-    p = (uint8 *)vdp_cram + 2 * col;    /* point p to the two-byte CRAM entry */
-    ui_palcache[col] =          /* normal */
-      (p[0] & 0xE) << (ui_uipinfo.blueshift + 1) |
-      (p[1] & 0xE) << (ui_uipinfo.redshift + 1) |
-      ((p[1] & 0xE0) >> 4) << (ui_uipinfo.greenshift + 1);
-    ui_palcache[col + 64] =     /* hilight */
-      (p[0] & 0xE) << ui_uipinfo.blueshift |
-      (p[1] & 0xE) << ui_uipinfo.redshift |
-      ((p[1] & 0xE0) >> 4) << ui_uipinfo.greenshift |
-      (16 << ui_uipinfo.blueshift) | (16 << ui_uipinfo.redshift) |
-      (16 << ui_uipinfo.greenshift);
-    ui_palcache[col + 128] =    /* shadow */
-      (p[0] & 0xE) << ui_uipinfo.blueshift |
-      (p[1] & 0xE) << ui_uipinfo.redshift |
-      ((p[1] & 0xE0) >> 4) << ui_uipinfo.greenshift;
-  }
-}
-
-/*** ui_convertdata - convert genesis data to 16 bit colour */
-
-void ui_convertdata(uint8 *indata, uint16 *outdata, unsigned int pixels)
-{
-  unsigned int ui;
-  uint32 outdata1;
-  uint32 outdata2;
-  uint32 indata_val;
-
-  ui_checkpalcache(0);
-  /* not scaled, 16bpp - we do 4 pixels at a time */
-  for (ui = 0; ui < pixels >> 2; ui++) {
-    indata_val = ((uint32 *)indata)[ui];        /* 4 bytes of in data */
-    outdata1 = (ui_palcache[indata_val & 0xff] |
-                ui_palcache[(indata_val >> 8) & 0xff] << 16);
-    outdata2 = (ui_palcache[(indata_val >> 16) & 0xff] |
-                ui_palcache[(indata_val >> 24) & 0xff] << 16);
-#ifdef WORDS_BIGENDIAN
-    ((uint32 *)outdata)[(ui << 1)] = outdata2;
-    ((uint32 *)outdata)[(ui << 1) + 1] = outdata1;
-#else
-    ((uint32 *)outdata)[(ui << 1)] = outdata1;
-    ((uint32 *)outdata)[(ui << 1) + 1] = outdata2;
-#endif
-  }
-}
-
-/*** ui_render_x1 - copy to screen with delta changes ***/
-
-void ui_render_x1(uint16 *linedata, uint16 *olddata, uint8 *screen,
-                  unsigned int linewidth, unsigned int pixels)
-{
-  unsigned int ui;
-  uint32 inval;
-
-  if (0 == 1) {
-    memcpy(screen, linedata, pixels * 2);
-  } else {
-    for (ui = 0; ui < pixels >> 1; ui++) {
-      inval = ((uint32 *)linedata)[ui]; /* two words of input data */
-      if (inval != ((uint32 *)olddata)[ui]) {
-        ((uint32 *)screen)[ui] = inval;
-      }
-    }
-  }
-}
-
-/*** ui_render_x2 - blow up screen image by two */
-
-void ui_render_x2(uint16 *linedata, uint16 *olddata, uint8 *screen,
-                  unsigned int linewidth, unsigned int pixels)
-{
-  unsigned int ui;
-  uint32 inval, outval, mask;
-  uint8 *screen2 = screen + linewidth;
-
-  for (ui = 0; ui < pixels >> 1; ui++) {
-    inval = ((uint32 *)linedata)[ui];   /* two words of input data */
-    mask = inval ^ ((uint32 *)olddata)[ui];     /* check for changed data */
-    if (mask & 0xffff) {
-      outval = inval & 0xffff;
-      outval |= outval << 16;
-#ifdef WORDS_BIGENDIAN
-      ((uint32 *)screen)[(ui << 1) + 1] = outval;       /* write first two words */
-      ((uint32 *)screen2)[(ui << 1) + 1] = outval;
-#else
-      ((uint32 *)screen)[(ui << 1)] = outval;   /* write first two words */
-      ((uint32 *)screen2)[(ui << 1)] = outval;
-#endif
-    }
-    if (mask & 0xffff0000) {
-      outval = inval & 0xffff0000;
-      outval |= outval >> 16;
-#ifdef WORDS_BIGENDIAN
-      ((uint32 *)screen)[(ui << 1)] = outval;   /* write second two words */
-      ((uint32 *)screen2)[(ui << 1)] = outval;
-#else
-      ((uint32 *)screen)[(ui << 1) + 1] = outval;       /* write second two words */
-      ((uint32 *)screen2)[(ui << 1) + 1] = outval;
-#endif
-    }
-  }
-}
-
-/*** ui_render_x2h - blow up by two in horizontal direction only */
-
-void ui_render_x2h(uint16 *linedata, uint16 *olddata, uint8 *screen,
-                   unsigned int linewidth, unsigned int pixels)
-{
-  unsigned int ui;
-  uint32 inval, outval, mask;
-
-  mask = 0xffffffff;
-  for (ui = 0; ui < pixels >> 1; ui++) {
-    inval = ((uint32 *)linedata)[ui];   /* two words of input data */
-    if (olddata)
-      mask = inval ^ ((uint32 *)olddata)[ui];   /* check for changed data */
-    if (mask & 0xffff) {
-      outval = inval & 0xffff;
-      outval |= outval << 16;
-#ifdef WORDS_BIGENDIAN
-      ((uint32 *)screen)[(ui << 1) + 1] = outval;       /* write first two words */
-#else
-      ((uint32 *)screen)[(ui << 1)] = outval;   /* write first two words */
-#endif
-    }
-    if (mask & 0xffff0000) {
-      outval = inval & 0xffff0000;
-      outval |= outval >> 16;
-#ifdef WORDS_BIGENDIAN
-      ((uint32 *)screen)[(ui << 1)] = outval;   /* write second two words */
-#else
-      ((uint32 *)screen)[(ui << 1) + 1] = outval;       /* write second two words */
-#endif
-    }
-  }
-}
-
-/*** ui_irender_weavefilter - take even and odd fields, filter and plot ***/
-
-void ui_irender_weavefilter(uint16 *evendata, uint16 *odddata, uint8 *screen,
-                            unsigned int linewidth, unsigned int pixels)
-{
-  unsigned int ui;
-  uint32 evenval, oddval, e_r, e_g, e_b, o_r, o_g, o_b;
-  uint32 outval, w1, w2;
-
-  for (ui = 0; ui < pixels >> 1; ui++) {
-    evenval = ((uint32 *)evendata)[ui]; /* two words of input data */
-    oddval = ((uint32 *)odddata)[ui];   /* two words of input data */
-    e_r = (evenval >> ui_uipinfo.redshift) & 0x001f001f;
-    e_g = (evenval >> ui_uipinfo.greenshift) & 0x001f001f;
-    e_b = (evenval >> ui_uipinfo.blueshift) & 0x001f001f;
-    o_r = (oddval >> ui_uipinfo.redshift) & 0x001f001f;
-    o_g = (oddval >> ui_uipinfo.greenshift) & 0x001f001f;
-    o_b = (oddval >> ui_uipinfo.blueshift) & 0x001f001f;
-    outval = (((e_r + o_r) >> 1) & 0x001f001f) << ui_uipinfo.redshift |
-      (((e_g + o_g) >> 1) & 0x001f001f) << ui_uipinfo.greenshift |
-      (((e_b + o_b) >> 1) & 0x001f001f) << ui_uipinfo.blueshift;
-    w1 = (outval & 0xffff);
-    w1 |= w1 << 16;
-    w2 = outval & 0xffff0000;
-    w2 |= w2 >> 16;
-#ifdef WORDS_BIGENDIAN
-    ((uint32 *)screen)[(ui << 1)] = w2;
-    ((uint32 *)screen)[(ui << 1) + 1] = w1;
-    LOG_CRITICAL(("this code hasn't been checked"));
-#else
-    ((uint32 *)screen)[(ui << 1)] = w1;
-    ((uint32 *)screen)[(ui << 1) + 1] = w2;
-#endif
-  }
-}
-
 /*** ui_line - it is time to render a line ***/
 
-void ui_line(unsigned int line)
+void ui_line(int line)
 {
   static uint8 gfx[320];
-  unsigned int yoffset = (vdp_reg[1] & 1 << 3) ? 0 : 8;
   unsigned int width = (vdp_reg[12] & 1) ? 320 : 256;
 
-  if (ui_plotfield && !ui_vdpsimple) {
-    /* we are plotting this frame, and we're not doing a simple plot at
-       the end of it all */
-    switch ((vdp_reg[12] >> 1) & 3) {
-    case 0:                    /* normal */
-    case 1:                    /* interlace simply doubled up */
-    case 2:                    /* invalid */
-      vdp_renderline(line, gfx, 0);
-      break;
-    case 3:                    /* interlace with double resolution */
-      vdp_renderline(line, gfx, vdp_oddframe);
-      break;
-    }
-    ui_convertdata(gfx, ui_newscreen + line * 320, width);
+  if (!ui_plotfield)
+    return;
+  if (line < 0 || line >= (int)vdp_vislines)
+    return;
+  if (ui_vdpsimple) { 
+    if (line == (int)(vdp_vislines >> 1)) 
+      /* if we're in simple cell-based mode, plot when half way
+       * down screen */
+      ui_simpleplot();
+    return;
+  }
+  /* we are plotting this frame, and we're not doing a simple plot at
+     the end of it all */
+  switch ((vdp_reg[12] >> 1) & 3) {
+  case 0:                    /* normal */
+  case 1:                    /* interlace simply doubled up */
+  case 2:                    /* invalid */
+    vdp_renderline(line, gfx, 0);
+    break;
+  case 3:                    /* interlace with double resolution */
+    vdp_renderline(line, gfx, vdp_oddframe);
+    break;
+  }
+  uiplot_checkpalcache(0);
+  uiplot_convertdata16(gfx, ui_newscreen + line * 320, width);
+}
+
+static void ui_simpleplot(void)
+{
+  unsigned int line;
+  unsigned int width = (vdp_reg[12] & 1) ? 320 : 256;
+  uint8 gfx[(320 + 16) * (240 + 16)];
+
+  /* cell mode - entire frame done here */
+  uiplot_checkpalcache(0);
+  vdp_renderframe(gfx + (8 * (320 + 16)) + 8, 320 + 16);    /* plot frame */
+  for (line = 0; line < vdp_vislines; line++) {
+    uiplot_convertdata16(gfx + 8 + (line + 8) * (320 + 16),
+                         ui_newscreen + line * 320, width);
   }
 }
 
@@ -985,19 +808,8 @@ void ui_line(unsigned int line)
 void ui_endfield(void)
 {
   static int counter = 0;
-  unsigned int line;
-  unsigned int width = (vdp_reg[12] & 1) ? 320 : 256;
-  uint8 gfx[(320 + 16) * (240 + 16)];
 
   if (ui_plotfield) {
-    if (ui_vdpsimple) {
-      /* cell mode - entire frame done here */
-      vdp_renderframe(gfx + (8 * (320 + 16)) + 8, 320 + 16);    /* plot frame */
-      for (line = 0; line < vdp_vislines; line++) {
-        ui_convertdata(gfx + 8 + (line + 8) * (320 + 16),
-                       ui_newscreen + line * 320, width);
-      }
-    }
     ui_rendertoscreen();        /* plot ui_newscreen to screen */
   }
   if (ui_frameskip == 0) {
@@ -1035,8 +847,7 @@ void ui_rendertoscreen(void)
       case 0:
       case 1:
       case 2:
-        ui_render_x2h(newlinedata, oldlinedata, screen,
-                      ui_uipinfo.linewidth, nominalwidth);
+        uiplot_render16_x2h(newlinedata, oldlinedata, screen, nominalwidth);
         break;
       case 3:
         /* work out which buffer contains the odd and even fields */
@@ -1049,24 +860,25 @@ void ui_rendertoscreen(void)
         }
         switch (ui_interlace) {
         case DEINTERLACE_BOB:
-          ui_render_x2(newlinedata, oldlinedata, screen,
-                       ui_uipinfo.linewidth, nominalwidth);
+          uiplot_render16_x2(newlinedata, oldlinedata, screen,
+                             ui_uipinfo.linewidth, nominalwidth);
           break;
         case DEINTERLACE_WEAVE:
-          ui_render_x2h(evenscreen + line * 320, NULL, screen,
-                        ui_uipinfo.linewidth, nominalwidth);
-          ui_render_x2h(oddscreen + line * 320, NULL,
-                        screen + ui_uipinfo.linewidth,
-                        ui_uipinfo.linewidth, nominalwidth);
+          uiplot_render16_x2h(evenscreen + line * 320, NULL, screen,
+                              nominalwidth);
+          uiplot_render16_x2h(oddscreen + line * 320, NULL,
+                              screen + ui_uipinfo.linewidth, nominalwidth);
           break;
         case DEINTERLACE_WEAVEFILTER:
-          ui_irender_weavefilter(evenscreen + line * 320,       /* line   */
-                                 oddscreen + line * 320,        /* line+1 */
-                                 screen, ui_uipinfo.linewidth, nominalwidth);
-          ui_irender_weavefilter(oddscreen + line * 320,        /* line+1 */
-                                 evenscreen + line * 320 + 320, /* line+2 */
-                                 screen + ui_uipinfo.linewidth,
-                                 ui_uipinfo.linewidth, nominalwidth);
+          /* lines line+0 and line+1 */
+          uiplot_irender16_weavefilter(evenscreen + line * 320,
+                                       oddscreen + line * 320,
+                                       screen, nominalwidth);
+          /* lines line+1 and line+2 */
+          uiplot_irender16_weavefilter(oddscreen + line * 320,
+                                       evenscreen + line * 320 + 320,
+                                       screen + ui_uipinfo.linewidth,
+                                       nominalwidth);
           break;
         }
         break;
@@ -1074,8 +886,8 @@ void ui_rendertoscreen(void)
     } else {
       screen = (ui_uipinfo.screenmem_w + 320 + xoffset * 2 +
                 ui_uipinfo.linewidth * (120 + line + yoffset));
-      ui_render_x1(newlinedata, oldlinedata, screen,
-                   ui_uipinfo.linewidth, nominalwidth);
+      uiplot_render16_x1(newlinedata, oldlinedata, screen,
+                         nominalwidth);
     }
   }
   uip_displaybank(-1);
@@ -1095,7 +907,7 @@ void ui_basicbits(void)
 
   ui_plotstring("Generator is (c) James Ponder 1997-2001, "
                 "all rights reserved.", 0, 0);
-  ui_plotstring(VERSTRING, 640 - (strlen(VERSTRING) * 6), 0);
+  ui_plotstring(VERSION, 640 - (strlen(VERSION) * 6), 0);
   ui_drawbox(red, 140, 100, 360, 280);
   ui_drawbox(grey, 141, 101, 358, 278);
   ui_plotsprite_acorn((uint16 *)logo, 282, 40, 179, 80);
@@ -1447,13 +1259,6 @@ void ui_err(const char *text, ...)
   exit(0);                      /* don't exit(1) because windows makes an error then! */
 }
 
-/*** ui_setinfo - there is new cart information ***/
-
-char *ui_setinfo(t_cartinfo * cartinfo)
-{
-  return NULL;
-}
-
 /*** ui_topbit - given an integer return the top most bit set ***/
 
 int ui_topbit(unsigned long int bits)
@@ -1466,4 +1271,12 @@ int ui_topbit(unsigned long int bits)
       return bit;
   }
   return -1;
+}
+
+/*** console version doesn't implement music log yet ***/
+
+void ui_musiclog(uint8 *data, unsigned int length)
+{
+  (void)data;
+  (void)length;
 }

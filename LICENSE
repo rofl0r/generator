@@ -2,8 +2,12 @@ Generator - Sega Genesis (Mega Drive) emulator
 Copyright (C) 1997-2001 James Ponder
 
 YM2612 chip emulation by Tatsuyuki Satoh
-RAZE Z80 core, by Richard Mitton (richard.mitton@bigfoot.com)
 SN76496 by Nicola Salmoria et al
+
+One of:
+  RAZE Z80 core, by Richard Mitton (richard.mitton@bigfoot.com)
+  Multi-Z80 CPU emulator by Neil Bradley (neil@synthcom.com)
+  Portable C version written by Edward Massey
 
 All code written by me is distributed under the license detailed below.  Any
 software not written by me is included in this distribution subject to the

@@ -2,25 +2,66 @@ dnl Generator configure.in file - process with autoconf
 
   AC_INIT(cpu68k/def68k.c)
   AC_CANONICAL_SYSTEM
-  AM_INIT_AUTOMAKE(generator, 0.33)
+  AM_INIT_AUTOMAKE(generator, 0.34)
   AM_CONFIG_HEADER(config.h)
   optimum=yes
 
 dnl See what version we're compiling
 
-  AC_ARG_ENABLE(svgalib, [Create svgalib version], PROGRAM="generator-svgalib")
-  AC_ARG_ENABLE(allegro, [Create allegro version], PROGRAM="generator-allegro")
-  AC_ARG_ENABLE(tcltk, [Create tcltk version], PROGRAM="generator-tcltk")
-  # AC_ARG_ENABLE(gtk, [Create gtk version], PROGRAM="generator-gtk")
-  if [[ "x$PROGRAM" = "x" ]]; then
-    AC_MSG_ERROR(You must select a user interface type: svgalib allegro tcltk)
+  MY_DIST_SUBDIRS="cpu68k raze cmz80 ym2612 sn76496 main glade gtkopts"
+  MY_SUBDIRS="cpu68k ym2612 sn76496 main"
+  MY_LIBS=""
+  UNDERSCORE=""
+  ASMOUTPUT=elf
+  AC_ARG_WITH(coffasm,
+              AC_HELP_STRING([--with-coffasm], [Assemble coff files]),
+              ASMOUTPUT=coff; UNDERSCORE="_")
+  AC_ARG_WITH(svgalib,
+              AC_HELP_STRING([--with-svgalib], [Create svgalib version]),
+              MY_PROG="generator-svgalib")
+  AC_ARG_WITH(allegro,
+              AC_HELP_STRING([--with-allegro], [Create allegro version]),
+              MY_PROG="generator-allegro")
+  AC_ARG_WITH(tcltk,
+              AC_HELP_STRING([--with-tcltk], [Create tcltk version]),
+              MY_PROG="generator-tcltk")
+  AC_ARG_WITH(gtk,
+              AC_HELP_STRING([--with-gtk], [Create gtk version]),
+              MY_PROG="generator-gtk")
+  if [[ "x$MY_PROG" = "x" ]]; then
+    AC_MSG_ERROR(You must select a user interface type:
+    svgalib allegro tcltk gtk)
   fi
-  AC_SUBST(PROGRAM)
-  if [[ "x$PROGRAM" = "xgenerator-allegro" ]]; then
+  if [[ "x$MY_PROG" = "xgenerator-allegro" ]]; then
     AC_DEFINE(ALLEGRO, 1, [Allegro version])
+    PROGRAM='generator-allegro$(EXEEXT)'
+  else
+    PROGRAM=$MY_PROG
   fi
-  AC_DEFINE(RAZE, 1, [Define for RAZE z80, undef for mz80])
+  AC_ARG_WITH(raze,
+              AC_HELP_STRING([--with-raze], [Use RAZE z80 emulation]),
+              Z80="raze")
+  AC_ARG_WITH(cmz80,
+              AC_HELP_STRING([--with-cmz80], [Use C mz80 z80 emulation]),
+              Z80="cmz80")
+  if [[ "x$Z80" = "xraze" ]]; then
+    MY_SUBDIRS="raze $MY_SUBDIRS"
+    MY_LIBS="../raze/libraze.a $MY_LIBS"
+    AC_DEFINE(RAZE, 1, [Define to use RAZE z80 emulation])
+  elif [[ "x$Z80" = "xcmz80" ]]; then
+    MY_SUBDIRS="cmz80 $MY_SUBDIRS"
+    MY_LIBS="../cmz80/libcmz80.a $MY_LIBS"
+    AC_DEFINE(CMZ80, 1, [Define to use the portable C mz80 z80 emulation])
+  else
+    AC_MSG_ERROR(You must select a z80 emulator: raze cmz80)
+  fi
   AC_DEFINE(DIRECTRAM, 1, [Define for direct ram writes (faster)])
+  AC_SUBST(PROGRAM)
+  AC_SUBST(ASMOUTPUT)
+  AC_SUBST(UNDERSCORE)
+  AC_SUBST(MY_LIBS)
+  AC_SUBST(MY_SUBDIRS)
+  AC_SUBST(MY_DIST_SUBDIRS)
 
 dnl Check for processor.
 
@@ -52,14 +93,23 @@ dnl Check for gcc options
   GCCVER=2
   WARN=no
   DEBUG=no
-  AC_ARG_WITH(warnings, [  --with-warnings         Turn on gcc warnings],
+  AC_ARG_WITH(nologging, AC_HELP_STRING([--with-nologging],
+                                        [Turn off all logging]),
+              AC_DEFINE(NOLOGGING, 1, [Define to turn off all logging]))
+  AC_ARG_WITH(warnings, AC_HELP_STRING([--with-warnings],
+                                       [Turn on gcc warnings]),
               WARN=$withval, WARN=no)
-  AC_ARG_WITH(gcc, [  --with-gcc[=VER]    GCC optimisation setting],
+  AC_ARG_WITH(gcc, AC_HELP_STRING([--with-gcc@<:@=VER@:>@],
+                                  [GCC optimisation setting]),
               GCCVER=$withval)
-  AC_ARG_WITH(debug, [  --with-debug        Turn debugging options on],
+  AC_ARG_WITH(raze, AC_HELP_STRING([--with-raze],
+                                   [Use raze z80 emulation]),
+              RAZE=$withval, DEBUG=no)
+  AC_ARG_WITH(debug, AC_HELP_STRING([--with-debug],
+                                    [Turn debugging options on]),
               DEBUG=$withval, DEBUG=no)
   if [[ "x$WARN" != "xno" ]]; then
-    CFLAGS="$CFLAGS -W -Wall -Wstrict-prototypes -Wno-format -Wno-unused"
+    CFLAGS="$CFLAGS -W -Wall -Wstrict-prototypes -Wformat -Wunused"
   fi
   if [[ "x$DEBUG" != "xno" ]]; then
     AC_MSG_RESULT(Turning on debug flags)
@@ -89,15 +139,22 @@ dnl Checks for programs.
 
   AC_PROG_CC
   AC_PROG_RANLIB
+  AC_PROG_MAKE_SET
   AC_ISC_POSIX
   AC_PROG_INSTALL
   AC_TYPE_SIGNAL
 
-dnl Checks for libraries.
-
 dnl Checks for header files.
 
   AC_HEADER_STDC
+
+dnl Checks for libraries.
+
+  if [[ "x$MY_PROG" = "xgenerator-gtk" ]]; then
+    MY_SUBDIRS="glade gtkopts $MY_SUBDIRS"
+    AM_PATH_GTK(1.2.0,,AC_MSG_ERROR(Generator needs gtk 1.2.0 or later))
+    AM_PATH_SDL(1.1.0,,AC_MSG_ERROR(Generator needs sdk 1.1.0 or later))
+  fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 
@@ -122,8 +179,9 @@ dnl Makefile substitutions
 
 dnl Final stuff
 
-  AC_OUTPUT([Makefile cpu68k/Makefile raze/Makefile ym2612/Makefile
-             main/Makefile sn76496/Makefile])
+  AC_OUTPUT([Makefile cpu68k/Makefile raze/Makefile cmz80/Makefile
+             ym2612/Makefile main/Makefile sn76496/Makefile glade/Makefile
+             gtkopts/Makefile raze/raze.asm])
 
   if [[ $optimum = no ]]; then
     echo '!!! Generator was compiled non-optimally, see warnings above !!!' 1>&2

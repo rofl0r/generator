@@ -206,3 +206,17 @@
          [CONSOLE] Add multiple keyboard positions for two keyboard players
          [CONSOLE] Add -j option to control input devices for players
          [68000]   Optimised 68k writes in favour of RAM
+
+0.34     [VDP]     Fix bug in vsram (Pengo)
+         [VDP]     General clean up of redundant routines in source etc.
+         [VDP]     Fixed column 0 vsram issue (Charles MacDonald)
+         [SOUND]   Updated sound code
+         [VDP]     Added support for border emulation (only gtk version uses
+                   this currently)
+         [SOUND]   Added support for turning off psg/fm/z80 and sound
+         [SOUND]   GYM, GNM file logging added (only gtk version uses this
+                   currently)
+         [CORE]    Added welcome ROM
+         [CORE]    Re-implemented save state with new block-based format
+         [CORE]    Completely changed the way sound is saved
+         [DOS]     Tweaked sound code to more compatible

@@ -1,21 +1,17 @@
 #include "../config.h"
 #include "machine.h"
 
-#define VERSTRING VERSION
-#define PROGNAME generator
+/* VERSION set by autoconf */
+/* PACKAGE set by autoconf */
+
 #define GEN_RAMLENGTH 64*1024
 
 #define LEN_IPCLISTTABLE 16*1024
 
 char *gen_loadimage(const char *filename);
-char *gen_loadsavepos(const char *filename);
 void gen_reset(void);
 void gen_softreset(void);
-
-extern unsigned int gen_quit;
-extern unsigned int gen_debugmode;
-extern unsigned int gen_loglevel;
-extern char gen_leafname[];
+void gen_loadmemrom(const char *rom, int romlen);
 
 #ifdef WORDS_BIGENDIAN
 #define LOCENDIAN16(y) (y)
@@ -176,14 +172,25 @@ typedef struct {
 #define SR_SFLAG (1<<13)
 #define SR_TFLAG (1<<15)
 
-#define LOG_DEBUG3(x)   /* */
-#define LOG_DEBUG2(x)   /* */
-#define LOG_DEBUG1(x)   /* */
-#define LOG_USER(x)     ui_log_user ## x
-#define LOG_VERBOSE(x)  ui_log_verbose ## x
-#define LOG_NORMAL(x)   ui_log_normal ## x
-#define LOG_CRITICAL(x) ui_log_critical ## x
-#define LOG_REQUEST(x)  ui_log_request ## x
+#ifdef NOLOGGING
+#  define LOG_DEBUG3(x)   /* */
+#  define LOG_DEBUG2(x)   /* */
+#  define LOG_DEBUG1(x)   /* */
+#  define LOG_USER(x)     /* */
+#  define LOG_VERBOSE(x)  /* */
+#  define LOG_NORMAL(x)   /* */
+#  define LOG_CRITICAL(x) /* */
+#  define LOG_REQUEST(x)  /* */
+#else
+#  define LOG_DEBUG3(x)   /* ui_log_debug3 ## x */
+#  define LOG_DEBUG2(x)   /* ui_log_debug2 ## x */
+#  define LOG_DEBUG1(x)   /* ui_log_debug1 ## x */
+#  define LOG_USER(x)     ui_log_user ## x
+#  define LOG_VERBOSE(x)  ui_log_verbose ## x
+#  define LOG_NORMAL(x)   ui_log_normal ## x
+#  define LOG_CRITICAL(x) ui_log_critical ## x
+#  define LOG_REQUEST(x)  ui_log_request ## x
+#endif
 
 typedef struct {
   uint8 *sprite;       /* pointer to sprite data or NULL for end of list */
@@ -213,4 +220,15 @@ typedef struct {
   uint8 hardware;    /* new style 4-bit bitmap, 0=japan,2=us,3=europe */
 } t_cartinfo;
 
+typedef enum {
+  musiclog_off, musiclog_gym, musiclog_gnm
+} t_musiclog;
+
 extern t_cartinfo gen_cartinfo;
+
+extern unsigned int gen_quit;
+extern unsigned int gen_debugmode;
+extern unsigned int gen_loglevel;
+extern unsigned int gen_autodetect;
+extern t_musiclog gen_musiclog;
+extern char gen_leafname[];

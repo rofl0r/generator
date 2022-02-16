@@ -16,9 +16,17 @@ Generator version
 
 This source can be compiled for three different types of interface:
 
-  --enable-svgalib
-  --enable-allegro
-  --enable-tcltk (deprecated - will re-write soon)
+  --with-svgalib
+  --with-allegro
+  --with-gtk
+  --with-tcltk (deprecated)
+
+One and only one of these options must be given to configure.
+
+The source also needs a z80 emulation:
+
+  --with-raze  (i386 assembler - uses nasm to compile)
+  --with-cmz80 (portable C)
 
 One and only one of these options must be given to configure.
 
@@ -27,34 +35,32 @@ Example
 
 An example compilation:
 
-  ./configure --enable-svgalib --with-gcc=3 --prefix=/home/james
+  ./configure --with-gtk --with-raze --prefix=/home/james
   make
   make install
-
 
 Cross compile
 =============
 
-I compile for DOS from linux with:
+Generator's build tree should cope well with cross compilation.  To
+compile using djgpp/allegro use:
 
-  PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH ./configure --enable-allegro \
-                                                     --host=i386
+  PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH ./configure --with-allegro \
+    --with-raze --host=i586-pc-msdosdjgpp --build=i686-pc-linux-gnu \
+    --with-coffasm
   PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH make
 
-  Unfortunately this will compile the def68k and gen68k programs for DOS
-  rather than linux, so the build will fail to create the cpu files for
-  compiling with:
+The option --with-coffasm is for raze compilation - it does two things,
+it switches to 'coff' output instead of 'elf' with nasm, and it also
+modifies a macro in raze.asm that inserts underscores before all globals.
 
-    ./def68k: ./def68k: cannot execute binary file
+Generator has two binaries 'def68k' and 'gen68k' that need to be run on
+the host machine, so if you see the error:
 
-  So you need to have built Generator earlier under unix so that you can
-  copy the linux version of def68k in place when you see the above error.
+  ./def68k: ./def68k: cannot execute binary file
 
-  You have to do the same for gen68k.
-
-  RAZE doesn't seem like djgpp, there is a macro that needs un-commenting
-  in the source when you cross-compile, plus nasm needs '-f coff' rather
-  than '-f elf' in the Makefile.
+You will need to copy local versions of def68k and gen68k (that you compiled
+earlier) into place so that the compilation can continue.
 
 Basic Installation
 ==================

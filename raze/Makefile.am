@@ -9,6 +9,6 @@ libraze_a_LIBADD = raze.o
 raze:	raze.o
 raze.o:	raze.asm raze.reg
 	nasm -e raze.asm -o raze2.asm
-	nasm -f elf raze2.asm -o raze.o -praze.reg
+	nasm -f @ASMOUTPUT@ raze2.asm -o raze.o -praze.reg
 
-DISTCLEANFILES = raze2.asm
+DISTCLEANFILES = raze.asm raze2.asm

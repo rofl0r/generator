@@ -15,18 +15,17 @@
 
 uint8 *cpuz80_ram = NULL;
 uint32 cpuz80_bank = 0;
-unsigned int cpuz80_active = 0;
+uint8 cpuz80_active = 0;
+uint8 cpuz80_resetting = 0;
 unsigned int cpuz80_pending = 0;
+unsigned int cpuz80_on = 1;     /* z80 turned on? */
 
 /*** global variables ***/
 
 static unsigned int cpuz80_lastsync = 0;
-static unsigned int cpuz80_resetting = 0;
 
 int cpuz80_init(void)
 {
-  int i;
-
   cpuz80_reset();
   return 0;
 }
@@ -48,6 +47,7 @@ void cpuz80_reset(void)
   cpuz80_active = 0;
   cpuz80_lastsync = 0;
   cpuz80_resetting = 1;
+  cpuz80_pending = 0;
   z80_init_memmap();
   z80_map_fetch(0x0000, 0x3fff, cpuz80_ram);
   z80_map_fetch(0x4000, 0x7fff, cpuz80_ram);    /* ok? */
@@ -134,7 +134,7 @@ void cpuz80_sync(void)
     z80_lower_IRQ();
     cpuz80_pending = 0;
   }
-  if (cpuz80_active && !cpuz80_resetting) {
+  if (cpuz80_on && cpuz80_active && !cpuz80_resetting) {
     /* ui_log(LOG_USER, "executing %d z80 clocks @ %X", wanted,
        cpuz80_z80.z80pc); */
     acheived = z80_emulate(wanted);

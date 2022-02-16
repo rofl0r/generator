@@ -23,7 +23,7 @@ int sound_feedback = 0;         /* -1, running out of sound
                                    +0, lots of sound, do something */
 unsigned int sound_minfields = 5;       /* min fields to try to buffer */
 unsigned int sound_maxfields = 10;      /* max fields before blocking */
-unsigned int sound_speed;       /* sample rate */
+unsigned int sound_speed = SOUND_SAMPLERATE;    /* sample rate */
 unsigned int sound_sampsperfield;       /* samples per field */
 unsigned int sound_threshold;   /* samples in buffer aiming for */
 uint8 sound_regs1[256];
@@ -31,15 +31,26 @@ uint8 sound_regs2[256];
 uint8 sound_address1 = 0;
 uint8 sound_address2 = 0;
 uint8 sound_keys[8];
+int sound_logsample = 0;        /* sample to log or -1 if none */
+unsigned int sound_on = 1;      /* sound enabled */
+unsigned int sound_psg = 1;     /* psg enabled */
+unsigned int sound_fm = 1;      /* fm enabled */
 
 /* pal is lowest framerate */
 uint16 sound_soundbuf[2][SOUND_MAXRATE / 50];
 
 /*** forward references ***/
 
+static void sound_process(void);
+static void sound_writetolog(unsigned char c);
+
 /*** file scoped variables ***/
 
 static int sound_active = 0;
+static uint8 *sound_logdata;    /* log data */
+static unsigned int sound_logdata_size; /* sound_logdata size */
+static unsigned int sound_logdata_p;    /* current log data offset */
+static unsigned int sound_fieldhassamples;      /* flag if field has samples */
 
 #ifdef JFM
 static t_jfm_ctx *sound_ctx;
@@ -57,7 +68,6 @@ int sound_init(void)
      fields worth of sound around, and drops plotting frames to keep up on slow
      machines */
 
-  sound_speed = SOUND_SAMPLERATE;
   sound_sampsperfield = sound_speed / vdp_framerate;
   sound_threshold = sound_sampsperfield * sound_minfields;
 
@@ -84,6 +94,12 @@ int sound_init(void)
 #endif
     return 1;
   }
+  if (sound_logdata)
+    free(sound_logdata);
+  sound_logdata_size = 8192;
+  sound_logdata = malloc(sound_logdata_size);
+  if (!sound_logdata)
+    ui_err("out of memory");
   LOG_VERBOSE(("YM2612 Initialised @ sample rate %d", sound_speed));
   return 0;
 }
@@ -136,12 +152,78 @@ int sound_reset(void)
   return sound_init();
 }
 
+/*** sound_startfield - start of frame ***/
+
+void sound_startfield(void)
+{
+  sound_logdata_p = 0;
+  if (gen_musiclog == musiclog_gnm) {
+    sound_writetolog(0);
+    sound_writetolog((vdp_totlines >> 8) & 0xff);
+    sound_writetolog(vdp_totlines & 0xff);
+    sound_fieldhassamples = 0;
+  }
+}
 /*** sound_endfield - end frame and output sound ***/
 
 void sound_endfield(void)
 {
-  unsigned int i;
   int pending;
+  uint8 *p, *o;
+
+  if (gen_musiclog) {
+    if (gen_musiclog == musiclog_gym) {
+      /* GYM format ends a field with a 0 byte */
+      sound_writetolog(0);
+    } else {
+      /* GNM format requires sifting through the data */
+      if (!sound_fieldhassamples) {
+        /* we're only removing data, so we're going to write to the buffer
+           we're reading from */
+        o = sound_logdata + 3;
+        for (p = sound_logdata + 3;
+             p < (sound_logdata + sound_logdata_p); p++) {
+          if ((*p & 0xF0) != 0x00 || *p == 4)
+            ui_err("assertion of no samples failed");
+          switch (*p) {
+          case 0:
+            ui_err("field marker in middle of field data");
+          case 1:
+          case 2:
+            /* FM data, copy 2 and two bytes to output */
+            *o++ = *p++;
+            *o++ = *p++;
+            *o++ = *p;
+            break;
+          case 3:
+            /* PSG data, copy 3 and one byte to output */
+            *o++ = *p++;
+            *o++ = *p;
+            break;
+          case 5:
+            /* these are the bytes we're trying to strip */
+            /* do nothing */
+            break;
+          default:
+            ui_err("invalid data in sound log buffer");
+          }
+        }
+        /* update new end of buffer */
+        sound_logdata_p = o - sound_logdata;
+        sound_logdata[1] = 0; /* high byte number of samples */
+        sound_logdata[2] = 0; /* low byte number of samples */
+      }
+    }
+    /* write data */
+    ui_musiclog(sound_logdata, sound_logdata_p);
+    /* sound_startfield resets everything */
+  }
+
+  if (!sound_on) {
+    /* sound is turned off - let generator continue */
+    sound_feedback = 0;
+    return;
+  }
 
   /* work out feedback from sound system */
 
@@ -181,16 +263,31 @@ void sound_ym2612store(uint8 addr, uint8 data)
     sound_address1 = data;
     break;
   case 1:
+    if (sound_address1 == 0x2a) {
+      /* sample data */
+      sound_keys[7] = 0;
+      sound_logsample = data;
+    } else {
+      if (gen_musiclog != musiclog_off) {
+        /* GYM and GNM */
+        sound_writetolog(1);
+        sound_writetolog(sound_address1);
+        sound_writetolog(data);
+      }
+    }
     if (sound_address1 == 0x28 && (data & 3) != 3)
       sound_keys[data & 7] = data >> 4;
-    if (sound_address1 == 0x2a) {
-      sound_keys[7] = 0;
-    }
     if (sound_address1 == 0x2b)
       sound_keys[7] = data & 0x80 ? 0xf : 0;
     sound_regs1[sound_address1] = data;
     break;
   case 2:
+    if (gen_musiclog != musiclog_off) {
+      /* GYM and GNM */
+      sound_writetolog(2);
+      sound_writetolog(sound_address2);
+      sound_writetolog(data);
+    }
     sound_address2 = data;
     break;
   case 3:
@@ -208,6 +305,11 @@ void sound_ym2612store(uint8 addr, uint8 data)
 
 void sound_sn76496store(uint8 data)
 {
+  if (gen_musiclog != musiclog_off) {
+    /* GYM and GNM */
+    sound_writetolog(3);
+    sound_writetolog(data);
+  }
   SN76496Write(0, data);
 }
 
@@ -222,9 +324,30 @@ void sound_genreset(void)
 #endif
 }
 
+/*** sound_line - called at end of line ***/
+
+void sound_line(void)
+{
+  if (gen_musiclog == musiclog_gnm) {
+    /* GNM log */
+    if (sound_logsample == -1) {
+      sound_writetolog(5);
+    } else {
+      if ((sound_logsample & 0xF0) == 0) {
+        sound_writetolog(4);
+      }
+      sound_writetolog(sound_logsample);
+      sound_logsample = -1;
+      /* mark the fact that we have encountered a sample this field */
+      sound_fieldhassamples = 1;
+    }
+  }
+  sound_process();
+}
+
 /*** sound_process - process sound ***/
 
-void sound_process(void)
+static void sound_process(void)
 {
   static sint16 *tbuf[2];
   int s1 = (sound_sampsperfield * (vdp_line)) / vdp_totlines;
@@ -238,27 +361,66 @@ void sound_process(void)
   tbuf[1] = sound_soundbuf[1] + s1;
 
   if (s2 > s1) {
+    if (sound_fm)
 #ifdef JFM
-    jfm_update(sound_ctx, (void **)tbuf, samples1);
+      jfm_update(sound_ctx, (void **)tbuf, samples1);
 #else
-    YM2612UpdateOne(0, (void **)tbuf, samples);
+      YM2612UpdateOne(0, tbuf, samples);
 #endif
-    SN76496Update(0, sn76496buf, samples);
+    if (sound_psg)
+      SN76496Update(0, sn76496buf, samples);
 
     /* SN76496 outputs sound in range -0x4000 to 0x3fff
        YM2612 ouputs sound in range -0x8000 to 0x7fff - therefore
        we take 3/4 of the YM2612 and add half the SN76496 */
-    for (i = 0; i < samples; i++) {
-      sint16 snsample = sn76496buf[i] - 0x4000;
-      sint32 l = (tbuf[0][i] * 3) >> 2; /* left channel */
-      sint32 r = (tbuf[1][i] * 3) >> 2; /* right channel */
-      l += snsample >> 1;
-      r += snsample >> 1;
-      /* write with clipping
-         tbuf[0][i] = l > 0x7FFF ? 0x7fff : ((l < -0x7fff) ? -0x7fff : l);
-         tbuf[1][i] = r > 0x7FFF ? 0x7fff : ((r < -0x7fff) ? -0x7fff : r); */
-      tbuf[0][i] = l;
-      tbuf[1][i] = r;
+
+    if (sound_fm && sound_psg) {
+      for (i = 0; i < samples; i++) {
+        sint16 snsample = sn76496buf[i] - 0x4000;
+        sint32 l = (tbuf[0][i] * 3) >> 2; /* left channel */
+        sint32 r = (tbuf[1][i] * 3) >> 2; /* right channel */
+        l += snsample >> 1;
+        r += snsample >> 1;
+        tbuf[0][i] = l;
+        tbuf[1][i] = r;
+      }
+    } else if (!sound_fm && !sound_psg) {
+      /* no sound */
+      memset(tbuf[0], 0, 2 * samples);
+      memset(tbuf[1], 0, 2 * samples);
+    } else if (sound_fm) {
+      /* fm only */
+      for (i = 0; i < samples; i++) {
+        sint32 l = (tbuf[0][i] * 3) >> 2; /* left channel */
+        sint32 r = (tbuf[1][i] * 3) >> 2; /* right channel */
+        tbuf[0][i] = l;
+        tbuf[1][i] = r;
+      }
+    } else {
+      /* psg only */
+      for (i = 0; i < samples; i++) {
+        sint16 snsample = sn76496buf[i] - 0x4000;
+        tbuf[0][i] = snsample >> 1;
+        tbuf[1][i] = snsample >> 1;
+      }
     }
+  }
+}
+
+/*** sound_writetolog - write to music log buffer ***/
+
+static void sound_writetolog(unsigned char c)
+{
+  /* write the byte to the self-expanding memory log - when we have the whole
+     field's worth of data we then sift through the data (see the
+     documentation on the GNM log format) and then pass it to ui_writelog */
+
+  sound_logdata[sound_logdata_p++] = c;
+  if (sound_logdata_p >= sound_logdata_size) {
+    LOG_VERBOSE(("sound log buffer limit increased"));
+    sound_logdata_size+= 8192;
+    sound_logdata = realloc(sound_logdata, sound_logdata_size);
+    if (!sound_logdata)
+      ui_err("out of memory");
   }
 }

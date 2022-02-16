@@ -8,14 +8,10 @@
 ; See RAZE.TXT for license information.
 ;----------------------------------------------------------------------------;
 
-; this is needed for compiling with allegro in coff mode
 %macro cglobal 1 
-  global %1 
+  global @UNDERSCORE@%1 
+  %define %1 @UNDERSCORE@%1 
 %endmacro
-;%macro cglobal 1 
-;  global _%1 
-;  %define %1 _%1 
-;%endmacro
 
 ; You are not expected to understand this.
 

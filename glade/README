@@ -1,0 +1,5 @@
+To edit the user interface you need glade installed - just run
+  glade ./generator.glade
+
+The options are set so that you can just "Write source code..." and it
+shouldn't overwrite anything important.

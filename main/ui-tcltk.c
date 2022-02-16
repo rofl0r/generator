@@ -36,6 +36,7 @@
 #include "vdp.h"
 #include "mem68k.h"
 #include "event.h"
+#include "state.h"
 
 #ifdef XF86DGA
 #include <X11/extensions/xf86dga.h>
@@ -70,6 +71,7 @@ void ui_convertdata(uint8 *indata, uint8 *outdata, unsigned int pixels,
 void ui_convertdata_smooth(uint8 *indata, uint8 *outdata,
                            unsigned int pixels, unsigned int lineoffset,
                            unsigned int depth);
+static char *ui_setinfo(t_cartinfo * cartinfo);
 
 #ifdef XF86DGA
 void ui_fullscreen(int onoff);
@@ -78,7 +80,6 @@ void ui_fullscreen(int onoff);
 /*** static variables ***/
 
 static Tk_Window mainwin;
-static char *display = NULL;
 static Bool xsync = False;
 static Bool save = False;
 static Tcl_Interp *interp;
@@ -134,6 +135,7 @@ static Tk_ArgvInfo argtable[] = {
 
 static int errorhandler(ClientData data, XErrorEvent * err)
 {
+  (void)data;
   ui_err("X error %d, request %d, minor %d", err->error_code,
          err->request_code, err->minor_code);
   return 0;
@@ -147,6 +149,7 @@ Gen_Load(ClientData cdata, Tcl_Interp * interp, int objc,
 {
   int i;
 
+  (void)cdata;
   if (objc != 3) {
     Tcl_SetResult(interp,
                   "wrong # args: should be \"Gen_Load type pathName\"",
@@ -172,6 +175,7 @@ int
 Gen_Save(ClientData cdata, Tcl_Interp * interp, int objc,
          Tcl_Obj * const objv[])
 {
+  (void)cdata;
   if (objc != 2) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Save pathName\"",
                   TCL_STATIC);
@@ -193,6 +197,7 @@ int Gen_Dump(ClientData cdata, Tcl_Interp * interp, int argc, char *argv[])
   uint8 *mem_where;
   unsigned int mem_start, mem_len;
 
+  (void)cdata;
   if (!cpu68k_rom) {
     Tcl_SetResult(interp, "Nothing to display", TCL_STATIC);
     return TCL_ERROR;
@@ -350,6 +355,8 @@ int
 Gen_Step(ClientData cdata, Tcl_Interp * interp, int objc,
          Tcl_Obj * const objv[])
 {
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Step\"", TCL_STATIC);
     return TCL_ERROR;
@@ -370,6 +377,8 @@ Gen_Cont(ClientData cdata, Tcl_Interp * interp, int objc,
   Tcl_Obj *obj;
   int i;
 
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Cont\"", TCL_STATIC);
     return TCL_ERROR;
@@ -407,6 +416,8 @@ int
 Gen_FrameStep(ClientData cdata, Tcl_Interp * interp, int objc,
               Tcl_Obj * const objv[])
 {
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_FrameStep\"",
                   TCL_STATIC);
@@ -432,6 +443,8 @@ int
 Gen_SpriteList(ClientData cdata, Tcl_Interp * interp, int objc,
                Tcl_Obj * const objv[])
 {
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_SpriteList\"",
                   TCL_STATIC);
@@ -447,10 +460,11 @@ int
 Gen_Change(ClientData cdata, Tcl_Interp * interp, int objc,
            Tcl_Obj * const objv[])
 {
-  Tcl_Obj *varobj, *outobj;
   unsigned int oldscale = scale;
   unsigned int newstate;
 
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Change\"",
                   TCL_STATIC);
@@ -527,6 +541,8 @@ Gen_Initialised(ClientData cdata, Tcl_Interp * interp, int objc,
   int f;
   char buffer[256];
 
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Change\"",
                   TCL_STATIC);
@@ -563,6 +579,7 @@ Gen_Reset(ClientData cdata, Tcl_Interp * interp, int objc,
 {
   int resetitem;
 
+  (void)cdata;
   if (objc != 2) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Reset <x>\"",
                   TCL_STATIC);
@@ -626,6 +643,8 @@ int
 Gen_Regs(ClientData cdata, Tcl_Interp * interp, int objc,
          Tcl_Obj * const objv[])
 {
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Regs\"", TCL_STATIC);
     return TCL_ERROR;
@@ -640,6 +659,8 @@ int
 Gen_VDPDescribe(ClientData cdata, Tcl_Interp * interp, int objc,
                 Tcl_Obj * const objv[])
 {
+  (void)cdata;
+  (void)objv;
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_VDPDescribe\"",
                   TCL_STATIC);
@@ -651,10 +672,9 @@ Gen_VDPDescribe(ClientData cdata, Tcl_Interp * interp, int objc,
 
 int ui_redrawdump(Tcl_Interp * interp, char *textwidget)
 {
-  int offset, line, listlen, words, i, memtype;
+  int offset, line, listlen, words, memtype;
   char tmp[256], dumpline[128];
   Tcl_Obj *varobj, *outobj, *paramobj;
-  t_ipc ipc;
   uint8 *mem_where;
   unsigned int mem_start, mem_len;
 
@@ -752,7 +772,7 @@ int ui_redrawdump(Tcl_Interp * interp, char *textwidget)
 
     /* this line is visible so disassemble it */
     if ((unsigned int)offset == mem_len) {
-      sprintf(dumpline, "---end\n", offset);
+      sprintf(dumpline, "---end\n");
       words = 1;
     } else {
       words = diss68k_getdumpline(mem_start + offset, mem_where + offset,
@@ -804,7 +824,6 @@ int ui_redrawdump(Tcl_Interp * interp, char *textwidget)
 int ui_init(int argc, char *argv[])
 {
   int i;
-  unsigned int ui;
   unsigned long plane_masks[1];
   unsigned long colours[256];
   XColor xcolor;
@@ -992,6 +1011,8 @@ void ui_final(void)
 
 void ui_enterleave(ClientData cd, XEvent * event)
 {
+
+  (void)cd;
   if (event->type == EnterNotify) {
     XAutoRepeatOff(ui_display);
   } else {
@@ -1004,6 +1025,7 @@ void ui_keypress(ClientData cd, XEvent * event)
   char keysym = XLookupKeysym(&event->xkey, 0);
   int type = (event->type == KeyPress);
 
+  (void)cd;
   LOG_DEBUG3(("KEY %d: %d", type, keysym));
   switch (keysym) {
   case 'a':
@@ -1154,6 +1176,8 @@ int ui_loadimage(Tcl_Interp * interp, const char *filename)
   char *p;
 
   p = gen_loadimage(filename);
+  if (!p)
+    p = ui_setinfo(&gen_cartinfo);
   if (p) {
     Tcl_SetResult(interp, p, TCL_STATIC);
     return TCL_ERROR;
@@ -1166,11 +1190,8 @@ int ui_loadimage(Tcl_Interp * interp, const char *filename)
 
 int ui_loadsavepos(Tcl_Interp * interp, const char *filename)
 {
-  char *p;
-
-  p = gen_loadsavepos(filename);
-  if (p) {
-    Tcl_SetResult(interp, p, TCL_STATIC);
+  if ((state_loadfile(filename)) != 0) {
+    Tcl_SetResult(interp, "error loading file", TCL_STATIC);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -1178,7 +1199,7 @@ int ui_loadsavepos(Tcl_Interp * interp, const char *filename)
 
 /*** ui_setinfo - set information window with name/copyright/etc ***/
 
-char *ui_setinfo(t_cartinfo * cartinfo)
+static char *ui_setinfo(t_cartinfo * cartinfo)
 {
   char buffer[128];
 
@@ -1209,7 +1230,6 @@ char *ui_setinfo(t_cartinfo * cartinfo)
 
 void ui_checkpalcache(int flag)
 {
-  uint32 pal;
   unsigned int col;
   uint8 *p;
 
@@ -1241,14 +1261,15 @@ void ui_checkpalcache(int flag)
 
 /*** ui_line - it is time to render a line ***/
 
-void ui_line(unsigned int line)
+void ui_line(int line)
 {
   static uint8 gfx[320];
-  uint8 *cram = (uint8 *)vdp_cram;
-  char *p, *pp, *ppp;
+  char *p;
   int lineoffset;
 
   if (ui_vdpsimple)
+    return;
+  if (line < 0 || line >= (int)vdp_vislines)
     return;
 
 #ifdef XF86DGA
@@ -1421,9 +1442,8 @@ void
 ui_convertdata_smooth(uint8 *indata, uint8 *outdata, unsigned int pixels,
                       unsigned int lineoffset, unsigned int depth)
 {
-  char *p, *pp;
+  char *p;
   unsigned int ui;
-  int t, s;
   uint32 data1, data2, datam;
 
   ui_checkpalcache(0);
@@ -1500,9 +1520,8 @@ void ui_endfield(void)
 
 void ui_endframe(void)
 {
-  int y, x, i;
+  int i;
   XColor xcolor;
-  uint16 col;
   static uint8 gfx[(320 + 16) * (240 + 16)];
   char *p, *framestart;
   unsigned int lineoffset, line;
@@ -1573,25 +1592,6 @@ void ui_endframe(void)
     }
   }
 }
-
-/*
-
-void ui_run(void)
-{
-  gen_quit = 0;
-  do {
-    event_doframe();
-    while (Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT));
-  } while(!gen_quit);
-  if (gen_debugmode) {
-    ui_updateregs();
-    if (gen_quit)
-      LOG_NORMAL(("Stopped."));
-  }
-  gen_quit = 0;
-}
-
-*/
 
 #ifdef XF86DGA
 void ui_fullscreen(int onoff)

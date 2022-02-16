@@ -40,6 +40,9 @@ int main(int argc, char *argv[])
   char buf[BUFLEN], *p;
   int lineno = 0;
 
+  (void)argc;
+  (void)argv;
+
   /* open output files and write headers */
 
   if ((outiibs = fopen(FNAME_OUTIIBS, "w")) == NULL) {
@@ -702,7 +705,6 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
     t_size size;
     t_datatype ea_e;
     t_datatype ea_f;
-    int skip;
     int cc;
     int wordlen, type;
     int idx;
@@ -1360,8 +1362,6 @@ int clocks_typetoindex(t_datatype type)
 
 int clocks_eacalc(t_datatype type, t_size size)
 {
-  int clks = 0;
-
   switch(type) {
   case dt_Dreg:
   case dt_Areg: return 0;

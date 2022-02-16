@@ -29,15 +29,20 @@
 /*** variables externed in generator.h ***/
 
 unsigned int gen_quit = 0;
-unsigned int gen_debugmode = 1;
-unsigned int gen_loglevel = 2;  /* 2 = NORMAL, 1 = CRITICAL */
+unsigned int gen_debugmode = 0;
+unsigned int gen_loglevel = 1;  /* 2 = NORMAL, 1 = CRITICAL */
+unsigned int gen_autodetect = 1; /* 0 = no, 1 = yes */
+unsigned int gen_musiclog = 0; /* 0 = no, 1 = GYM, 2 = GNM */
 t_cartinfo gen_cartinfo;
 char gen_leafname[128];
+
+static int gen_freerom = 0;
 
 /*** forward references ***/
 
 void gen_nicetext(char *out, char *in, unsigned int size);
 uint16 gen_checksum(uint8 *start, unsigned int length);
+void gen_setupcartinfo(void);
 
 /*** Signal handler ***/
 
@@ -145,28 +150,31 @@ char *gen_loadimage(const char *filename)
   struct stat statbuf;
   const char *extension;
   uint8 *buffer;
-  char countrybuf[32];
   unsigned int blocks, x, i;
   uint8 *new;
   char *p;
 
   /* Remove current file */
   if (cpu68k_rom) {
-    free(cpu68k_rom);
+    if (gen_freerom)
+      free(cpu68k_rom);
     cpu68k_rom = NULL;
   }
 
   /* Load file */
-  if (stat(filename, &statbuf) != 0) {
+  if (stat(filename, &statbuf) != 0)
     return ("Unable to stat file.");
-  }
   cpu68k_romlen = statbuf.st_size;
+  if (cpu68k_romlen < 0x200)
+    return ("File is too small");
+
   /* allocate enough memory plus 16 bytes for disassembler to cope
      with the last instruction */
   if ((cpu68k_rom = malloc(cpu68k_romlen + 16)) == NULL) {
     cpu68k_romlen = 0;
     return ("Out of memory!");
   }
+  gen_freerom = 1;
   memset(cpu68k_rom, 0, cpu68k_romlen + 16);
 #ifdef ALLEGRO
   if ((file = open(filename, O_RDONLY | O_BINARY, 0)) == -1) {
@@ -209,7 +217,6 @@ char *gen_loadimage(const char *filename)
       cpu68k_rom[0x2280] == 'S' && cpu68k_rom[0x2281] == 'G') {
     imagetype = 2;              /* SMD file */
   }
-#ifndef OS_ACORN
   /* Check extension is not wrong */
   extension = filename + strlen(filename) - 3;
   if (extension > filename) {
@@ -220,7 +227,6 @@ char *gen_loadimage(const char *filename)
       LOG_REQUEST(("File extension (bin) does not match detected "
                    "type (smd)"));
   }
-#endif
 
   /* convert to standard BIN file format */
 
@@ -253,9 +259,6 @@ char *gen_loadimage(const char *filename)
     break;
   }
 
-  /* reset system */
-  gen_reset();
-
   /* is this icky? */
   if ((p = strrchr(filename, '/')) == NULL &&
       (p = strrchr(filename, '\\')) == NULL) {
@@ -269,6 +272,46 @@ char *gen_loadimage(const char *filename)
   }
   if (gen_leafname[0] == '\0')
     snprintf(gen_leafname, sizeof(gen_leafname), "rom");
+
+
+  if (gen_autodetect) {
+    vdp_pal = (!gen_cartinfo.flag_usa && !gen_cartinfo.flag_japan &&
+               gen_cartinfo.flag_europe) ? 1 : 0;
+  }
+
+  gen_setupcartinfo();
+
+  /* reset system */
+  gen_reset();
+
+  if (gen_cartinfo.checksum != (cpu68k_rom[0x18e] << 8 | cpu68k_rom[0x18f]))
+    LOG_REQUEST(("Warning: Checksum does not match in ROM (%04X)",
+                 (cpu68k_rom[0x18e] << 8 | cpu68k_rom[0x18f])));
+
+  LOG_REQUEST(("Loaded '%s'/'%s' (%s %04X %s)", gen_cartinfo.name_domestic,
+               gen_cartinfo.name_overseas, gen_cartinfo.version,
+               gen_cartinfo.checksum, gen_cartinfo.country));
+
+  return NULL;
+}
+
+/* setup to run from ROM in memory */
+
+void gen_loadmemrom(const char *rom, int romlen)
+{
+  cpu68k_rom = (char *)rom; /* I won't alter it, promise */
+  cpu68k_romlen = romlen;
+  gen_freerom = 0;
+  gen_setupcartinfo();
+  gen_reset();
+}
+
+/* setup gen_cartinfo from current loaded rom */
+
+void gen_setupcartinfo(void)
+{
+  unsigned int i;
+  char *p;
 
   memset(&gen_cartinfo, 0, sizeof(gen_cartinfo));
   gen_nicetext(gen_cartinfo.console, (char *)(cpu68k_rom + 0x100), 16);
@@ -305,21 +348,6 @@ char *gen_loadimage(const char *filename)
       *p++ = cpu68k_rom[i];
   }
   *p = '\0';
-
-  ui_setinfo(&gen_cartinfo);
-
-  if (gen_cartinfo.checksum != (cpu68k_rom[0x18e] << 8 | cpu68k_rom[0x18f]))
-    LOG_REQUEST(("Warning: Checksum does not match in ROM (%04X)",
-                 (cpu68k_rom[0x18e] << 8 | cpu68k_rom[0x18f])));
-
-  vdp_pal = (!gen_cartinfo.flag_usa && !gen_cartinfo.flag_japan &&
-             gen_cartinfo.flag_europe) ? 1 : 0;
-
-  LOG_REQUEST(("Loaded '%s'/'%s' (%s %04X %s)", gen_cartinfo.name_domestic,
-               gen_cartinfo.name_overseas, gen_cartinfo.version,
-               gen_cartinfo.checksum, gen_cartinfo.country));
-
-  return NULL;
 }
 
 /*** get_nicetext - take a string, remove spaces and capitalise ***/
@@ -327,38 +355,37 @@ char *gen_loadimage(const char *filename)
 void gen_nicetext(char *out, char *in, unsigned int size)
 {
   int flag, i;
-  char c;
+  int c;
   char *start = out;
 
   flag = 0;                     /* set if within word, e.g. make lowercase */
   i = size;                     /* maximum number of chars in input */
-  while ((c = *in++) && i--) {
-    if (isalpha((int)c)) {
+  while ((c = *in++) && --i > 0) {
+    if (isalpha(c)) {
       if (!flag) {
         /* make uppercase */
         flag = 1;
-        if (islower((int)c)) {
-          *out++ = c - 'z' - 'Z';
-        } else {
+        if (islower(c))
+          *out++ = c - 'z' + 'Z';
+        else
           *out++ = c;
-        }
       } else {
         /* make lowercase */
-        if (isupper((int)c)) {
-          *out++ = (c) + 'z' - 'Z';
-        } else {
+        if (isupper(c))
+          *out++ = (c) - 'Z' + 'z';
+        else
           *out++ = c;
-        }
       }
-      continue;
+    } else if (c == ' ') {
+      if (flag)
+        *out++ = c;
+      flag = 0;
+    } else if (isprint(c) && c != '\t') {
+      flag = 0;
+      *out++ = c;
     }
-    if (c == ' ' && !flag) {
-      continue;
-    }
-    *out++ = c;
-    flag = 0;
   }
-  if (out > start && out[-1] == ' ')
+  while (out > start && out[-1] == ' ')
     out--;
   *out++ = '\0';
 }
@@ -379,12 +406,4 @@ uint16 gen_checksum(uint8 *start, unsigned int length)
     checksum += start[1];
   }
   return checksum;
-}
-
-/*** gen_loadsavepos - load saved position ***/
-
-char *gen_loadsavepos(const char *filename)
-{
-  LOG_REQUEST(("gen_loadsavepos: %s\n", filename));
-  return ("Not implemented.");
 }

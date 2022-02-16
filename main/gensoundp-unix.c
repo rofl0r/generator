@@ -36,7 +36,6 @@ static int soundp_dev = -1;
 static int soundp_format;
 static int soundp_stereo;
 static int soundp_frag;
-static int soundp_fragsize;
 static unsigned int soundp_speed;
 
 #ifdef JFM

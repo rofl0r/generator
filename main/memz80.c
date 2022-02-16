@@ -72,7 +72,7 @@ uint8 memz80_fetch_bad_byte(uint16 addr)
 
 void memz80_store_bad_byte(uint16 addr, uint8 data)
 {
-  LOG_CRITICAL(("[Z80] Invalid memory store (byte) 0x%X", addr));
+  LOG_CRITICAL(("[Z80] Invalid memory store (byte) 0x%X = %X", addr, data));
 }
 
 /*** SRAM fetch/store ***/
@@ -122,6 +122,7 @@ uint8 memz80_fetch_bank_byte(uint16 addr)
 
 void memz80_store_bank_byte(uint16 addr, uint8 data)
 {
+  (void)addr;
   /* set bank */
   cpuz80_bankwrite(data);
 }

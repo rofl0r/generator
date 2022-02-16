@@ -18,13 +18,14 @@ void cpuz80_iowrite_actual(UINT16 addr, UINT8 data, struct z80PortWrite *me);
 
 uint8 *cpuz80_ram = NULL;
 uint32 cpuz80_bank = 0;
-unsigned int cpuz80_active = 0;
+uint8 cpuz80_resetting = 0;
+uint8 cpuz80_active = 0;
+unsigned int cpuz80_on = 1;     /* z80 turned on? */
 CONTEXTMZ80 cpuz80_z80;
 
 /*** global variables ***/
 
 static unsigned int cpuz80_lastsync = 0;
-static unsigned int cpuz80_resetting = 0;
 
 static struct MemoryReadByte cpuz80_read[] = {
   {0x0000, 0xFFFF, cpuz80_read_actual, NULL},
@@ -164,7 +165,7 @@ void cpuz80_sync(void)
   int wanted = (cpu68k_wanted < 0 ? 0 : cpu68k_wanted) * 7 / 15;
   int acheived;
 
-  if (cpuz80_active && !cpuz80_resetting) {
+  if (cpuz80_on && cpuz80_active && !cpuz80_resetting) {
     /* ui_log(LOG_USER, "executing %d z80 clocks @ %X", wanted,
        cpuz80_z80.z80pc); */
     mz80exec(wanted);

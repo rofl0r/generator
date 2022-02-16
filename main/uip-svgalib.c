@@ -24,8 +24,6 @@
 
 /*** forward reference declarations ***/
 
-static int uip_getshifts(t_uipinfo * uipinfo);
-
 /*** static variables ***/
 
 static uint8 uip_vga = 0;       /* flag for whether in VGA mode */
@@ -105,7 +103,6 @@ int uip_initjoysticks(void)
 int uip_vgamode(void)
 {
   vga_modeinfo *modeinfo;
-  int cardmemory;
 
   uip_vga = 1;
   if (vga_setmode(G640x480x32K) == -1) {

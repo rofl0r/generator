@@ -1,7 +1,7 @@
 #ifdef RAZE
 #  include "raze.h"
 #else
-#  include "mz80.h"
+#  include "cmz80.h"
 CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
 #endif
 
@@ -9,7 +9,9 @@ CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
 
 extern uint8 *cpuz80_ram;
 extern uint32 cpuz80_bank;
-extern unsigned int cpuz80_active;
+extern uint8 cpuz80_active;
+extern uint8 cpuz80_resetting;
+extern unsigned int cpuz80_on;
 
 void cpuz80_reset(void);
 void cpuz80_resetcpu(void);

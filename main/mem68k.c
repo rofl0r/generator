@@ -224,20 +224,20 @@ uint32 mem68k_fetch_bad_long(uint32 addr)
 
 void mem68k_store_bad_byte(uint32 addr, uint8 data)
 {
-  LOG_CRITICAL(("%08X [MEM] Invalid memory store (byte) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [MEM] Invalid memory store (byte) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 void mem68k_store_bad_word(uint32 addr, uint16 data)
 {
-  LOG_CRITICAL(("%08X [MEM] Invalid memory store (word) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [MEM] Invalid memory store (word) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 void mem68k_store_bad_long(uint32 addr, uint32 data)
 {
-  LOG_CRITICAL(("%08X [MEM] Invalid memory store (long) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [MEM] Invalid memory store (long) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 
@@ -292,20 +292,20 @@ uint32 mem68k_fetch_rom_long(uint32 addr)
 
 void mem68k_store_rom_byte(uint32 addr, uint8 data)
 {
-  LOG_CRITICAL(("%08X [ROM] Invalid memory store (byte) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [ROM] Invalid memory store (byte) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 void mem68k_store_rom_word(uint32 addr, uint16 data)
 {
-  LOG_CRITICAL(("%08X [ROM] Invalid memory store (word) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [ROM] Invalid memory store (word) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 void mem68k_store_rom_long(uint32 addr, uint32 data)
 {
-  LOG_CRITICAL(("%08X [ROM] Invalid memory store (long) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [ROM] Invalid memory store (long) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 
@@ -470,8 +470,8 @@ void mem68k_store_yam_word(uint32 addr, uint16 data)
   }
 #endif
   addr -= 0xA04000;
-  LOG_CRITICAL(("%08X [YAM] Invalid memory store (word) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [YAM] Invalid memory store (word) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 void mem68k_store_yam_long(uint32 addr, uint32 data)
@@ -484,8 +484,8 @@ void mem68k_store_yam_long(uint32 addr, uint32 data)
 #endif
   addr -= 0xA04000;
   /* no longs please */
-  LOG_CRITICAL(("%08X [YAM] Invalid memory store (long) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [YAM] Invalid memory store (long) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 
@@ -547,8 +547,8 @@ void mem68k_store_bank_long(uint32 addr, uint32 data)
 {
   addr -= 0xA06000;
   /* no longs please */
-  LOG_CRITICAL(("%08X [BANK] Invalid memory store (long) 0x%X", regs.pc,
-                addr));
+  LOG_CRITICAL(("%08X [BANK] Invalid memory store (long) 0x%X = %X", regs.pc,
+                addr, data));
 }
 
 
@@ -785,8 +785,8 @@ void mem68k_store_ctrl_long(uint32 addr, uint32 data)
 {
   addr -= 0xA11000;
   /* no long access allowed */
-  LOG_CRITICAL(("%08X [CTRL] Invalid memory store (long) 0x%X",
-                regs.pc, addr));
+  LOG_CRITICAL(("%08X [CTRL] Invalid memory store (long) 0x%X = %X",
+                regs.pc, addr, data));
 }
 
 

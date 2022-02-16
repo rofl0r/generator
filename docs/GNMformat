@@ -1,0 +1,93 @@
+The Generator GNM log format is:
+
+header:
+  0: 'G'
+  1: 'N'
+  2: 'M'
+  3: fields per second (e.g. 50 or 60)
+
+interval = 0;
+while (!EOF) {
+  data = readbyte()) // readbyte() reads the next byte from the file
+  if ((data & 0xF0) == 0) {
+    switch (data) {
+      case 0: /* start of field marker (1/50th or 1/60th second elapsed) */
+              sampsperfield=(readbyte() << 8) + readbyte();
+      case 1: /* FM port 0 */
+              ymport=0; ymreg=readbyte(); ymdata=readbyte();
+      case 2: /* FM port 1 */
+              ymport=1; ymreg=readbyte(); ymdata=readbyte();
+      case 3: /* PSG */
+              write readbyte() to psg port;
+      case 4: /* escaped sample data and mark of interval */
+              ymport=0; ymreg=0x2A; ymdata=readbyte(); interval=1;
+      case 5: /* no sample data this interval */
+              interval=1; /* no change of register 0x2A */
+    }
+  } else {
+    /* unescaped sameple data and mark of interval */
+    ymport=0; ymreg=0x2A; ymdata=data; sample=1;
+  }
+  if (interval) {
+    interval = 0;
+    update sound;
+  }
+}
+
+Rationale
+
+The GYM file format does not support samples.  Where sample data has been
+added to the GYM file format it is not possible to know where within the
+time period of a field the sample(s) occured, so any players have to make
+a guess.  Samples within a GYM file are represented using an FM write which
+consists of three bytes, this is a huge waste of space.
+
+Design
+
+The field is split into a distinct number of intervals in order to
+increase accuracy.  As an emulation format, the idea was to output X
+intervals where X is the number of lines of display, as emulators work
+in terms of video lines.  The GNM format has been modified however to
+cope with any number of intervals within a field.  You could divide a
+field into 4 events for example.  This would mean 4 times the accuracy
+in placing events (in time) than the GYM format.  Of course, the higher
+the number of intervals, the bigger the resulting file format.
+
+You can only accurately have one sample per interval because the interval
+is the only thing that tells you where in time you are within a field.
+Therefore, the GNM format uses the samples themselves as a marker for
+each interval.  If there is no sample, then a special marker is inserted
+to represent no change.  This makes the file format as concise as possible.
+
+Encoding
+
+Each field starts with a $0 byte marker followed by two bytes that indicate
+the number of intervals for this field.
+
+Each interval is marked by a sample.  The samples are placed directly in
+the stream except for byte vales $0 to $f, in which case they are escaped
+with a $4 byte.  If there was no sample written in the interval period then
+a $5 byte is inserted.
+
+Generator's implementation
+
+Generator works on a field at a time basis.  Generator allocates a block
+of memory, which expands if required, that contains what we would write
+to disk assuming maximum samples are necessary (maximum in Generator's
+case is the number of lines in the display, i.e. 262 for NTSC).  Nominally
+8k is allocated for this purpose.
+
+YM/PSG writes are written into this block, however writes to FM address
+$2a are held pending until the end of each line.  At the end of the line
+we write the (last) sample into the block (as-is or escaped with a $4 if
+necessary, or $5 if no change to FM register $2a was made).
+
+At the end of a field we can then decide the number of intervals that we
+wish to output into the file.  If there were no samples in the entire
+period then we remove all interval markers ($5 bytes) and set the number
+of intervals to 0 for this field.  We could leave a few intervals in to
+make FM more accurate, but Generator doesn't do this (not sure if it's
+necessary).
+
+Generator is of course open source so you are free to look at the
+actual implementation.

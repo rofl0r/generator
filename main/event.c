@@ -28,6 +28,8 @@ inline void event_nextevent(void)
                 cpu68k_clocks, vdp_event_start,
                 vdp_line - vdp_visstartline, vdp_reg[10],
                 vdp_hskip_countdown));
+    if (vdp_line == 0)
+      sound_startfield();
     if (vdp_line == (vdp_visstartline - 1)) {
       vdp_vblank = 0;
       vdp_hskip_countdown = vdp_reg[10];
@@ -93,8 +95,7 @@ inline void event_nextevent(void)
                 cpu68k_clocks, vdp_event_hdisplay,
                 vdp_line - vdp_visstartline, vdp_reg[10],
                 vdp_hskip_countdown));
-    if (vdp_line >= vdp_visstartline - 1 && vdp_line < vdp_visendline - 1)
-      ui_line(vdp_line - vdp_visstartline + 1);
+    ui_line(vdp_line - vdp_visstartline + 1);
     if ((vdp_nextevent = vdp_event_end - cpu68k_clocks) > 0)
       break;
     /* vdp_event++; - not required, we set vdp_event to 0 below */
@@ -107,14 +108,15 @@ inline void event_nextevent(void)
     if (vdp_line >= vdp_visstartline && vdp_line < vdp_visendline)
       vdp_hblank = 0;
     cpuz80_sync();
-    sound_process();
+    sound_line();
     vdp_line++;
     if (vdp_line == vdp_visendline)
       cpuz80_interrupt();
     if (vdp_line == vdp_totlines) {
+      /* the order of these is important */
+      sound_endfield(); /* must be before ui_endfield for GYM log */
       ui_endfield();
-      sound_endfield();
-      vdp_endfield();
+      vdp_endfield(); /* must be after ui_endfield as it alters state */
       cpuz80_endfield();
       cpu68k_endfield();
       cpu68k_frames++;
@@ -167,7 +169,6 @@ void event_dostep(void)
 
 void event_freeze_clocks(unsigned int clocks)
 {
-  int old_nextevent = vdp_nextevent;
   int missed = 0;
 
   /* first - fix vdp_nextevent to be correct for right now, due to block

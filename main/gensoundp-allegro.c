@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "generator.h"
 #include "gensound.h"
@@ -137,16 +138,16 @@ void sound_readyblock(void)
 {
   static int locked = 0;
   int writepos = soundp_block * sound_sampsperfield;
-  unsigned int a = 0;
+  time_t start = time(NULL);
 
   if (locked && digi_driver->unlock_voice)
     digi_driver->unlock_voice(soundp_voice);
 
   while ((voice_get_position(soundp_voice) /
           sound_sampsperfield) == soundp_block) {
-    usleep(100);
-    a++;
-    if (a > 100000) {
+    /* I used to usleep here, but it breaks on some platforms - then I
+       tried uclock() which failed too, so we're just going to busywait */
+    if (time(NULL) > start + 10) {
       LOG_CRITICAL(("Sound error - pos=%d %d=%d",
                     voice_get_position(soundp_voice),
                     sound_sampsperfield, soundp_block));

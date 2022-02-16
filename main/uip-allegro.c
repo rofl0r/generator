@@ -107,9 +107,9 @@ int uip_vgamode(void)
   unsigned long screenbase;
 
   for (rate = 60; rate <= 70; rate += 10) {
-    for (depth = 15; depth <= 17; depth++) {
+    for (depth = 15; depth <= 16; depth++) {
       LOG_VERBOSE(("Trying mode 640x480 depth %d rate %d", depth, rate));
-      set_color_depth((depth == 17 ? 32 : depth));
+      set_color_depth(depth);
       request_refresh_rate(rate);
       if ((set_gfx_mode(GFX_AUTODETECT, 640, 480, 0, 480 * 2) < 0)) {
         LOG_VERBOSE(("Mode not supported"));

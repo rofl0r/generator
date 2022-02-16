@@ -51,6 +51,9 @@ int main(int argc, char *argv[])
   int i;
   char tmp[256];
 
+  (void)argc;
+  (void)argv;
+
   printf("Writing C files... ");
   fflush(stdout);
 
@@ -118,7 +121,7 @@ void generate(FILE *output, int topnibble)
 
       fprintf(output, "void cpu_op_%i%s(t_ipc *ipc) /* %s */ {\n",
 	      i, flags ? "b" : "a", mnemonic_table[iib->mnemonic].name);
-      fprintf(output, "  /* mask %0.4x, bits %0.4x, mnemonic %d, priv %d, ",
+      fprintf(output, "  /* mask %04x, bits %04x, mnemonic %d, priv %d, ",
 	      iib->mask, iib->bits, iib->mnemonic, iib->flags.priv);
       fprintf(output, "endblk %d, imm_notzero %d, used %d",
 	      iib->flags.endblk, iib->flags.imm_notzero, iib->flags.used);
@@ -2252,26 +2255,31 @@ void generate_stdflag_n(FILE *o, t_iib *iib)
 
 void generate_stdflag_z(FILE *o, t_iib *iib)
 {
+  (void)iib;
   fprintf(o, "  ZFLAG = !outdata;\n");
 }
 
 void generate_clrflag_v(FILE *o, t_iib *iib)
 {
+  (void)iib;
   fprintf(o, "  VFLAG = 0;\n");
 }
 
 void generate_clrflag_c(FILE *o, t_iib *iib)
 {
+  (void)iib;
   fprintf(o, "  CFLAG = 0;\n");
 }
 
 void generate_clrflag_n(FILE *o, t_iib *iib)
 {
+  (void)iib;
   fprintf(o, "  NFLAG = 0;\n");
 }
 
 void generate_setflag_z(FILE *o, t_iib *iib)
 {
+  (void)iib;
   fprintf(o, "  ZFLAG = 1;\n");
 }
 
@@ -2282,6 +2290,7 @@ void generate_subflag_c(FILE *o, t_iib *iib)
      so this is simply if the source is greater than the destination - I
      have proven this to be the case using a truth table and the above
      motorola definition */
+  (void)iib;
   fprintf(o, "  CFLAG = srcdata > dstdata;\n");
 }
 
@@ -2292,6 +2301,7 @@ void generate_subflag_cx(FILE *o, t_iib *iib)
      so this is simply if the source is greater than the destination - I
      have proven this to be the case using a truth table and the above
      motorola definition */
+  (void)iib;
   fprintf(o, "  XFLAG = CFLAG = srcdata > dstdata;\n");
 }
 
@@ -2327,6 +2337,7 @@ void generate_cmpaflag_c(FILE *o, t_iib *iib)
 {
   /* see generate_subflag_c - this is just the same but with a sign extend
      on the source */
+  (void)iib;
   fprintf(o, "  CFLAG = (uint32)(sint32)(sint16)srcdata > dstdata;\n");
 }
 
@@ -2363,6 +2374,7 @@ void generate_cmpaflag_v(FILE *o, t_iib *iib)
 {
   /* see generate_subflag_v - this is just the sz_long version with a sign
      extend on the source */
+  (void)iib;
   fprintf(o, "  VFLAG = (((sint32)(sint16)srcdata < 0) != ");
   fprintf(o, "((sint32)dstdata < 0)) ");
   fprintf(o, "&&\n    (((sint32)dstdata < 0) != ((sint32)outdata < 0));\n");
@@ -2370,6 +2382,7 @@ void generate_cmpaflag_v(FILE *o, t_iib *iib)
 
 void generate_stdxflag_z(FILE *o, t_iib *iib)
 {
+  (void)iib;
   fprintf(o, "  if (outdata) ZFLAG = 0;\n");
 }
 
@@ -2457,6 +2470,7 @@ void generate_addflag_v(FILE *o, t_iib *iib)
 
 void generate_negflag_cx(FILE *o, t_iib *iib)
 {
+  (void)iib;
   /* C = (Dm || Rm) */
   fprintf(o, "  XFLAG = CFLAG = srcdata ? 1 : 0;\n");
 }
