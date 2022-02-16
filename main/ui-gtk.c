@@ -386,7 +386,7 @@ static void ui_usage(void)
 void ui_final(void)
 {
   gdk_font_unref(ui_dissfont);
-  gdk_key_repeat_restore();
+  // gdk_key_repeat_restore();
   SDL_Quit();
   gtk_exit(0);
 }
@@ -2746,12 +2746,12 @@ void ui_gtk_mainenter(void)
 {
   /* clear out current state */
   memset(mem68k_cont, 0, sizeof(mem68k_cont));
-  gdk_key_repeat_disable();
+  // gdk_key_repeat_disable();
 }
 
 void ui_gtk_mainleave(void)
 {
-  gdk_key_repeat_restore();
+  // gdk_key_repeat_restore();
 }
 
 static void ui_gtk_opts_to_menu(void)
