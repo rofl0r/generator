@@ -1,4 +1,14 @@
+/* the ordering of these includes is important - stdio can have inline
+   functions - so can mem68k.h - and registers.h must appear before them */
+
+#include "generator.h"
 #include "registers.h"
+
+#include <stdio.h>
+
+#include "cpu68k.h"
+#include "mem68k.h"
+#include "reg68k.h"
 
 #define DATAREG(a) (reg68k_regs[a])
 #define ADDRREG(a) (reg68k_regs[8+(a)])

@@ -55,6 +55,9 @@
 /* Define for RAZE z80, undef for mz80 */
 #undef RAZE
 
+/* Define for direct ram writes (faster) */
+#undef DIRECTRAM
+
 /* Define if you have an x86 processor */
 #undef PROCESSOR_INTEL
 

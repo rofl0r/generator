@@ -31,6 +31,31 @@ An example compilation:
   make
   make install
 
+
+Cross compile
+=============
+
+I compile for DOS from linux with:
+
+  PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH ./configure --enable-allegro \
+                                                     --host=i386
+  PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH make
+
+  Unfortunately this will compile the def68k and gen68k programs for DOS
+  rather than linux, so the build will fail to create the cpu files for
+  compiling with:
+
+    ./def68k: ./def68k: cannot execute binary file
+
+  So you need to have built Generator earlier under unix so that you can
+  copy the linux version of def68k in place when you see the above error.
+
+  You have to do the same for gen68k.
+
+  RAZE doesn't seem like djgpp, there is a macro that needs un-commenting
+  in the source when you cross-compile, plus nasm needs '-f coff' rather
+  than '-f elf' in the Makefile.
+
 Basic Installation
 ==================
 

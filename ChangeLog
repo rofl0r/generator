@@ -37,10 +37,10 @@
                      caesars palace, warsong, many more)
          [VDP]     Added register storing after H retrace
          [MEM68K]  Fixed joy pad buttons (ynar, juyu_gai)
-	 [VDP]     Added display disabling
+         [VDP]     Added display disabling
          [VDP]     Added 'smooth' option, although it's not particularly good
 
-0.11	 [CORE]    General cleanup so I can release the source
+0.11     [CORE]    General cleanup so I can release the source
          [REG68K]  Changed the order of events so that the vblank occurs at
                    the end rather than the start
          [CORE]    Changed everything to default to /usr/local and changed lib
@@ -183,3 +183,26 @@
          [CORE]    Re-organised source to use automake/autoheader
          [CORE]    Generator now auto-detects processor and adds other
                    optimisations for building source
+
+0.33     [SOUND]   Added PSG sound generator (SN76496)!
+         [SOUND]   Re-wrote all the sound files so that they have better
+                   separation between Generator and the hardware
+         [CONSOLE] Fixed crash if you try and reset (F12)
+         [VDP]     Fixed H/V counter which somehow I broke after 0.16 (fixes
+                   Sonic 3D, 3 Ninjas, Road Rash, etc. etc.)
+         [VDP]     Implemented Charles MacDonald's h/v size of 2 (repeat every
+                   row) for his test carts
+         [VDP]     Implemented VDP window bug (thanks to Charles MacDonald
+                   for his test cart)
+         [VDP]     Fixed interlace mode 1 (thanks to Charles MacDonald for
+                   his test cart)
+         [VDP]     Added invalid HSCR support for Populus (Charles MacDonald)
+         [VDP]     Fixed minor cram bug (possible segv)
+         [VDP]     Fixed bug in fill operation (contra hardcorps)
+         [CORE]    Re-formatted all code with indent (see .indent.pro file)
+         [CONSOLE] Add joystick framework (thanks to Lester Barrows for
+                   his code submission)
+         [SVGALIB] Add joystick support
+         [CONSOLE] Add multiple keyboard positions for two keyboard players
+         [CONSOLE] Add -j option to control input devices for players
+         [68000]   Optimised 68k writes in favour of RAM

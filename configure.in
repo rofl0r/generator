@@ -2,7 +2,7 @@ dnl Generator configure.in file - process with autoconf
 
   AC_INIT(cpu68k/def68k.c)
   AC_CANONICAL_SYSTEM
-  AM_INIT_AUTOMAKE(generator, 0.32)
+  AM_INIT_AUTOMAKE(generator, 0.33)
   AM_CONFIG_HEADER(config.h)
   optimum=yes
 
@@ -16,10 +16,11 @@ dnl See what version we're compiling
     AC_MSG_ERROR(You must select a user interface type: svgalib allegro tcltk)
   fi
   AC_SUBST(PROGRAM)
-  if [[ "x$program" = "xgenerator-allegro" ]]; then
+  if [[ "x$PROGRAM" = "xgenerator-allegro" ]]; then
     AC_DEFINE(ALLEGRO, 1, [Allegro version])
   fi
   AC_DEFINE(RAZE, 1, [Define for RAZE z80, undef for mz80])
+  AC_DEFINE(DIRECTRAM, 1, [Define for direct ram writes (faster)])
 
 dnl Check for processor.
 
@@ -122,7 +123,7 @@ dnl Makefile substitutions
 dnl Final stuff
 
   AC_OUTPUT([Makefile cpu68k/Makefile raze/Makefile ym2612/Makefile
-             main/Makefile])
+             main/Makefile sn76496/Makefile])
 
   if [[ $optimum = no ]]; then
     echo '!!! Generator was compiled non-optimally, see warnings above !!!' 1>&2

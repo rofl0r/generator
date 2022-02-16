@@ -1,0 +1,1 @@
+-nut -i2 -npsl -di0 -br -ce -d0 -cli0 -npcs -nfc1 -ncs -T uint8 -T sint8 -T uint16 -T sint16 -T uint32 -T sint32

@@ -10,7 +10,8 @@ the INSTALL file details information on installing the program from source.
 This distribution contains:
   cpu68k/                       68000 processor files
   raze/                         RAZE Z80 files
-  ym2612/                       YM2612 files
+  ym2612/                       YM2612 (yamaha FM) files
+  sn76496/                      SN76496 (programmable sound generator) files
   hdr/                          header files
   main/                         main source files
   extra/                        extra files not used in compilation

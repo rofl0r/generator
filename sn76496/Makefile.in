@@ -1,4 +1,3 @@
-# Generated automatically from Makefile.in by configure.
 # Makefile.in generated automatically by automake 1.4 from Makefile.am
 
 # Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
@@ -12,44 +11,45 @@
 # PARTICULAR PURPOSE.
 
 
-SHELL = /bin/sh
+SHELL = @SHELL@
 
-srcdir = .
-top_srcdir = ..
-prefix = /usr/local
-exec_prefix = ${prefix}
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
 
-bindir = ${exec_prefix}/bin
-sbindir = ${exec_prefix}/sbin
-libexecdir = ${exec_prefix}/libexec
-datadir = ${prefix}/share
-sysconfdir = ${prefix}/etc
-sharedstatedir = ${prefix}/com
-localstatedir = ${prefix}/var
-libdir = ${exec_prefix}/lib
-infodir = ${prefix}/info
-mandir = ${prefix}/man
-includedir = ${prefix}/include
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
 oldincludedir = /usr/include
 
 DESTDIR =
 
-pkgdatadir = $(datadir)/generator
-pkglibdir = $(libdir)/generator
-pkgincludedir = $(includedir)/generator
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
 
 top_builddir = ..
 
-ACLOCAL = aclocal
-AUTOCONF = autoconf
-AUTOMAKE = automake
-AUTOHEADER = autoheader
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
 
-INSTALL = /usr/bin/install -c
-INSTALL_PROGRAM = ${INSTALL} $(AM_INSTALL_PROGRAM_FLAGS)
-INSTALL_DATA = ${INSTALL} -m 644
-INSTALL_SCRIPT = ${INSTALL_PROGRAM}
-transform = s,x,x,
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
 
 NORMAL_INSTALL = :
 PRE_INSTALL = :
@@ -57,66 +57,37 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_alias = i686-pc-linux-gnu
-build_triplet = i686-pc-linux-gnu
-host_alias = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
-target_alias = i686-pc-linux-gnu
-target_triplet = i686-pc-linux-gnu
-CC = gcc
-MAKEINFO = makeinfo
-PACKAGE = generator
-PROGRAM = generator-svgalib
-RANLIB = ranlib
-VERSION = 0.32
+build_alias = @build_alias@
+build_triplet = @build@
+host_alias = @host_alias@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
+CC = @CC@
+MAKEINFO = @MAKEINFO@
+PACKAGE = @PACKAGE@
+PROGRAM = @PROGRAM@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
 
-noinst_PROGRAMS = def68k headers gen68k
-BUILT_SOURCES = def68k-iibs.h def68k-funcs.h def68k-proto.h                 cpu68k-0.c cpu68k-1.c cpu68k-2.c cpu68k-3.c                 cpu68k-4.c cpu68k-5.c cpu68k-6.c cpu68k-7.c                 cpu68k-8.c cpu68k-9.c cpu68k-a.c cpu68k-b.c                 cpu68k-c.c cpu68k-d.c cpu68k-e.c cpu68k-f.c
-
-
-def68k_SOURCES = def68k.c tab68k.c
 INCLUDES = -I../hdr -I.
 
-headers_SOURCES = def68k-iibs.h def68k-funcs.h def68k-proto.h
-
-gen68k_SOURCES = gen68k.c tab68k.c
-gen68k_DEPENDENCIES = def68k-iibs.h
-
-noinst_LIBRARIES = lib68k.a
-lib68k_a_SOURCES = cpu68k-0.c cpu68k-1.c cpu68k-2.c cpu68k-3.c                    cpu68k-4.c cpu68k-5.c cpu68k-6.c cpu68k-7.c                    cpu68k-8.c cpu68k-9.c cpu68k-a.c cpu68k-b.c                    cpu68k-c.c cpu68k-d.c cpu68k-e.c cpu68k-f.c
-
-lib68k_a_DEPENDENCIES = def68k-iibs.h
-
-DISTCLEANFILES = ${lib68k_a_SOURCES} ${headers_SOURCES}
+noinst_LIBRARIES = libsn76496.a
+libsn76496_a_SOURCES = sn76496.c
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(noinst_LIBRARIES)
 
 
-DEFS = -DHAVE_CONFIG_H -I. -I$(srcdir) -I..
-CPPFLAGS = 
-LDFLAGS = 
-LIBS = 
-lib68k_a_LIBADD = 
-lib68k_a_OBJECTS =  cpu68k-0.o cpu68k-1.o cpu68k-2.o cpu68k-3.o \
-cpu68k-4.o cpu68k-5.o cpu68k-6.o cpu68k-7.o cpu68k-8.o cpu68k-9.o \
-cpu68k-a.o cpu68k-b.o cpu68k-c.o cpu68k-d.o cpu68k-e.o cpu68k-f.o
+DEFS = @DEFS@ -I. -I$(srcdir) -I..
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+libsn76496_a_LIBADD = 
+libsn76496_a_OBJECTS =  sn76496.o
 AR = ar
-PROGRAMS =  $(noinst_PROGRAMS)
-
-def68k_OBJECTS =  def68k.o tab68k.o
-def68k_LDADD = $(LDADD)
-def68k_DEPENDENCIES = 
-def68k_LDFLAGS = 
-headers_OBJECTS = 
-headers_LDADD = $(LDADD)
-headers_DEPENDENCIES = 
-headers_LDFLAGS = 
-gen68k_OBJECTS =  gen68k.o tab68k.o
-gen68k_LDADD = $(LDADD)
-gen68k_LDFLAGS = 
-CFLAGS =  -O3 -ffast-math -fomit-frame-pointer -march=pentium -malign-double -malign-loops=5 -malign-jumps=5 -malign-functions=5
+CFLAGS = @CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
@@ -127,19 +98,15 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-DEP_FILES =  .deps/cpu68k-0.P .deps/cpu68k-1.P .deps/cpu68k-2.P \
-.deps/cpu68k-3.P .deps/cpu68k-4.P .deps/cpu68k-5.P .deps/cpu68k-6.P \
-.deps/cpu68k-7.P .deps/cpu68k-8.P .deps/cpu68k-9.P .deps/cpu68k-a.P \
-.deps/cpu68k-b.P .deps/cpu68k-c.P .deps/cpu68k-d.P .deps/cpu68k-e.P \
-.deps/cpu68k-f.P .deps/def68k.P .deps/gen68k.P .deps/tab68k.P
-SOURCES = $(lib68k_a_SOURCES) $(def68k_SOURCES) $(headers_SOURCES) $(gen68k_SOURCES)
-OBJECTS = $(lib68k_a_OBJECTS) $(def68k_OBJECTS) $(headers_OBJECTS) $(gen68k_OBJECTS)
+DEP_FILES =  .deps/sn76496.P
+SOURCES = $(libsn76496_a_SOURCES)
+OBJECTS = $(libsn76496_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .S .c .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu cpu68k/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu sn76496/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -171,27 +138,10 @@ distclean-compile:
 
 maintainer-clean-compile:
 
-lib68k.a: $(lib68k_a_OBJECTS) $(lib68k_a_DEPENDENCIES)
-	-rm -f lib68k.a
-	$(AR) cru lib68k.a $(lib68k_a_OBJECTS) $(lib68k_a_LIBADD)
-	$(RANLIB) lib68k.a
-
-mostlyclean-noinstPROGRAMS:
-
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-
-distclean-noinstPROGRAMS:
-
-maintainer-clean-noinstPROGRAMS:
-
-def68k: $(def68k_OBJECTS) $(def68k_DEPENDENCIES)
-	@rm -f def68k
-	$(LINK) $(def68k_LDFLAGS) $(def68k_OBJECTS) $(def68k_LDADD) $(LIBS)
-
-gen68k: $(gen68k_OBJECTS) $(gen68k_DEPENDENCIES)
-	@rm -f gen68k
-	$(LINK) $(gen68k_LDFLAGS) $(gen68k_OBJECTS) $(gen68k_LDADD) $(LIBS)
+libsn76496.a: $(libsn76496_a_OBJECTS) $(libsn76496_a_DEPENDENCIES)
+	-rm -f libsn76496.a
+	$(AR) cru libsn76496.a $(libsn76496_a_OBJECTS) $(libsn76496_a_LIBADD)
+	$(RANLIB) libsn76496.a
 
 tags: TAGS
 
@@ -224,14 +174,14 @@ maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-subdir = cpu68k
+subdir = sn76496
 
 distdir: $(DISTFILES)
 	here=`cd $(top_builddir) && pwd`; \
 	top_distdir=`cd $(top_distdir) && pwd`; \
 	distdir=`cd $(distdir) && pwd`; \
 	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu cpu68k/Makefile
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu sn76496/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
@@ -293,7 +243,7 @@ install-am: all-am
 install: install-am
 uninstall-am:
 uninstall: uninstall-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS)
+all-am: Makefile $(LIBRARIES)
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
@@ -307,30 +257,26 @@ clean-generic:
 distclean-generic:
 	-rm -f Makefile $(CONFIG_CLEAN_FILES)
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
-	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean-am:  mostlyclean-noinstLIBRARIES mostlyclean-compile \
-		mostlyclean-noinstPROGRAMS mostlyclean-tags \
-		mostlyclean-depend mostlyclean-generic
+		mostlyclean-tags mostlyclean-depend mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
-clean-am:  clean-noinstLIBRARIES clean-compile clean-noinstPROGRAMS \
-		clean-tags clean-depend clean-generic mostlyclean-am
+clean-am:  clean-noinstLIBRARIES clean-compile clean-tags clean-depend \
+		clean-generic mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-noinstLIBRARIES distclean-compile \
-		distclean-noinstPROGRAMS distclean-tags \
-		distclean-depend distclean-generic clean-am
+		distclean-tags distclean-depend distclean-generic \
+		clean-am
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-noinstLIBRARIES \
-		maintainer-clean-compile \
-		maintainer-clean-noinstPROGRAMS maintainer-clean-tags \
+		maintainer-clean-compile maintainer-clean-tags \
 		maintainer-clean-depend maintainer-clean-generic \
 		distclean-am
 	@echo "This command is intended for maintainers to use;"
@@ -341,9 +287,7 @@ maintainer-clean: maintainer-clean-am
 .PHONY: mostlyclean-noinstLIBRARIES distclean-noinstLIBRARIES \
 clean-noinstLIBRARIES maintainer-clean-noinstLIBRARIES \
 mostlyclean-compile distclean-compile clean-compile \
-maintainer-clean-compile mostlyclean-noinstPROGRAMS \
-distclean-noinstPROGRAMS clean-noinstPROGRAMS \
-maintainer-clean-noinstPROGRAMS tags mostlyclean-tags distclean-tags \
+maintainer-clean-compile tags mostlyclean-tags distclean-tags \
 clean-tags maintainer-clean-tags distdir mostlyclean-depend \
 distclean-depend clean-depend maintainer-clean-depend info-am info \
 dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
@@ -352,47 +296,6 @@ uninstall-am uninstall all-redirect all-am all installdirs \
 mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-headers:	def68k-iibs.h def68k-funcs.h def68k-proto.h
-
-def68k-iibs.h:	def68k def68k.def
-	./def68k
-def68k-funcs.h:	def68k def68k.def
-	./def68k
-def68k-proto.h:	def68k def68k.def
-	./def68k
-
-cpu68k-0.c:	gen68k
-	./gen68k
-cpu68k-1.c:	gen68k
-	./gen68k
-cpu68k-2.c:	gen68k
-	./gen68k
-cpu68k-3.c:	gen68k
-	./gen68k
-cpu68k-4.c:	gen68k
-	./gen68k
-cpu68k-5.c:	gen68k
-	./gen68k
-cpu68k-6.c:	gen68k
-	./gen68k
-cpu68k-7.c:	gen68k
-	./gen68k
-cpu68k-8.c:	gen68k
-	./gen68k
-cpu68k-9.c:	gen68k
-	./gen68k
-cpu68k-a.c:	gen68k
-	./gen68k
-cpu68k-b.c:	gen68k
-	./gen68k
-cpu68k-c.c:	gen68k
-	./gen68k
-cpu68k-d.c:	gen68k
-	./gen68k
-cpu68k-e.c:	gen68k
-	./gen68k
-cpu68k-f.c:	gen68k
-	./gen68k
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -70,12 +70,7 @@ int main(int argc, char *argv[])
 
     /* output header */
     fprintf(output, HEADER, i);
-    fprintf(output, "#include \"generator.h\"\n");
-    fprintf(output, "#include \"cpu68k.h\"\n");
-    fprintf(output, "#include \"mem68k.h\"\n");
-    fprintf(output, "#include \"reg68k.h\"\n\n");
     fprintf(output, "#include \"cpu68k-inline.h\"\n\n");
-    fprintf(output, "#include <stdio.h>\n\n");
 
     generate(output, i);
 

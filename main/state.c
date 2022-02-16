@@ -18,7 +18,6 @@
 #include "cpuz80.h"
 #include "vdp.h"
 #include "gensound.h"
-#include "gensoundi.h"
 #include "fm.h"
 
 /*
@@ -27,17 +26,18 @@
  * all local values are stored in network / 68k format (big endian)
  */
 
-struct savestate {
+struct savestate
+{
   /* must ensure everything is aligned as expected */
   char s_majorver[1];
   char s_minorver[1];
-  char reserved1[2]; /* align */
+  char reserved1[2];            /* align */
   char s_ram[0x10000];
   char s_vram[0x10000];
   char s_z80ram[0x2000];
   char s_cram[0x80];
   char s_vsram[0x50];
-  char s_68k_regs[4*16];
+  char s_68k_regs[4 * 16];
   char s_68k_pc[4];
   char s_68k_sp[4];
   char s_68k_sr[2];
@@ -58,24 +58,24 @@ struct savestate {
   char s_z80_i[1];
   char s_z80_r[1];
   char s_z80_active[1];
-  char s_z80_halted[1]; /* was reserved in 0.31 */
+  char s_z80_halted[1];         /* was reserved in 0.31 */
   char s_z80_bank[4];
   char s_fmregs1[256];
   char s_fmregs2[256];
   char s_fmaddr1[1];
   char s_fmaddr2[1];
   char s_vdp_regs[25];
-  char s_z80_im[1]; /* was reserved in 0.31 */
+  char s_z80_im[1];             /* was reserved in 0.31 */
   char s_vdp_pal[1];
   char s_vdp_overseas[1];
   char s_vdp_ctrlflag[1];
   char s_vdp_code[1];
-  char s_vdp_first[2]; /* possibly only top two bits required here */
-  char s_vdp_second[2]; /* used for unterminated ctrl writes */
+  char s_vdp_first[2];          /* possibly only top two bits required here */
+  char s_vdp_second[2];         /* used for unterminated ctrl writes */
   char s_vdp_dmabytes[4];
   char s_vdp_address[2];
-  char s_z80_iff1[1]; /* was reserved in 0.31 */
-  char s_z80_iff2[1]; /* was reserved in 0.31 */
+  char s_z80_iff1[1];           /* was reserved in 0.31 */
+  char s_z80_iff2[1];           /* was reserved in 0.31 */
 };
 
 /*** state_date - return the modification date or 0 for non-existant ***/
@@ -108,8 +108,7 @@ int state_load(const int slot)
     return -1;
 
   if ((ss = malloc(statbuf.st_size)) == NULL) {
-    LOG_CRITICAL(("Failed to allocate memory whilst loading '%s'",
-                  filename));
+    LOG_CRITICAL(("Failed to allocate memory whilst loading '%s'", filename));
     return -1;
   }
   if ((f = fopen(filename, "rb")) == NULL) {
@@ -122,7 +121,7 @@ int state_load(const int slot)
       return -1;
     }
     LOG_CRITICAL(("Error whilst reading GTR file '%s': %s", filename,
-		  strerror(errno)));
+                  strerror(errno)));
     return -1;
   }
   fclose(f);
@@ -154,27 +153,27 @@ int state_load(const int slot)
   regs.stop = ssp->s_68k_stop[0];
   regs.pending = ssp->s_68k_pending[0];
 #ifdef RAZE
-  z80_set_reg(Z80_REG_AF,  LOCENDIAN16(*(uint16 *)ssp->s_z80_af));
-  z80_set_reg(Z80_REG_BC,  LOCENDIAN16(*(uint16 *)ssp->s_z80_bc));
-  z80_set_reg(Z80_REG_DE,  LOCENDIAN16(*(uint16 *)ssp->s_z80_de));
-  z80_set_reg(Z80_REG_HL,  LOCENDIAN16(*(uint16 *)ssp->s_z80_hl));
+  z80_set_reg(Z80_REG_AF, LOCENDIAN16(*(uint16 *)ssp->s_z80_af));
+  z80_set_reg(Z80_REG_BC, LOCENDIAN16(*(uint16 *)ssp->s_z80_bc));
+  z80_set_reg(Z80_REG_DE, LOCENDIAN16(*(uint16 *)ssp->s_z80_de));
+  z80_set_reg(Z80_REG_HL, LOCENDIAN16(*(uint16 *)ssp->s_z80_hl));
   z80_set_reg(Z80_REG_AF2, LOCENDIAN16(*(uint16 *)ssp->s_z80_afprime));
   z80_set_reg(Z80_REG_BC2, LOCENDIAN16(*(uint16 *)ssp->s_z80_bcprime));
   z80_set_reg(Z80_REG_DE2, LOCENDIAN16(*(uint16 *)ssp->s_z80_deprime));
   z80_set_reg(Z80_REG_HL2, LOCENDIAN16(*(uint16 *)ssp->s_z80_hlprime));
-  z80_set_reg(Z80_REG_IX,  LOCENDIAN16(*(uint16 *)ssp->s_z80_ix));
-  z80_set_reg(Z80_REG_IY,  LOCENDIAN16(*(uint16 *)ssp->s_z80_iy)); 
-  z80_set_reg(Z80_REG_SP,  LOCENDIAN16(*(uint16 *)ssp->s_z80_sp));
-  z80_set_reg(Z80_REG_PC,  LOCENDIAN16(*(uint16 *)ssp->s_z80_pc));
+  z80_set_reg(Z80_REG_IX, LOCENDIAN16(*(uint16 *)ssp->s_z80_ix));
+  z80_set_reg(Z80_REG_IY, LOCENDIAN16(*(uint16 *)ssp->s_z80_iy));
+  z80_set_reg(Z80_REG_SP, LOCENDIAN16(*(uint16 *)ssp->s_z80_sp));
+  z80_set_reg(Z80_REG_PC, LOCENDIAN16(*(uint16 *)ssp->s_z80_pc));
   z80_set_reg(Z80_REG_IFF1, ssp->s_z80_iff1[0]);
   z80_set_reg(Z80_REG_IFF2, ssp->s_z80_iff2[0]);
-  z80_set_reg(Z80_REG_IR, ssp->s_z80_i[0]<<8 | ssp->s_z80_r[0]);
+  z80_set_reg(Z80_REG_IR, ssp->s_z80_i[0] << 8 | ssp->s_z80_r[0]);
   z80_set_reg(Z80_REG_IM, ssp->s_z80_im[0]);
   z80_set_reg(Z80_REG_Halted, ssp->s_z80_halted[0]);
   /* FIX:
-      Z80_REG_IRQVector,   0x00 to 0xff
-      Z80_REG_IRQLine,     boolean - 1 or 0
-  */
+     Z80_REG_IRQVector,   0x00 to 0xff
+     Z80_REG_IRQLine,     boolean - 1 or 0
+   */
 #else
   cpuz80_z80.z80af = LOCENDIAN16(*(uint16 *)ssp->s_z80_af);
   cpuz80_z80.z80bc = LOCENDIAN16(*(uint16 *)ssp->s_z80_bc);
@@ -195,9 +194,9 @@ int state_load(const int slot)
   cpuz80_z80.z80interruptMode = ssp->s_z80_im[0];
   cpuz80_z80.z80halted = ssp->s_z80_halted[0];
   /* FIX:
-    c -> z80intAddr = z80intAddr;
-    c -> z80nmiAddr = z80nmiAddr;
-  */
+     c -> z80intAddr = z80intAddr;
+     c -> z80nmiAddr = z80nmiAddr;
+   */
 #endif
   cpuz80_bank = LOCENDIAN32(*(uint32 *)ssp->s_z80_bank);
 
@@ -211,19 +210,19 @@ int state_load(const int slot)
   vdp_second = LOCENDIAN16(*(uint16 *)ssp->s_vdp_second);
   vdp_dmabytes = LOCENDIAN32(*(uint32 *)ssp->s_vdp_dmabytes);
   vdp_address = LOCENDIAN16(*(uint16 *)ssp->s_vdp_address);
-  
+
   /* reset some other run-time stuff that isn't important enough to save */
   vdp_setupvideo();
   vdp_dmabusy = vdp_dmabytes > 0 ? 1 : 0;
 
   for (i = 0; i < 256; i++) {
-    soundi_ym2612store(0, i);
-    soundi_ym2612store(1, ssp->s_fmregs1[i]);
-    soundi_ym2612store(2, i);
-    soundi_ym2612store(3, ssp->s_fmregs2[i]);
+    sound_ym2612store(0, i);
+    sound_ym2612store(1, ssp->s_fmregs1[i]);
+    sound_ym2612store(2, i);
+    sound_ym2612store(3, ssp->s_fmregs2[i]);
   }
-  soundi_ym2612store(0, ssp->s_fmaddr1[0]);
-  soundi_ym2612store(1, ssp->s_fmaddr2[0]);
+  sound_ym2612store(0, ssp->s_fmaddr1[0]);
+  sound_ym2612store(1, ssp->s_fmaddr2[0]);
   cpuz80_updatecontext();
   return 0;
 }
@@ -234,7 +233,7 @@ int state_save(const int slot)
 {
   char filename[256];
   struct savestate ss;
-  struct savestate *ssp = &ss; /* I want a pointer like the load routines */
+  struct savestate *ssp = &ss;  /* I want a pointer like the load routines */
   struct stat statbuf;
   FILE *f, *a;
   int i;
@@ -308,13 +307,13 @@ int state_save(const int slot)
   *(uint16 *)ssp->s_vdp_second = LOCENDIAN16(vdp_second);
   *(uint32 *)ssp->s_vdp_dmabytes = LOCENDIAN32(vdp_dmabytes);
   *(uint16 *)ssp->s_vdp_address = LOCENDIAN16(vdp_address);
-  memcpy(ssp->s_fmregs1, soundi_regs1, sizeof(ssp->s_fmregs1));
-  memcpy(ssp->s_fmregs2, soundi_regs2, sizeof(ssp->s_fmregs2));
-  ssp->s_fmaddr1[0] = soundi_address1;
-  ssp->s_fmaddr2[0] = soundi_address2;
+  memcpy(ssp->s_fmregs1, sound_regs1, sizeof(ssp->s_fmregs1));
+  memcpy(ssp->s_fmregs2, sound_regs2, sizeof(ssp->s_fmregs2));
+  ssp->s_fmaddr1[0] = sound_address1;
+  ssp->s_fmaddr2[0] = sound_address2;
   if (fwrite(ssp, sizeof(ss), 1, f) != 1) {
     LOG_CRITICAL(("Error whilst writing GTR file '%s': %s", filename,
-		  strerror(errno)));
+                  strerror(errno)));
     return -1;
   }
   fclose(f);

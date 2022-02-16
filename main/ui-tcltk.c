@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <stdarg.h>
 
-#include <sys/types.h> /* these three are for saving with -save */
+#include <sys/types.h>          /* these three are for saving with -save */
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -52,23 +52,24 @@ Status _XInitImageFuncPtrs(XImage *);
 
 /*** forward reference declarations ***/
 
-int ui_loadimage(Tcl_Interp *interp, const char *filename);
-int ui_loadsavepos(Tcl_Interp *interp, const char *filename);
-int ui_redrawdump(Tcl_Interp *interp, char *textwidget);
+int ui_loadimage(Tcl_Interp * interp, const char *filename);
+int ui_loadsavepos(Tcl_Interp * interp, const char *filename);
+int ui_redrawdump(Tcl_Interp * interp, char *textwidget);
 void ui_updateregs(void);
 void ui_updatestr(char *var, char *val);
 void ui_updateint(char *var, int val);
 int ui_getint(int *cint, char *tclint);
 int ui_setstr(const char *name, const char *value);
-void ui_keypress(ClientData cd, XEvent *event);
-void ui_enterleave(ClientData cd, XEvent *event);
+void ui_keypress(ClientData cd, XEvent * event);
+void ui_enterleave(ClientData cd, XEvent * event);
 int ui_topbit(unsigned long int bits);
 void ui_endframe(void);
 void ui_convertdata(uint8 *indata, uint8 *outdata, unsigned int pixels,
-		    unsigned int lineoffset, unsigned int scale,
-		    unsigned int depth, unsigned int basepixel);
-void ui_convertdata_smooth(uint8 *indata, uint8 *outdata, unsigned int pixels,
-			   unsigned int lineoffset, unsigned int depth);
+                    unsigned int lineoffset, unsigned int scale,
+                    unsigned int depth, unsigned int basepixel);
+void ui_convertdata_smooth(uint8 *indata, uint8 *outdata,
+                           unsigned int pixels, unsigned int lineoffset,
+                           unsigned int depth);
 
 #ifdef XF86DGA
 void ui_fullscreen(int onoff);
@@ -100,12 +101,12 @@ static unsigned int frameskip = 1;
 static Display *ui_display = NULL;
 static Screen *ui_screen = NULL;
 static int ui_screenno = 0;
-static int ui_dga = 0; /* enable/disable availability flag */
-static int ui_dga_state = 0; /* DGA on/off */
+static int ui_dga = 0;          /* enable/disable availability flag */
+static int ui_dga_state = 0;    /* DGA on/off */
 static uint32 ui_palcache[192];
-static int ui_vdpsimple = 1; /* simple vdp enable/disable */
-static char *ui_initload = NULL; /* filename to load on init */
-static unsigned int state = 0; /* 0=stop,1=pause,2=play */
+static int ui_vdpsimple = 1;    /* simple vdp enable/disable */
+static char *ui_initload = NULL;        /* filename to load on init */
+static unsigned int state = 0;  /* 0=stop,1=pause,2=play */
 
 #ifdef XF86DGA
 static int dga_major, dga_minor;
@@ -121,32 +122,35 @@ static char *dga_start;
 
 static Tk_ArgvInfo argtable[] = {
   /*  { "-display", TK_ARGV_STRING, (char*) NULL, (char*) &display,
-      "Display to use" }, */
-  { "-sync", TK_ARGV_CONSTANT, (char*) True, (char*) &xsync,
-    "Turn on synchronous X" },
-  { "-save", TK_ARGV_CONSTANT, (char*) True, (char*) &save,
-    "Save ROM as bin" },
-  { "", TK_ARGV_END, (char*) NULL, (char*) NULL, (char*) NULL }
+     "Display to use" }, */
+  {"-sync", TK_ARGV_CONSTANT, (char *)True, (char *)&xsync,
+   "Turn on synchronous X"},
+  {"-save", TK_ARGV_CONSTANT, (char *)True, (char *)&save,
+   "Save ROM as bin"},
+  {"", TK_ARGV_END, (char *)NULL, (char *)NULL, (char *)NULL}
 };
 
 /*** Error handler for X protocol errors ***/
 
-static int errorhandler(ClientData data, XErrorEvent *err) {
+static int errorhandler(ClientData data, XErrorEvent * err)
+{
   ui_err("X error %d, request %d, minor %d", err->error_code,
-	 err->request_code, err->minor_code);
+         err->request_code, err->minor_code);
   return 0;
 }
 
 /*** Gen_Load type pathname ***/
 
-int Gen_Load(ClientData cdata, Tcl_Interp *interp, int objc,
-	     Tcl_Obj * const objv[])
+int
+Gen_Load(ClientData cdata, Tcl_Interp * interp, int objc,
+         Tcl_Obj * const objv[])
 {
   int i;
 
   if (objc != 3) {
-    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Load type pathName\"",
-		  TCL_STATIC);
+    Tcl_SetResult(interp,
+                  "wrong # args: should be \"Gen_Load type pathName\"",
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   if (Tcl_GetIntFromObj(interp, objv[1], &i) != TCL_OK)
@@ -158,18 +162,19 @@ int Gen_Load(ClientData cdata, Tcl_Interp *interp, int objc,
     return ui_loadsavepos(interp, Tcl_GetStringFromObj(objv[2], NULL));
   }
   Tcl_SetResult(interp, "invalid type: should be image (0) or savepos (1)\n",
-		TCL_STATIC);
+                TCL_STATIC);
   return TCL_ERROR;
 }
 
 /*** Gen_Save pathname - saves the current state of play in a savegame ***/
 
-int Gen_Save(ClientData cdata, Tcl_Interp *interp, int objc,
-	     Tcl_Obj * const objv[])
+int
+Gen_Save(ClientData cdata, Tcl_Interp * interp, int objc,
+         Tcl_Obj * const objv[])
 {
   if (objc != 2) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Save pathName\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   LOG_NORMAL(("Save! %s\n", Tcl_GetStringFromObj(objv[1], NULL)));
@@ -178,8 +183,7 @@ int Gen_Save(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_Dump widgetname yview <params from scrollbar> ***/
 
-int Gen_Dump(ClientData cdata, Tcl_Interp *interp, int argc,
-		  char *argv[])
+int Gen_Dump(ClientData cdata, Tcl_Interp * interp, int argc, char *argv[])
 {
   int si_line, memtype, dumptype, offset, lines;
   double si_fraction;
@@ -260,7 +264,7 @@ int Gen_Dump(ClientData cdata, Tcl_Interp *interp, int argc,
   Tcl_DecrRefCount(varobj);
   Tcl_DecrRefCount(outobj);
 
-  switch(memtype) {
+  switch (memtype) {
   case 1:
     mem_where = cpu68k_ram;
     mem_start = 0xFF0000;
@@ -286,7 +290,7 @@ int Gen_Dump(ClientData cdata, Tcl_Interp *interp, int argc,
     mem_start = 0x0;
     mem_len = LEN_SRAM;
     break;
-  default: /* 0 */
+  default:                     /* 0 */
     mem_where = cpu68k_rom;
     mem_start = 0;
     mem_len = cpu68k_romlen;
@@ -294,23 +298,24 @@ int Gen_Dump(ClientData cdata, Tcl_Interp *interp, int argc,
   }
 
   if (!strcasecmp(argv[2], "yview")) {
-    switch (Tk_GetScrollInfo(interp, argc-1, argv+1, &si_fraction, &si_line)) {
+    switch (Tk_GetScrollInfo
+            (interp, argc - 1, argv + 1, &si_fraction, &si_line)) {
     case TK_SCROLL_MOVETO:
-      offset = (int)(si_fraction*mem_len) & (~1);
+      offset = (int)(si_fraction * mem_len) & (~1);
       break;
     case TK_SCROLL_UNITS:
       if (offset < 256 && (si_line > 0)) {
-	offset = (si_line*4)+offset;
-	offset&= ~3;
+        offset = (si_line * 4) + offset;
+        offset &= ~3;
       } else if ((offset <= 256) && (si_line < 0)) {
-	offset = (si_line*4)+offset;
-	offset&= ~3;
+        offset = (si_line * 4) + offset;
+        offset &= ~3;
       } else {
-	offset = (si_line*2)+offset;
+        offset = (si_line * 2) + offset;
       }
       break;
     case TK_SCROLL_PAGES:
-      offset = si_line*lines*2+offset;
+      offset = si_line * lines * 2 + offset;
       break;
     default:
       Tcl_SetResult(interp, "unknown yview command parameter", TCL_STATIC);
@@ -320,33 +325,33 @@ int Gen_Dump(ClientData cdata, Tcl_Interp *interp, int argc,
     return ui_redrawdump(interp, argv[1]);
   } else {
     Tcl_SetResult(interp, "unknown command type (must be yview or redraw)",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
-  }    
+  }
   if (offset >= (signed int)mem_len)
-    offset = mem_len-2;
+    offset = mem_len - 2;
   if (offset < 0)
     offset = 0;
   sprintf(tmp, "%s.offset", argv[1]);
   varobj = Tcl_NewStringObj(tmp, -1);
   Tcl_IncrRefCount(varobj);
   if (Tcl_ObjSetVar2(interp, varobj, NULL, Tcl_NewIntObj(offset),
-		     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
+                     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
     return TCL_ERROR;
   }
   Tcl_DecrRefCount(varobj);
   ui_redrawdump(interp, argv[1]);
   return TCL_OK;
 }
-  
+
 /*** Gen_Step - step through one instruction ***/
 
-int Gen_Step(ClientData cdata, Tcl_Interp *interp, int objc,
-	     Tcl_Obj * const objv[])
+int
+Gen_Step(ClientData cdata, Tcl_Interp * interp, int objc,
+         Tcl_Obj * const objv[])
 {
   if (objc != 1) {
-    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Step\"",
-		  TCL_STATIC);
+    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Step\"", TCL_STATIC);
     return TCL_ERROR;
   }
   event_dostep();
@@ -356,8 +361,9 @@ int Gen_Step(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_Cont - start executing ***/
 
-int Gen_Cont(ClientData cdata, Tcl_Interp *interp, int objc,
-	     Tcl_Obj * const objv[])
+int
+Gen_Cont(ClientData cdata, Tcl_Interp * interp, int objc,
+         Tcl_Obj * const objv[])
 {
   char *stopstr;
   uint32 stopaddr;
@@ -365,12 +371,11 @@ int Gen_Cont(ClientData cdata, Tcl_Interp *interp, int objc,
   int i;
 
   if (objc != 1) {
-    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Cont\"",
-		  TCL_STATIC);
+    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Cont\"", TCL_STATIC);
     return TCL_ERROR;
   }
   obj = Tcl_ObjGetVar2(interp, Tcl_NewStringObj("regs.stop", -1), NULL,
-		       TCL_GLOBAL_ONLY);
+                       TCL_GLOBAL_ONLY);
   stopstr = Tcl_GetStringFromObj(obj, NULL);
   if (!stopstr) {
     Tcl_SetResult(interp, "Cannot read regs.stop", TCL_STATIC);
@@ -384,9 +389,10 @@ int Gen_Cont(ClientData cdata, Tcl_Interp *interp, int objc,
     for (i = 0; i < 128; i++) {
       event_dostep();
       if ((regs.pc & 0xFFFFFF) == stopaddr || gen_quit)
-	break;
+        break;
     }
-  } while((regs.pc & 0xFFFFFF) != stopaddr && !gen_quit);
+  }
+  while ((regs.pc & 0xFFFFFF) != stopaddr && !gen_quit);
   LOG_NORMAL(("End of continuation, stopped at %08X", regs.pc));
   ui_updateregs();
   if (gen_quit)
@@ -397,19 +403,21 @@ int Gen_Cont(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_FrameStep - step through one frame ***/
 
-int Gen_FrameStep(ClientData cdata, Tcl_Interp *interp, int objc,
-		  Tcl_Obj * const objv[])
+int
+Gen_FrameStep(ClientData cdata, Tcl_Interp * interp, int objc,
+              Tcl_Obj * const objv[])
 {
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_FrameStep\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   gen_quit = 0;
   do {
     event_doframe();
     while (Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT));
-  } while(!gen_quit);
+  }
+  while (!gen_quit);
   ui_updateregs();
   if (gen_quit)
     LOG_NORMAL(("Stopped."));
@@ -420,12 +428,13 @@ int Gen_FrameStep(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_SpriteList - print sprite information ***/
 
-int Gen_SpriteList(ClientData cdata, Tcl_Interp *interp, int objc,
-		   Tcl_Obj * const objv[])
+int
+Gen_SpriteList(ClientData cdata, Tcl_Interp * interp, int objc,
+               Tcl_Obj * const objv[])
 {
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_SpriteList\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   vdp_spritelist();
@@ -434,8 +443,9 @@ int Gen_SpriteList(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_Change - there has been a change in parameter ***/
 
-int Gen_Change(ClientData cdata, Tcl_Interp *interp, int objc,
-	       Tcl_Obj * const objv[])
+int
+Gen_Change(ClientData cdata, Tcl_Interp * interp, int objc,
+           Tcl_Obj * const objv[])
 {
   Tcl_Obj *varobj, *outobj;
   unsigned int oldscale = scale;
@@ -443,22 +453,22 @@ int Gen_Change(ClientData cdata, Tcl_Interp *interp, int objc,
 
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Change\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
 
   ui_getint((int *)&ui_vdpsimple, "vdpsimple");
-  ui_getint((int *)&vdp_layerB,   "layerB");
-  ui_getint((int *)&vdp_layerBp,  "layerBp");
-  ui_getint((int *)&vdp_layerA,   "layerA");
-  ui_getint((int *)&vdp_layerAp,  "layerAp");
-  ui_getint((int *)&vdp_layerW,   "layerW");
-  ui_getint((int *)&vdp_layerWp,  "layerWp");
-  ui_getint((int *)&vdp_layerH,   "layerH");
-  ui_getint((int *)&vdp_layerS,   "layerS");
-  ui_getint((int *)&vdp_layerSp,  "layerSp");
-  ui_getint((int *)&frameskip,    "skip");
-  ui_getint((int *)&newstate,     "state");
+  ui_getint((int *)&vdp_layerB, "layerB");
+  ui_getint((int *)&vdp_layerBp, "layerBp");
+  ui_getint((int *)&vdp_layerA, "layerA");
+  ui_getint((int *)&vdp_layerAp, "layerAp");
+  ui_getint((int *)&vdp_layerW, "layerW");
+  ui_getint((int *)&vdp_layerWp, "layerWp");
+  ui_getint((int *)&vdp_layerH, "layerH");
+  ui_getint((int *)&vdp_layerS, "layerS");
+  ui_getint((int *)&vdp_layerSp, "layerSp");
+  ui_getint((int *)&frameskip, "skip");
+  ui_getint((int *)&newstate, "state");
   ui_getint((int *)&gen_loglevel, "loglevel");
 
   ui_getint(&scale, "scale");
@@ -466,11 +476,12 @@ int Gen_Change(ClientData cdata, Tcl_Interp *interp, int objc,
 
   if (scale != oldscale) {
     XDestroyImage(image);
-    if ((imagedata = malloc(320*240*scale*scale*(depth/8))) == NULL)
+    if ((imagedata = malloc(320 * 240 * scale * scale * (depth / 8))) == NULL)
       ui_err("%s: Out of memory!");
-    memset(imagedata, 0, 320*240*scale*scale*(depth/8));
-    if ((image = XCreateImage(ui_display, visual, depth, ZPixmap, 0, imagedata,
-			      320*scale, 240*scale, 8, 0)) == NULL) {
+    memset(imagedata, 0, 320 * 240 * scale * scale * (depth / 8));
+    if ((image =
+         XCreateImage(ui_display, visual, depth, ZPixmap, 0, imagedata,
+                      320 * scale, 240 * scale, 8, 0)) == NULL) {
       Tcl_SetResult(interp, "unable to create image", TCL_STATIC);
       return TCL_ERROR;
     }
@@ -478,13 +489,13 @@ int Gen_Change(ClientData cdata, Tcl_Interp *interp, int objc,
     XInitImage(image);
   }
 #ifdef XF86DGA
-  dga_start = dga_baseaddr + ((depth/8) *
-			      (dga_xsize*((dga_ysize-(240*scale))/2) +
-			      ((dga_xsize-(320*scale))/2)));
+  dga_start = dga_baseaddr + ((depth / 8) *
+                              (dga_xsize * ((dga_ysize - (240 * scale)) / 2) +
+                               ((dga_xsize - (320 * scale)) / 2)));
 #endif
 
   if (newstate != state) {
-    switch(newstate) {
+    switch (newstate) {
     case 0:
       /* stop */
       break;
@@ -494,11 +505,11 @@ int Gen_Change(ClientData cdata, Tcl_Interp *interp, int objc,
     case 2:
       /* play */
       if (cpu68k_rom == NULL) {
-	Tcl_SetResult(interp, "No ROM loaded\n", TCL_STATIC);
-	return TCL_ERROR;
+        Tcl_SetResult(interp, "No ROM loaded\n", TCL_STATIC);
+        return TCL_ERROR;
       }
       if (state == 0)
-	gen_reset();
+        gen_reset();
       break;
     }
     state = newstate;
@@ -508,8 +519,9 @@ int Gen_Change(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_Initialised ***/
 
-int Gen_Initialised(ClientData cdata, Tcl_Interp *interp, int objc,
-		    Tcl_Obj * const objv[])
+int
+Gen_Initialised(ClientData cdata, Tcl_Interp * interp, int objc,
+                Tcl_Obj * const objv[])
 {
   char *p;
   int f;
@@ -517,7 +529,7 @@ int Gen_Initialised(ClientData cdata, Tcl_Interp *interp, int objc,
 
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Change\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   if (ui_initload) {
@@ -528,14 +540,14 @@ int Gen_Initialised(ClientData cdata, Tcl_Interp *interp, int objc,
     }
     ui_updateregs();
     if (save) {
-      snprintf(buffer, sizeof(buffer)-1, "./%s (%X-%s)",
-	       gen_cartinfo.name_overseas, gen_cartinfo.checksum,
-	       gen_cartinfo.country);
+      snprintf(buffer, sizeof(buffer) - 1, "./%s (%X-%s)",
+               gen_cartinfo.name_overseas, gen_cartinfo.checksum,
+               gen_cartinfo.country);
       f = 0;
-      if ((f = open(buffer, O_CREAT | O_EXCL | O_WRONLY, 0777)) == -1 || 
-	  write(f, cpu68k_rom, cpu68k_romlen) == -1 || close(f) == -1) {
-	Tcl_SetResult(interp, strerror(errno), TCL_STATIC);
-	return TCL_ERROR;
+      if ((f = open(buffer, O_CREAT | O_EXCL | O_WRONLY, 0777)) == -1 ||
+          write(f, cpu68k_rom, cpu68k_romlen) == -1 || close(f) == -1) {
+        Tcl_SetResult(interp, strerror(errno), TCL_STATIC);
+        return TCL_ERROR;
       }
       LOG_REQUEST(("Saved '%s'", buffer));
     }
@@ -545,19 +557,20 @@ int Gen_Initialised(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_Reset ***/
 
-int Gen_Reset(ClientData cdata, Tcl_Interp *interp, int objc,
-	      Tcl_Obj * const objv[])
+int
+Gen_Reset(ClientData cdata, Tcl_Interp * interp, int objc,
+          Tcl_Obj * const objv[])
 {
   int resetitem;
 
   if (objc != 2) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_Reset <x>\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   Tcl_GetIntFromObj(interp, objv[1], &resetitem);
-  switch(resetitem) {
-  case 1: /* z80 */
+  switch (resetitem) {
+  case 1:                      /* z80 */
     cpuz80_reset();
     break;
   default:
@@ -599,7 +612,7 @@ int ui_setstr(const char *name, const char *value)
   strobj = Tcl_NewStringObj((char *)value, -1);
   Tcl_IncrRefCount(strobj);
   if (!(outobj = Tcl_ObjSetVar2(interp, varobj, NULL, strobj,
-				TCL_GLOBAL_ONLY))) {
+                                TCL_GLOBAL_ONLY))) {
     return -1;
   }
   Tcl_DecrRefCount(varobj);
@@ -609,12 +622,12 @@ int ui_setstr(const char *name, const char *value)
 
 /*** Gen_Regs - display registers ***/
 
-int Gen_Regs(ClientData cdata, Tcl_Interp *interp, int objc,
-	     Tcl_Obj * const objv[])
+int
+Gen_Regs(ClientData cdata, Tcl_Interp * interp, int objc,
+         Tcl_Obj * const objv[])
 {
   if (objc != 1) {
-    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Regs\"",
-		  TCL_STATIC);
+    Tcl_SetResult(interp, "wrong # args: should be \"Gen_Regs\"", TCL_STATIC);
     return TCL_ERROR;
   }
   vdp_showregs();
@@ -623,19 +636,20 @@ int Gen_Regs(ClientData cdata, Tcl_Interp *interp, int objc,
 
 /*** Gen_VDPDescribe - describe vdp state ***/
 
-int Gen_VDPDescribe(ClientData cdata, Tcl_Interp *interp, int objc,
-		    Tcl_Obj * const objv[])
+int
+Gen_VDPDescribe(ClientData cdata, Tcl_Interp * interp, int objc,
+                Tcl_Obj * const objv[])
 {
   if (objc != 1) {
     Tcl_SetResult(interp, "wrong # args: should be \"Gen_VDPDescribe\"",
-		  TCL_STATIC);
+                  TCL_STATIC);
     return TCL_ERROR;
   }
   vdp_describe();
   return TCL_OK;
 }
 
-int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
+int ui_redrawdump(Tcl_Interp * interp, char *textwidget)
 {
   int offset, line, listlen, words, i, memtype;
   char tmp[256], dumpline[128];
@@ -649,7 +663,7 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
   varobj = Tcl_NewStringObj(tmp, -1);
   Tcl_IncrRefCount(varobj);
   if ((outobj = Tcl_ObjGetVar2(interp, varobj, NULL, TCL_GLOBAL_ONLY |
-			       TCL_LEAVE_ERR_MSG)) == NULL) {
+                               TCL_LEAVE_ERR_MSG)) == NULL) {
     return TCL_ERROR;
   }
   Tcl_IncrRefCount(outobj);
@@ -664,7 +678,7 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
   varobj = Tcl_NewStringObj(tmp, -1);
   Tcl_IncrRefCount(varobj);
   if ((outobj = Tcl_ObjGetVar2(interp, varobj, NULL, TCL_GLOBAL_ONLY |
-			       TCL_LEAVE_ERR_MSG)) == NULL) {
+                               TCL_LEAVE_ERR_MSG)) == NULL) {
     return TCL_ERROR;
   }
   Tcl_IncrRefCount(outobj);
@@ -683,7 +697,7 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
   }
   Tcl_DecrRefCount(varobj);
 
-  switch(memtype) {
+  switch (memtype) {
   case 1:
     mem_where = cpu68k_ram;
     mem_start = 0xFF0000;
@@ -709,7 +723,7 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
     mem_start = 0x0;
     mem_len = LEN_SRAM;
     break;
-  default: /* 0 */
+  default:                     /* 0 */
     mem_where = cpu68k_rom;
     mem_start = 0;
     mem_len = cpu68k_romlen;
@@ -717,7 +731,7 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
   }
 
   line = 1;
-  while(line <= 100) { /* do dump loop */
+  while (line <= 100) {         /* do dump loop */
 
     /* first check visibility of line by checking bbox of char 0 on the line */
     sprintf(tmp, "[%s.main bbox %d.0]", textwidget, line);
@@ -741,8 +755,8 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
       sprintf(dumpline, "---end\n", offset);
       words = 1;
     } else {
-      words = diss68k_getdumpline(mem_start+offset, mem_where+offset,
-				  dumpline);
+      words = diss68k_getdumpline(mem_start + offset, mem_where + offset,
+                                  dumpline);
     }
 
     /* insert line at end of disassembly */
@@ -755,14 +769,14 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
     Tcl_DecrRefCount(varobj);
 
     /* increment address and line number and loop */
-    offset+= words*2;
+    offset += words * 2;
     line++;
   }
   line--;
 
   /* update scrollbar */
-  sprintf(tmp, "%s.bar set %f %f", textwidget, offset/(double)mem_len,
-	  (offset+line*2)/(double)mem_len);
+  sprintf(tmp, "%s.bar set %f %f", textwidget, offset / (double)mem_len,
+          (offset + line * 2) / (double)mem_len);
   varobj = Tcl_NewStringObj(tmp, -1);
   Tcl_IncrRefCount(varobj);
   if (Tcl_EvalObj(interp, varobj) == TCL_ERROR) {
@@ -777,7 +791,7 @@ int ui_redrawdump(Tcl_Interp *interp, char *textwidget)
   Tcl_IncrRefCount(varobj);
   Tcl_IncrRefCount(paramobj);
   if (Tcl_ObjSetVar2(interp, varobj, NULL, paramobj,
-		     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
+                     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
     return TCL_ERROR;
   }
   Tcl_DecrRefCount(varobj);
@@ -815,8 +829,7 @@ int ui_init(int argc, char *argv[])
   ui_screenno = Tk_ScreenNumber(mainwin);
 
   /* Configure error handling */
-  Tk_CreateErrorHandler(ui_display, -1, -1, -1, errorhandler,
-			(char *) NULL);
+  Tk_CreateErrorHandler(ui_display, -1, -1, -1, errorhandler, (char *)NULL);
   if (xsync)
     XSynchronize(ui_display, True);
 
@@ -829,38 +842,42 @@ int ui_init(int argc, char *argv[])
   Tcl_CreateObjCommand(interp, "Gen_Cont", Gen_Cont, NULL, NULL);
   Tcl_CreateObjCommand(interp, "Gen_Change", Gen_Change, NULL, NULL);
   Tcl_CreateObjCommand(interp, "Gen_Regs", Gen_Regs, NULL, NULL);
-  Tcl_CreateObjCommand(interp, "Gen_VDPDescribe", Gen_VDPDescribe, NULL, NULL);
+  Tcl_CreateObjCommand(interp, "Gen_VDPDescribe", Gen_VDPDescribe, NULL,
+                       NULL);
   Tcl_CreateObjCommand(interp, "Gen_SpriteList", Gen_SpriteList, NULL, NULL);
-  Tcl_CreateObjCommand(interp, "Gen_Initialised", Gen_Initialised, NULL, NULL);
+  Tcl_CreateObjCommand(interp, "Gen_Initialised", Gen_Initialised, NULL,
+                       NULL);
   Tcl_CreateObjCommand(interp, "Gen_Reset", Gen_Reset, NULL, NULL);
 
   if ((visual = Tk_GetVisual(interp, mainwin, "truecolor 24", &depth,
-			     &cmap)) == NULL) {
+                             &cmap)) == NULL) {
     depth = 0;
   }
   LOG_VERBOSE(("Asked for depth 24, got depth %d", depth));
   if (depth != 16 && depth != 24) {
     if ((visual = Tk_GetVisual(interp, mainwin, "pseudocolor 8", &depth,
-			       NULL)) == NULL)
-      ui_err("%s: GetVisual failed: %s", argv[0], Tcl_GetStringResult(interp));
+                               NULL)) == NULL)
+      ui_err("%s: GetVisual failed: %s", argv[0],
+             Tcl_GetStringResult(interp));
     if (depth != 8)
-      ui_err("%s: Depth is %d (we want 8, e.g. 256 colours).", argv[0], depth);
+      ui_err("%s: Depth is %d (we want 8, e.g. 256 colours).", argv[0],
+             depth);
     if ((cmap = Tk_GetColormap(interp, mainwin, "new")) == 0)
       ui_err("%s: Unable to create new colormap.", argv[0]);
     if (Tk_SetWindowVisual(mainwin, visual, 8, cmap) != 1)
       ui_err("%s: Unable to set window visual/colormap.", argv[0]);
     if (XAllocColorCells(ui_display, cmap, True, plane_masks, 0,
-			 colours, 32) == 0)
+                         colours, 32) == 0)
       ui_err("%s: Unable to allocate colors.", argv[0]);
     for (i = 0; i < 32; i++) {
       xcolor.pixel = i;
       xcolor.flags = 0;
       XQueryColor(ui_display, DefaultColormap(ui_display, ui_screenno),
-		  &xcolor);
+                  &xcolor);
       XStoreColor(ui_display, cmap, &xcolor);
     }
     if (XAllocColorCells(ui_display, cmap, True, plane_masks, 0,
-			 colours, 64*3) == 0)
+                         colours, 64 * 3) == 0)
       ui_err("%s: Unable to allocate colors.", argv[0]);
     basepixel = colours[0];
     LOG_VERBOSE(("UI: Base pixel %d", basepixel));
@@ -869,15 +886,15 @@ int ui_init(int argc, char *argv[])
       ui_err("%s: Unable to set window visual/colormap.", argv[0]);
   }
 
-  if ((imagedata = malloc(320*240*(depth/8))) == NULL)
+  if ((imagedata = malloc(320 * 240 * (depth / 8))) == NULL)
     ui_err("%s: Out of memory!", argv[0]);
-  memset(imagedata, 0, 320*240*(depth/8));
+  memset(imagedata, 0, 320 * 240 * (depth / 8));
   if ((image = XCreateImage(ui_display, visual, depth, ZPixmap, 0,
-			    imagedata, 320, 240, 8, 0)) == NULL) {
+                            imagedata, 320, 240, 8, 0)) == NULL) {
     ui_err("%s: Unable to create image.", argv[0]);
   }
   /* XCreateImage is broken on my system - force these values */
-  image->bytes_per_line = 320*(depth/8);
+  image->bytes_per_line = 320 * (depth / 8);
   image->bits_per_pixel = depth;
   if (depth != 8) {
     visual_bluemask = image->blue_mask;
@@ -888,9 +905,9 @@ int ui_init(int argc, char *argv[])
     visual_greenpos = ui_topbit(visual_greenmask) - 2;
     if (visual_bluepos == -1 || visual_redpos == -1 || visual_greenpos == -1) {
       ui_err("%s: Bad colour masks (%x(%d),%x(%d),%x(%d)).",
-	     argv[0], visual_redmask, visual_redpos,
-	     visual_greenmask, visual_greenpos,
-	     visual_bluemask, visual_bluepos);
+             argv[0], visual_redmask, visual_redpos,
+             visual_greenmask, visual_greenpos,
+             visual_bluemask, visual_bluepos);
     }
   }
 
@@ -912,23 +929,24 @@ int ui_init(int argc, char *argv[])
   } else if (!(dga_flags & XF86DGADirectPresent)) {
     LOG_NORMAL(("%s: DGA Direct video support is not present", argv[0]));
   } else if (!XF86DGAGetVideo(ui_display, ui_screenno, &dga_baseaddr,
-			      &dga_width, &dga_banksize, &dga_memsize)) {
+                              &dga_width, &dga_banksize, &dga_memsize)) {
     LOG_NORMAL(("%s: XF86DGAGetVideo failed", argv[0]));
   } else if (!XF86DGAGetViewPortSize(ui_display, ui_screenno, &dga_xsize,
-				     &dga_ysize)) {
+                                     &dga_ysize)) {
     LOG_NORMAL(("%s: XF86DGAGetViewPortsize failed", argv[0]));
   } else {
     ui_dga = 1;
-    dga_start = dga_baseaddr + ((depth/8) *
-			        (dga_xsize*((dga_ysize-(240*scale))/2) +
-			        ((dga_xsize-(320*scale))/2)));
+    dga_start = dga_baseaddr + ((depth / 8) *
+                                (dga_xsize *
+                                 ((dga_ysize - (240 * scale)) / 2) +
+                                 ((dga_xsize - (320 * scale)) / 2)));
     LOG_NORMAL(("DGA: Direct full-screen video enabled at "
-		"%08X (%d/%d) [%d x %d].", dga_baseaddr, dga_banksize,
-		dga_memsize, dga_xsize, dga_ysize));
+                "%08X (%d/%d) [%d x %d].", dga_baseaddr, dga_banksize,
+                dga_memsize, dga_xsize, dga_ysize));
   }
   if (!ui_dga) {
     LOG_NORMAL(("DGA has been disabled, no full-screen facilities will "
-	       "be available."));
+                "be available."));
   }
 #else
   LOG_VERBOSE(("DGA: Not compiled in."));
@@ -941,12 +959,12 @@ int ui_init(int argc, char *argv[])
   ui_updateint("debug", gen_debugmode);
 
   Tk_CreateEventHandler(mainwin, KeyPressMask | KeyReleaseMask,
-			ui_keypress, NULL);
+                        ui_keypress, NULL);
   Tk_CreateEventHandler(mainwin, EnterWindowMask | LeaveWindowMask,
-			ui_enterleave, NULL);
+                        ui_enterleave, NULL);
 
   if (argc == 2) {
-    if ((ui_initload = malloc(strlen(argv[1])+1)) == NULL) {
+    if ((ui_initload = malloc(strlen(argv[1]) + 1)) == NULL) {
       fprintf(stderr, "Out of memory\n");
       return 1;
     }
@@ -958,9 +976,9 @@ int ui_init(int argc, char *argv[])
 int ui_topbit(unsigned long int bits)
 {
   long int bit = 31;
-  unsigned long int mask = 1<<31;
+  unsigned long int mask = 1 << 31;
 
-  for (; bit >= 0; bit--, mask>>= 1) {
+  for (; bit >= 0; bit--, mask >>= 1) {
     if (bits & mask)
       return bit;
   }
@@ -972,7 +990,7 @@ void ui_final(void)
   XAutoRepeatOn(ui_display);
 }
 
-void ui_enterleave(ClientData cd, XEvent *event)
+void ui_enterleave(ClientData cd, XEvent * event)
 {
   if (event->type == EnterNotify) {
     XAutoRepeatOff(ui_display);
@@ -981,43 +999,43 @@ void ui_enterleave(ClientData cd, XEvent *event)
   }
 }
 
-void ui_keypress(ClientData cd, XEvent *event)
+void ui_keypress(ClientData cd, XEvent * event)
 {
   char keysym = XLookupKeysym(&event->xkey, 0);
   int type = (event->type == KeyPress);
 
   LOG_DEBUG3(("KEY %d: %d", type, keysym));
-  switch(keysym) {
+  switch (keysym) {
   case 'a':
   case '1':
   case 'z':
-    mem68k_cont1_a = type;
+    mem68k_cont[0].a = type;
     break;
   case 'b':
   case '2':
   case 's':
   case 'x':
-    mem68k_cont1_b = type;
+    mem68k_cont[0].b = type;
     break;
   case 'c':
   case '3':
   case 'd':
-    mem68k_cont1_c = type;
+    mem68k_cont[0].c = type;
     break;
   case 81:
-    mem68k_cont1_left = type;
+    mem68k_cont[0].left = type;
     break;
   case 82:
-    mem68k_cont1_up = type;
+    mem68k_cont[0].up = type;
     break;
   case 83:
-    mem68k_cont1_right = type;
+    mem68k_cont[0].right = type;
     break;
   case 84:
-    mem68k_cont1_down = type;
+    mem68k_cont[0].down = type;
     break;
   case 13:
-    mem68k_cont1_start = type;
+    mem68k_cont[0].start = type;
     break;
 #ifdef XF86DGA
   case '#':
@@ -1039,14 +1057,17 @@ void ui_updateregs(void)
 
   for (t = 0; t < 2; t++) {
     for (i = 0; i < 8; i++) {
-      sprintf(val, "%08X", regs.regs[t*8+i]);
+      sprintf(val, "%08X", regs.regs[t * 8 + i]);
       sprintf(var, "regs.%s%d", t ? "a" : "d", i);
       ui_updatestr(var, val);
     }
   }
-  sprintf(val, "%08X", regs.pc); ui_updatestr("regs.pc", val);
-  sprintf(val, "%04X", regs.sr.sr_int); ui_updatestr("regs.sr", val);
-  sprintf(val, "%08X", regs.sp); ui_updatestr("regs.sp", val);
+  sprintf(val, "%08X", regs.pc);
+  ui_updatestr("regs.pc", val);
+  sprintf(val, "%04X", regs.sr.sr_int);
+  ui_updatestr("regs.sr", val);
+  sprintf(val, "%08X", regs.sp);
+  ui_updatestr("regs.sp", val);
   ui_updateint("regs.s", regs.sr.sr_struct.s);
   ui_updateint("regs.x", regs.sr.sr_struct.x);
   ui_updateint("regs.n", regs.sr.sr_struct.n);
@@ -1067,7 +1088,7 @@ void ui_updatestr(char *var, char *val)
   Tcl_IncrRefCount(varobj);
 
   if (Tcl_ObjSetVar2(interp, varobj, NULL, valobj,
-		     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
+                     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
     LOG_CRITICAL(("Error setting %s", val));
   }
   Tcl_DecrRefCount(varobj);
@@ -1084,7 +1105,7 @@ void ui_updateint(char *var, int val)
   Tcl_IncrRefCount(varobj);
 
   if (Tcl_ObjSetVar2(interp, varobj, NULL, valobj,
-		     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
+                     TCL_GLOBAL_ONLY | TCL_LEAVE_ERR_MSG) == NULL) {
     LOG_CRITICAL(("Error setting %s", val));
   }
   Tcl_DecrRefCount(varobj);
@@ -1109,15 +1130,15 @@ int ui_loop(void)
   }
 
   gen_quit = 0;
-  while(!gen_quit) {
-    switch(state) {
-    case 0: /* stopped */
+  while (!gen_quit) {
+    switch (state) {
+    case 0:                    /* stopped */
       Tcl_DoOneEvent(TCL_ALL_EVENTS);
       break;
-    case 1: /* paused */
+    case 1:                    /* paused */
       Tcl_DoOneEvent(TCL_ALL_EVENTS);
       break;
-    case 2: /* playing */
+    case 2:                    /* playing */
       event_doframe();
       Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
       break;
@@ -1128,7 +1149,7 @@ int ui_loop(void)
 
 /*** ui_loadimage - load ROM image ***/
 
-int ui_loadimage(Tcl_Interp *interp, const char *filename)
+int ui_loadimage(Tcl_Interp * interp, const char *filename)
 {
   char *p;
 
@@ -1143,7 +1164,7 @@ int ui_loadimage(Tcl_Interp *interp, const char *filename)
 
 /*** ui_loadsavepos - load saved position ***/
 
-int ui_loadsavepos(Tcl_Interp *interp, const char *filename)
+int ui_loadsavepos(Tcl_Interp * interp, const char *filename)
 {
   char *p;
 
@@ -1157,7 +1178,7 @@ int ui_loadsavepos(Tcl_Interp *interp, const char *filename)
 
 /*** ui_setinfo - set information window with name/copyright/etc ***/
 
-char *ui_setinfo(t_cartinfo *cartinfo)
+char *ui_setinfo(t_cartinfo * cartinfo)
 {
   char buffer[128];
 
@@ -1201,28 +1222,27 @@ void ui_checkpalcache(int flag)
     if (!flag && !vdp_cramf[col])
       continue;
     vdp_cramf[col] = 0;
-    p = (uint8 *)vdp_cram+2*col;
-    ui_palcache[col] = 
-      (((p[0]>>1)&7)<<visual_bluepos) |
-      (((p[1]>>1)&7)<<visual_redpos) |
-      (((p[1]>>5)&7)<<visual_greenpos);
-    ui_palcache[col+64] = 
-      (((p[0]>>1)&7)<<(visual_bluepos-1)) |
-      (((p[1]>>1)&7)<<(visual_redpos-1)) |
-      (((p[1]>>5)&7)<<(visual_greenpos-1)) |
-      (4 << visual_bluepos) | (4 << visual_redpos) |
-      (4 << visual_greenpos);
-    ui_palcache[col+128] = 
-      (((p[0]>>1)&7)<<(visual_bluepos-1)) |
-      (((p[1]>>1)&7)<<(visual_redpos-1)) |
-      (((p[1]>>5)&7)<<(visual_greenpos-1));
+    p = (uint8 *)vdp_cram + 2 * col;
+    ui_palcache[col] =
+      (((p[0] >> 1) & 7) << visual_bluepos) |
+      (((p[1] >> 1) & 7) << visual_redpos) |
+      (((p[1] >> 5) & 7) << visual_greenpos);
+    ui_palcache[col + 64] =
+      (((p[0] >> 1) & 7) << (visual_bluepos - 1)) |
+      (((p[1] >> 1) & 7) << (visual_redpos - 1)) |
+      (((p[1] >> 5) & 7) << (visual_greenpos - 1)) |
+      (4 << visual_bluepos) | (4 << visual_redpos) | (4 << visual_greenpos);
+    ui_palcache[col + 128] =
+      (((p[0] >> 1) & 7) << (visual_bluepos - 1)) |
+      (((p[1] >> 1) & 7) << (visual_redpos - 1)) |
+      (((p[1] >> 5) & 7) << (visual_greenpos - 1));
   }
 }
 
 /*** ui_line - it is time to render a line ***/
 
 void ui_line(unsigned int line)
-{  
+{
   static uint8 gfx[320];
   uint8 *cram = (uint8 *)vdp_cram;
   char *p, *pp, *ppp;
@@ -1233,25 +1253,31 @@ void ui_line(unsigned int line)
 
 #ifdef XF86DGA
   if (ui_dga_state) {
-    lineoffset = dga_xsize*(depth/8);
-    p = dga_start + line*lineoffset*scale;
+    lineoffset = dga_xsize * (depth / 8);
+    p = dga_start + line * lineoffset * scale;
   } else {
-    lineoffset = 320*(depth/8)*scale;
-    p = imagedata + line*lineoffset*scale;
+    lineoffset = 320 * (depth / 8) * scale;
+    p = imagedata + line * lineoffset * scale;
   }
 #else
-  lineoffset = 320*(depth/8)*scale;
-  p = imagedata + line*lineoffset*scale;
+  lineoffset = 320 * (depth / 8) * scale;
+  p = imagedata + line * lineoffset * scale;
 #endif
 
   if (cpu68k_frames % frameskip != 0)
     return;
 
   LOG_DEBUG2(("line %d: ", line));
-  if (((vdp_reg[12]>>1) & 3) == 3)
-    vdp_renderline(line, gfx, vdp_oddframe); /* interlace */
-  else
+  switch ((vdp_reg[12] >> 1) & 3) {
+  case 0:                      /* normal */
+  case 1:                      /* interlace simply doubled up */
+  case 2:                      /* invalid */
     vdp_renderline(line, gfx, 0);
+    break;
+  case 3:                      /* interlace with double resolution */
+    vdp_renderline(line, gfx, vdp_oddframe);
+    break;
+  }
   if (scale == 2 && smooth) {
     ui_convertdata_smooth(gfx, p, 320, lineoffset, depth);
   } else {
@@ -1259,9 +1285,10 @@ void ui_line(unsigned int line)
   }
 }
 
-void ui_convertdata(uint8 *indata, uint8 *outdata, unsigned int pixels,
-		    unsigned int lineoffset, unsigned int scale,
-		    unsigned int depth, unsigned int basepixel)
+void
+ui_convertdata(uint8 *indata, uint8 *outdata, unsigned int pixels,
+               unsigned int lineoffset, unsigned int scale,
+               unsigned int depth, unsigned int basepixel)
 {
   char *p, *pp;
   unsigned int ui;
@@ -1270,128 +1297,129 @@ void ui_convertdata(uint8 *indata, uint8 *outdata, unsigned int pixels,
 
   if (depth == 8) {
     if (scale == 1) {
-	/* not scaled, 8bpp */
-	for (ui = 0; ui < pixels; ui++) {
-	  outdata[ui] = indata[ui] + basepixel;
-	}
+      /* not scaled, 8bpp */
+      for (ui = 0; ui < pixels; ui++) {
+        outdata[ui] = indata[ui] + basepixel;
+      }
     } else {
       /* scaled, 8bpp */
       p = outdata;
-      for (ui = 0; ui < pixels; ui++, p+=ui*scale) {
-	pp = p;
-	for (s = 0; s < scale; s++, pp+=lineoffset) {
+      for (ui = 0; ui < pixels; ui++, p += ui * scale) {
+        pp = p;
+        for (s = 0; s < scale; s++, pp += lineoffset) {
           for (t = 0; t < scale; t++) {
             pp[t] = indata[ui] + basepixel;
-	  }
-	}
+          }
+        }
       }
     }
   } else {
     ui_checkpalcache(0);
     if (scale == 1) {
       if (depth == 16) {
-	/* not scaled, 16bpp */
-	for (ui = 0; ui < pixels; ui++) {
-	  data = ui_palcache[indata[ui]];
-	  ((uint16 *)outdata)[ui] = data; /* already in local endian */
-	}
+        /* not scaled, 16bpp */
+        for (ui = 0; ui < pixels; ui++) {
+          data = ui_palcache[indata[ui]];
+          ((uint16 *)outdata)[ui] = data;       /* already in local endian */
+        }
       } else if (depth == 24) {
-	/* not scaled, 24bpp */
-	p = outdata;
-	for (ui = 0; ui < pixels; ui++, p+=3) {
-	  data = ui_palcache[indata[ui]];
+        /* not scaled, 24bpp */
+        p = outdata;
+        for (ui = 0; ui < pixels; ui++, p += 3) {
+          data = ui_palcache[indata[ui]];
 #ifdef WORDS_BIGENDIAN
-	  p[0] = (uint8)(data >> 16);
-	  p[1] = (uint8)(data >> 8);
-	  p[2] = (uint8)(data);
+          p[0] = (uint8)(data >> 16);
+          p[1] = (uint8)(data >> 8);
+          p[2] = (uint8)(data);
 #else
-	  p[0] = (uint8)(data);
-	  p[1] = (uint8)(data >> 8);
-	  p[2] = (uint8)(data >> 16);
+          p[0] = (uint8)(data);
+          p[1] = (uint8)(data >> 8);
+          p[2] = (uint8)(data >> 16);
 #endif
-	}
+        }
       } else {
         ui_err("unknown depth %d", depth);
       }
     } else if (scale == 2) {
       if (depth == 16) {
-	/* scaled by 2, 16bpp */
-	p = outdata;
-	for (ui = 0; ui < pixels; ui++, p+=4) {
-	  data = ui_palcache[indata[ui]];
-	  ((uint16 *)p)[0] = data; /* already in local endian */
-	  ((uint16 *)p)[1] = data;
-	  ((uint16 *)(p+lineoffset))[0] = data;
-	  ((uint16 *)(p+lineoffset))[1] = data;
-	}
+        /* scaled by 2, 16bpp */
+        p = outdata;
+        for (ui = 0; ui < pixels; ui++, p += 4) {
+          data = ui_palcache[indata[ui]];
+          ((uint16 *)p)[0] = data;      /* already in local endian */
+          ((uint16 *)p)[1] = data;
+          ((uint16 *)(p + lineoffset))[0] = data;
+          ((uint16 *)(p + lineoffset))[1] = data;
+        }
       } else if (depth == 24) {
-	/* scaled by 2, 24bpp */
-	p = outdata;
-	for (ui = 0; ui < pixels; ui++, p+=6) {
-	  data = ui_palcache[indata[ui]];
+        /* scaled by 2, 24bpp */
+        p = outdata;
+        for (ui = 0; ui < pixels; ui++, p += 6) {
+          data = ui_palcache[indata[ui]];
 #ifdef WORDS_BIGENDIAN
-	  p[0]            = (uint8)(data >> 16);
-	  p[3]            = (uint8)(data >> 16);
-	  p[lineoffset+0] = (uint8)(data >> 16);
-	  p[lineoffset+3] = (uint8)(data >> 16);
-	  p[1]            = (uint8)(data >> 8);
-	  p[4]            = (uint8)(data >> 8);
-	  p[lineoffset+1] = (uint8)(data >> 8);
-	  p[lineoffset+4] = (uint8)(data >> 8);
-	  p[2]            = (uint8)(data);
-	  p[5]            = (uint8)(data);
-	  p[lineoffset+2] = (uint8)(data);
-	  p[lineoffset+5] = (uint8)(data);
+          p[0] = (uint8)(data >> 16);
+          p[3] = (uint8)(data >> 16);
+          p[lineoffset + 0] = (uint8)(data >> 16);
+          p[lineoffset + 3] = (uint8)(data >> 16);
+          p[1] = (uint8)(data >> 8);
+          p[4] = (uint8)(data >> 8);
+          p[lineoffset + 1] = (uint8)(data >> 8);
+          p[lineoffset + 4] = (uint8)(data >> 8);
+          p[2] = (uint8)(data);
+          p[5] = (uint8)(data);
+          p[lineoffset + 2] = (uint8)(data);
+          p[lineoffset + 5] = (uint8)(data);
 #else
-	  p[0]            = (uint8)(data);
-	  p[3]            = (uint8)(data);
-	  p[lineoffset+0] = (uint8)(data);
-	  p[lineoffset+3] = (uint8)(data);
-	  p[1]            = (uint8)(data >> 8);
-	  p[4]            = (uint8)(data >> 8);
-	  p[lineoffset+1] = (uint8)(data >> 8);
-	  p[lineoffset+4] = (uint8)(data >> 8);
-	  p[2]            = (uint8)(data >> 16);
-	  p[5]            = (uint8)(data >> 16);
-	  p[lineoffset+2] = (uint8)(data >> 16);
-	  p[lineoffset+5] = (uint8)(data >> 16);
+          p[0] = (uint8)(data);
+          p[3] = (uint8)(data);
+          p[lineoffset + 0] = (uint8)(data);
+          p[lineoffset + 3] = (uint8)(data);
+          p[1] = (uint8)(data >> 8);
+          p[4] = (uint8)(data >> 8);
+          p[lineoffset + 1] = (uint8)(data >> 8);
+          p[lineoffset + 4] = (uint8)(data >> 8);
+          p[2] = (uint8)(data >> 16);
+          p[5] = (uint8)(data >> 16);
+          p[lineoffset + 2] = (uint8)(data >> 16);
+          p[lineoffset + 5] = (uint8)(data >> 16);
 #endif
-	}
+        }
       } else {
         ui_err("unknown depth %d", depth);
       }
     } else {
       /* scaled by more than 2 */
       for (ui = 0; ui < pixels; ui++) {
-	data = ui_palcache[indata[ui]];
-	p = outdata+ui*(depth/8)*scale;
-	for (s = 0; s < scale; s++, p+=lineoffset) {
-	  for (t = 0; t < scale; t++) {
-	    if (depth == 16) {
-	      ((uint16 *)p)[t] = data; /* already in local endian */
-	    } else if (depth == 24) {
-	      pp = p+t*3;
+        data = ui_palcache[indata[ui]];
+        p = outdata + ui * (depth / 8) * scale;
+        for (s = 0; s < scale; s++, p += lineoffset) {
+          for (t = 0; t < scale; t++) {
+            if (depth == 16) {
+              ((uint16 *)p)[t] = data;  /* already in local endian */
+            } else if (depth == 24) {
+              pp = p + t * 3;
 #ifdef WORDS_BIGENDIAN
-	      pp[0] = (uint8)(data >> 16);
-	      pp[1] = (uint8)(data >> 8);
-	      pp[2] = (uint8)(data);
+              pp[0] = (uint8)(data >> 16);
+              pp[1] = (uint8)(data >> 8);
+              pp[2] = (uint8)(data);
 #else
-	      pp[0] = (uint8)(data);
-	      pp[1] = (uint8)(data >> 8);
-	      pp[2] = (uint8)(data >> 16);
+              pp[0] = (uint8)(data);
+              pp[1] = (uint8)(data >> 8);
+              pp[2] = (uint8)(data >> 16);
 #endif
-	    } else {
+            } else {
               ui_err("unknown depth %d", depth);
             }
-	  }
-	}
+          }
+        }
       }
     }
   }
 }
 
-void ui_convertdata_smooth(uint8 *indata, uint8 *outdata, unsigned int pixels,
-			   unsigned int lineoffset, unsigned int depth)
+void
+ui_convertdata_smooth(uint8 *indata, uint8 *outdata, unsigned int pixels,
+                      unsigned int lineoffset, unsigned int depth)
 {
   char *p, *pp;
   unsigned int ui;
@@ -1403,58 +1431,58 @@ void ui_convertdata_smooth(uint8 *indata, uint8 *outdata, unsigned int pixels,
     /* scaled by 2, 16bpp */
     p = outdata;
     data1 = ui_palcache[indata[0]];
-    for (ui = 0; ui < pixels-1; ui++, p+=4) {
-      data2 = ui_palcache[indata[ui+1]];
+    for (ui = 0; ui < pixels - 1; ui++, p += 4) {
+      data2 = ui_palcache[indata[ui + 1]];
       datam = (((((data1 & visual_redmask) +
-		  (data2 & visual_redmask)) >> 1) & visual_redmask) |
-	       ((((data1 & visual_greenmask) +
-		  (data2 & visual_greenmask)) >> 1) & visual_greenmask) |
-	       ((((data1 & visual_bluemask) +
-		  (data2 & visual_bluemask)) >> 1) & visual_bluemask));
+                  (data2 & visual_redmask)) >> 1) & visual_redmask) |
+               ((((data1 & visual_greenmask) +
+                  (data2 & visual_greenmask)) >> 1) & visual_greenmask) |
+               ((((data1 & visual_bluemask) +
+                  (data2 & visual_bluemask)) >> 1) & visual_bluemask));
       ((uint16 *)p)[0] = data1; /* already in local endian */
       ((uint16 *)p)[1] = datam;
-      ((uint16 *)(p+lineoffset))[0] = data1;
-      ((uint16 *)(p+lineoffset))[1] = datam;
+      ((uint16 *)(p + lineoffset))[0] = data1;
+      ((uint16 *)(p + lineoffset))[1] = datam;
       data1 = data2;
     }
   } else {
     /* scaled by 2, 24bpp */
     p = outdata;
     data1 = ui_palcache[indata[0]];
-    for (ui = 0; ui < pixels; ui++, p+=6) {
-      data2 = ui_palcache[indata[ui+1]];
+    for (ui = 0; ui < pixels; ui++, p += 6) {
+      data2 = ui_palcache[indata[ui + 1]];
       datam = (((((data1 & visual_redmask) +
-		  (data2 & visual_redmask)) >> 1) & visual_redmask) |
-	       ((((data1 & visual_greenmask) +
-		  (data2 & visual_greenmask)) >> 1) & visual_greenmask) |
-	       ((((data1 & visual_bluemask) +
-		  (data2 & visual_bluemask)) >> 1) & visual_bluemask));
+                  (data2 & visual_redmask)) >> 1) & visual_redmask) |
+               ((((data1 & visual_greenmask) +
+                  (data2 & visual_greenmask)) >> 1) & visual_greenmask) |
+               ((((data1 & visual_bluemask) +
+                  (data2 & visual_bluemask)) >> 1) & visual_bluemask));
 #ifdef WORDS_BIGENDIAN
-      p[0]            = (uint8)(data1 >> 16);
-      p[lineoffset+0] = (uint8)(data1 >> 16);
-      p[lineoffset+3] = (uint8)(datam >> 16);
-      p[3]            = (uint8)(datam >> 16);
-      p[1]            = (uint8)(data1 >> 8);
-      p[lineoffset+1] = (uint8)(data1 >> 8);
-      p[lineoffset+4] = (uint8)(datam >> 8);
-      p[4]            = (uint8)(datam >> 8);
-      p[2]            = (uint8)(data1);
-      p[lineoffset+2] = (uint8)(data1);
-      p[lineoffset+5] = (uint8)(datam);
-      p[5]            = (uint8)(datam);
+      p[0] = (uint8)(data1 >> 16);
+      p[lineoffset + 0] = (uint8)(data1 >> 16);
+      p[lineoffset + 3] = (uint8)(datam >> 16);
+      p[3] = (uint8)(datam >> 16);
+      p[1] = (uint8)(data1 >> 8);
+      p[lineoffset + 1] = (uint8)(data1 >> 8);
+      p[lineoffset + 4] = (uint8)(datam >> 8);
+      p[4] = (uint8)(datam >> 8);
+      p[2] = (uint8)(data1);
+      p[lineoffset + 2] = (uint8)(data1);
+      p[lineoffset + 5] = (uint8)(datam);
+      p[5] = (uint8)(datam);
 #else
-      p[0]            = (uint8)(data1);
-      p[lineoffset+0] = (uint8)(data1);
-      p[lineoffset+3] = (uint8)(datam);
-      p[3]            = (uint8)(datam);
-      p[1]            = (uint8)(data1 >> 8);
-      p[lineoffset+1] = (uint8)(data1 >> 8);
-      p[lineoffset+4] = (uint8)(datam >> 8);
-      p[4]            = (uint8)(datam >> 8);
-      p[2]            = (uint8)(data1 >> 16);
-      p[lineoffset+2] = (uint8)(data1 >> 16);
-      p[lineoffset+5] = (uint8)(datam >> 16);
-      p[5]            = (uint8)(datam >> 16);
+      p[0] = (uint8)(data1);
+      p[lineoffset + 0] = (uint8)(data1);
+      p[lineoffset + 3] = (uint8)(datam);
+      p[3] = (uint8)(datam);
+      p[1] = (uint8)(data1 >> 8);
+      p[lineoffset + 1] = (uint8)(data1 >> 8);
+      p[lineoffset + 4] = (uint8)(datam >> 8);
+      p[4] = (uint8)(datam >> 8);
+      p[2] = (uint8)(data1 >> 16);
+      p[lineoffset + 2] = (uint8)(data1 >> 16);
+      p[lineoffset + 5] = (uint8)(datam >> 16);
+      p[5] = (uint8)(datam >> 16);
 #endif
       data1 = data2;
     }
@@ -1475,7 +1503,7 @@ void ui_endframe(void)
   int y, x, i;
   XColor xcolor;
   uint16 col;
-  static uint8 gfx[(320+16)*(240+16)];
+  static uint8 gfx[(320 + 16) * (240 + 16)];
   char *p, *framestart;
   unsigned int lineoffset, line;
 
@@ -1484,29 +1512,29 @@ void ui_endframe(void)
 
   if (ui_vdpsimple) {
     /* simple mode - entire frame done here */
-    framestart = gfx+(8*320)+8;
-    vdp_renderframe(framestart, 320+16); /* plot frame */
+    framestart = gfx + (8 * 320) + 8;
+    vdp_renderframe(framestart, 320 + 16);      /* plot frame */
 #ifdef XF86DGA
     if (ui_dga_state) {
-      lineoffset = dga_xsize*(depth/8);
+      lineoffset = dga_xsize * (depth / 8);
       p = dga_start;
     } else {
-      lineoffset = 320*(depth/8)*scale;
+      lineoffset = 320 * (depth / 8) * scale;
       p = imagedata;
     }
 #else
-    lineoffset = 320*(depth/8)*scale;
+    lineoffset = 320 * (depth / 8) * scale;
     p = imagedata;
 #endif
     for (line = 0; line < 224; line++) {
       if (scale == 2 && smooth) {
-	ui_convertdata_smooth(framestart+(320+16)*line,
-			      p+lineoffset*line*scale, 320, lineoffset,
-			      depth);
+        ui_convertdata_smooth(framestart + (320 + 16) * line,
+                              p + lineoffset * line * scale, 320,
+                              lineoffset, depth);
       } else {
-	ui_convertdata(framestart+(320+16)*line,
-		       p+lineoffset*line*scale, 320, lineoffset, scale,
-		       depth, basepixel);
+        ui_convertdata(framestart + (320 + 16) * line,
+                       p + lineoffset * line * scale, 320, lineoffset,
+                       scale, depth, basepixel);
       }
     }
   }
@@ -1514,30 +1542,33 @@ void ui_endframe(void)
     /* if ui_dga_state state is set, data has already gone to screen */
     if (!gc)
       gc = XCreateGC(ui_display, Tk_WindowId(mainwin), 0, NULL);
-      XPutImage(ui_display,
-                Tk_WindowId(Tk_NameToWindow(interp, ".main", mainwin)),
-                gc, image, 0, 0, 0, 0, 320*scale, 240*scale);
+    XPutImage(ui_display,
+              Tk_WindowId(Tk_NameToWindow(interp, ".main", mainwin)),
+              gc, image, 0, 0, 0, 0, 320 * scale, 240 * scale);
   }
   if (depth == 8) {
     for (i = 0; i < 64; i++) {
       if (vdp_cramf[i]) {
-	xcolor.pixel = basepixel+i;
-	xcolor.flags = DoRed | DoGreen | DoBlue;
-	xcolor.blue  = ((((uint8 *)vdp_cram)[2*i]) & (7<<1))<<12;
-	xcolor.red   = ((((uint8 *)vdp_cram)[2*i+1]) & (7<<1))<<12;
-	xcolor.green = ((((uint8 *)vdp_cram)[2*i+1]) & (7<<5))<<8;
-	XStoreColor(ui_display, cmap, &xcolor);
-	xcolor.pixel = basepixel+i+64;
-	xcolor.blue  = 1<<15 | ((((uint8 *)vdp_cram)[2*i]) & (7<<1))<<11;
-	xcolor.red   = 1<<15 | ((((uint8 *)vdp_cram)[2*i+1]) & (7<<1))<<11;
-	xcolor.green = 1<<15 | ((((uint8 *)vdp_cram)[2*i+1]) & (7<<5))<<7;
-	XStoreColor(ui_display, cmap, &xcolor);
-	xcolor.pixel = basepixel+i+128;
-	xcolor.blue  = ((((uint8 *)vdp_cram)[2*i]) & (7<<1))<<11;
-	xcolor.red   = ((((uint8 *)vdp_cram)[2*i+1]) & (7<<1))<<11;
-	xcolor.green = ((((uint8 *)vdp_cram)[2*i+1]) & (7<<5))<<7;
-	XStoreColor(ui_display, cmap, &xcolor);
-	vdp_cramf[i] = 0;
+        xcolor.pixel = basepixel + i;
+        xcolor.flags = DoRed | DoGreen | DoBlue;
+        xcolor.blue = ((((uint8 *)vdp_cram)[2 * i]) & (7 << 1)) << 12;
+        xcolor.red = ((((uint8 *)vdp_cram)[2 * i + 1]) & (7 << 1)) << 12;
+        xcolor.green = ((((uint8 *)vdp_cram)[2 * i + 1]) & (7 << 5)) << 8;
+        XStoreColor(ui_display, cmap, &xcolor);
+        xcolor.pixel = basepixel + i + 64;
+        xcolor.blue =
+          1 << 15 | ((((uint8 *)vdp_cram)[2 * i]) & (7 << 1)) << 11;
+        xcolor.red =
+          1 << 15 | ((((uint8 *)vdp_cram)[2 * i + 1]) & (7 << 1)) << 11;
+        xcolor.green =
+          1 << 15 | ((((uint8 *)vdp_cram)[2 * i + 1]) & (7 << 5)) << 7;
+        XStoreColor(ui_display, cmap, &xcolor);
+        xcolor.pixel = basepixel + i + 128;
+        xcolor.blue = ((((uint8 *)vdp_cram)[2 * i]) & (7 << 1)) << 11;
+        xcolor.red = ((((uint8 *)vdp_cram)[2 * i + 1]) & (7 << 1)) << 11;
+        xcolor.green = ((((uint8 *)vdp_cram)[2 * i + 1]) & (7 << 5)) << 7;
+        XStoreColor(ui_display, cmap, &xcolor);
+        vdp_cramf[i] = 0;
       }
     }
   }
@@ -1571,8 +1602,7 @@ void ui_fullscreen(int onoff)
   ui_dga_state = 0;
 
   if (!ui_dga) {
-    LOG_CRITICAL(("DGA has been disabled, see error message "
-		  "on startup."));
+    LOG_CRITICAL(("DGA has been disabled, see error message " "on startup."));
     return;
   }
   if (onoff) {
@@ -1612,14 +1642,14 @@ void ui_fullscreen(int onoff)
   } \
 }
 
-LOG_FUNC(debug3,   7, "DEBG ");
-LOG_FUNC(debug2,   6, "DEBG ");
-LOG_FUNC(debug1,   5, "DEBG ");
-LOG_FUNC(user,     4, "USER ");
-LOG_FUNC(verbose,  3, "---- ");
-LOG_FUNC(normal,   2, "---- ");
+LOG_FUNC(debug3, 7, "DEBG ");
+LOG_FUNC(debug2, 6, "DEBG ");
+LOG_FUNC(debug1, 5, "DEBG ");
+LOG_FUNC(user, 4, "USER ");
+LOG_FUNC(verbose, 3, "---- ");
+LOG_FUNC(normal, 2, "---- ");
 LOG_FUNC(critical, 1, "CRIT ");
-LOG_FUNC(request,  0, "---- ");
+LOG_FUNC(request, 0, "---- ");
 
 /*** ui_err - log error message and quit ***/
 

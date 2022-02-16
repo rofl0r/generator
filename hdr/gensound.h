@@ -3,25 +3,32 @@
 #  include "fm.h"
 #endif
 
+#define SOUND_MAXRATE 44100
 #define SOUND_SAMPLERATE 22050
-#define SOUND_DEVICE "/dev/dsp"
 
-/* #include "SN76489.h" */
-
-/* extern SN76489 psg_cpu; */
-extern int sound_feedback;
 extern int sound_debug;
-extern int sound_minfields;
-extern int sound_maxfields;
+extern int sound_feedback;
+extern unsigned int sound_minfields;
+extern unsigned int sound_maxfields;
+extern unsigned int sound_speed;
+extern unsigned int sound_sampsperfield;
+extern unsigned int sound_threshold;
+extern uint8 sound_regs1[256];
+extern uint8 sound_regs2[256];
+extern uint8 sound_address1;
+extern uint8 sound_address2;
+extern uint8 sound_keys[8];
 
 int sound_start(void);
 void sound_stop(void);
 int sound_init(void);
 void sound_final(void);
 int sound_reset(void);
+void sound_endfield(void);
 void sound_genreset(void);
 void sound_process(void);
-void sound_endfield(void);
-
-#define sound_psgwrite(data) WriteSN76489(&psg_cpu, data)
-#define WriteSN76489(x,y) 
+uint8 sound_ym2612fetch(uint8 addr);
+void sound_ym2612store(uint8 addr, uint8 data);
+void sound_sn76496store(uint8 data);
+void sound_genreset(void);
+void sound_process(void);

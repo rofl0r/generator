@@ -9,11 +9,11 @@
 
 /* forward references */
 
-void diss68k_getoperand(char *text, t_ipc *ipc, t_iib *iib, t_type type);
+void diss68k_getoperand(char *text, t_ipc * ipc, t_iib * iib, t_type type);
 
 /* functions */
 
-int diss68k_gettext(t_ipc *ipc, char *text)
+int diss68k_gettext(t_ipc * ipc, char *text)
 {
   t_iib *iib;
   char *p, *c;
@@ -47,7 +47,7 @@ int diss68k_gettext(t_ipc *ipc, char *text)
     }
   }
 
-  switch(iib->size) {
+  switch (iib->size) {
   case sz_byte:
     strcat(mnemonic, ".B");
     break;
@@ -66,7 +66,7 @@ int diss68k_gettext(t_ipc *ipc, char *text)
   return 1;
 }
 
-void diss68k_getoperand(char *text, t_ipc *ipc, t_iib *iib, t_type type)
+void diss68k_getoperand(char *text, t_ipc * ipc, t_iib * iib, t_type type)
 {
   int bitpos;
   uint32 val;
@@ -79,27 +79,27 @@ void diss68k_getoperand(char *text, t_ipc *ipc, t_iib *iib, t_type type)
     val = ipc->dst;
   }
 
-  switch(type == tp_src ? iib->stype : iib->dtype) {
+  switch (type == tp_src ? iib->stype : iib->dtype) {
   case dt_Dreg:
-    sprintf(text, "D%d", (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "D%d", (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Areg:
-    sprintf(text, "A%d", (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "A%d", (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Aind:
-    sprintf(text, "(A%d)", (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "(A%d)", (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Ainc:
-    sprintf(text, "(A%d)+", (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "(A%d)+", (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Adec:
-    sprintf(text, "-(A%d)", (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "-(A%d)", (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Adis:
-    sprintf(text, "$%04x(A%d)", (uint16)val, (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "$%04x(A%d)", (uint16)val, (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Aidx:
-    sprintf(text, "$%02x(A%d,Rx.X)", (uint8)val, (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "$%02x(A%d,Rx.X)", (uint8)val, (ipc->opcode >> bitpos) & 7);
     break;
   case dt_AbsW:
     sprintf(text, "$%08x", val);
@@ -126,13 +126,13 @@ void diss68k_getoperand(char *text, t_ipc *ipc, t_iib *iib, t_type type)
     sprintf(text, "#%d", iib->immvalue);
     break;
   case dt_Imm3:
-    sprintf(text, "#%d", (ipc->opcode>>bitpos) & 7);
+    sprintf(text, "#%d", (ipc->opcode >> bitpos) & 7);
     break;
   case dt_Imm4:
-    sprintf(text, "#%d", (ipc->opcode>>bitpos) & 15);
+    sprintf(text, "#%d", (ipc->opcode >> bitpos) & 15);
     break;
   case dt_Imm8:
-    sprintf(text, "#%d", (ipc->opcode>>bitpos) & 255);
+    sprintf(text, "#%d", (ipc->opcode >> bitpos) & 255);
     break;
   case dt_Imm8s:
     sprintf(text, "#%d", (sint32)val);
@@ -151,8 +151,7 @@ int diss68k_getdumpline(uint32 addr68k, uint8 *addr, char *dumpline)
   char dissline[64], *p;
 
   if (addr68k < 256) {
-    sprintf(dissline, "dc.l $%08x",
-	    LOCENDIAN32(*(uint32 *)addr));
+    sprintf(dissline, "dc.l $%08x", LOCENDIAN32(*(uint32 *)addr));
     words = 2;
   } else {
     cpu68k_ipc(addr68k, addr, iibp, &ipc);
@@ -162,26 +161,26 @@ int diss68k_getdumpline(uint32 addr68k, uint8 *addr, char *dumpline)
   }
 
   p = dumpline;
-  p+= sprintf(p, "%6x : %04x ", addr68k, (addr[0]<<8) + addr[1]);
+  p += sprintf(p, "%6x : %04x ", addr68k, (addr[0] << 8) + addr[1]);
   for (i = 1; i < words; i++) {
-    p+= sprintf(p, "%04x ", (addr[i*2]<<8) + addr[i*2+1]);
+    p += sprintf(p, "%04x ", (addr[i * 2] << 8) + addr[i * 2 + 1]);
   }
-  for (i = 29-strlen(dumpline); i > 0; i--) {
+  for (i = 29 - strlen(dumpline); i > 0; i--) {
     *p++ = ' ';
   }
-  p+= sprintf(p, ": ");
+  p += sprintf(p, ": ");
   for (i = 0; i < words; i++) {
-    if (isalnum(addr[i*2])) {
-      *p++ = addr[i*2];
+    if (isalnum(addr[i * 2])) {
+      *p++ = addr[i * 2];
     } else
       *p++ = '.';
-    if (isalnum(addr[i*2+1])) {
-      *p++ = addr[i*2+1];
+    if (isalnum(addr[i * 2 + 1])) {
+      *p++ = addr[i * 2 + 1];
     } else
       *p++ = '.';
   }
   *p = '\0';
-  for (i = 39-strlen(dumpline); i > 0; i--) {
+  for (i = 39 - strlen(dumpline); i > 0; i--) {
     *p++ = ' ';
   }
   if (iibp) {

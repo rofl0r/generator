@@ -13,6 +13,7 @@ typedef struct {
 } t_uipinfo;
 
 int uip_init(t_uipinfo *uipinfo);
+int uip_initjoysticks(void);
 int uip_vgamode(void);
 void uip_displaybank(int bank);
 void uip_clearscreen(void);

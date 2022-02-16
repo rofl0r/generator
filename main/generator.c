@@ -16,8 +16,8 @@
 
 #include "ui.h"
 #include "memz80.h"
-#include "mem68k.h"
 #include "cpu68k.h"
+#include "mem68k.h"
 #include "cpuz80.h"
 #include "vdp.h"
 #include "gensound.h"
@@ -30,7 +30,7 @@
 
 unsigned int gen_quit = 0;
 unsigned int gen_debugmode = 1;
-unsigned int gen_loglevel = 2; /* 2 = NORMAL, 1 = CRITICAL */
+unsigned int gen_loglevel = 2;  /* 2 = NORMAL, 1 = CRITICAL */
 t_cartinfo gen_cartinfo;
 char gen_leafname[128];
 
@@ -47,10 +47,10 @@ RETSIGTYPE gen_sighandler(int signum)
     if (signum == SIGINT) {
       if (gen_quit) {
         LOG_CRITICAL(("Bye!"));
-	ui_final();
-	ui_err("Exiting");
+        ui_final();
+        ui_err("Exiting");
       } else {
-	LOG_REQUEST(("Ping - current PC = 0x%X", regs.pc));
+        LOG_REQUEST(("Ping - current PC = 0x%X", regs.pc));
       }
       gen_quit = 1;
     }
@@ -62,12 +62,13 @@ RETSIGTYPE gen_sighandler(int signum)
 }
 
 static char thing[] = ("\n\nIt's the year 2000 is there anyone out there?\n"
-		       "\nIf you're from another planet put your hand in the "
-		       "air, say yeah!\n\n");
+                       "\nIf you're from another planet put your hand in the "
+                       "air, say yeah!\n\n");
 
 /*** Program entry point ***/
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   int retval;
   t_sr test;
 
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
   test.sr_struct.c = 1;
   if (test.sr_int != 1) {
     fprintf(stderr, "%s: compilation variable BYTES_HIGHFIRST not set "
-	    "correctly\n", argv[0]);
+            "correctly\n", argv[0]);
     return 1;
   }
 
@@ -119,7 +120,8 @@ END_OF_MAIN();
 
 /*** gen_reset - reset system ***/
 
-void gen_reset(void) {
+void gen_reset(void)
+{
   vdp_reset();
   cpu68k_reset();
   cpuz80_reset();
@@ -130,13 +132,15 @@ void gen_reset(void) {
 
 /*** gen_softreset - reset system ***/
 
-void gen_softreset(void) {
+void gen_softreset(void)
+{
   cpu68k_reset();
 }
 
 /*** gen_loadimage - load ROM image ***/
 
-char *gen_loadimage(const char *filename) {
+char *gen_loadimage(const char *filename)
+{
   int file, imagetype, bytes, bytesleft;
   struct stat statbuf;
   const char *extension;
@@ -154,98 +158,98 @@ char *gen_loadimage(const char *filename) {
 
   /* Load file */
   if (stat(filename, &statbuf) != 0) {
-    return("Unable to stat file.");
+    return ("Unable to stat file.");
   }
   cpu68k_romlen = statbuf.st_size;
   /* allocate enough memory plus 16 bytes for disassembler to cope
      with the last instruction */
-  if ((cpu68k_rom = malloc(cpu68k_romlen+16)) == NULL) {
+  if ((cpu68k_rom = malloc(cpu68k_romlen + 16)) == NULL) {
     cpu68k_romlen = 0;
-    return("Out of memory!");
+    return ("Out of memory!");
   }
-  memset(cpu68k_rom, 0, cpu68k_romlen+16);
+  memset(cpu68k_rom, 0, cpu68k_romlen + 16);
 #ifdef ALLEGRO
-  if ((file = open(filename, O_RDONLY|O_BINARY, 0)) == -1) {
+  if ((file = open(filename, O_RDONLY | O_BINARY, 0)) == -1) {
 #else
   if ((file = open(filename, O_RDONLY, 0)) == -1) {
 #endif
     perror("open");
     cpu68k_rom = NULL;
     cpu68k_romlen = 0;
-    return("Unable to open file.");
+    return ("Unable to open file.");
   }
   buffer = cpu68k_rom;
   bytesleft = cpu68k_romlen;
   do {
     if ((bytes = read(file, buffer, bytesleft)) <= 0)
       break;
-    buffer+= bytes;
-    bytesleft-= bytes;
-  } while (bytesleft >= 0);
+    buffer += bytes;
+    bytesleft -= bytes;
+  }
+  while (bytesleft >= 0);
   close(file);
   if (bytes == -1)
-    return(strerror(errno));
+    return (strerror(errno));
   else if (bytes != 0)
-    return("invalid return code from read()");
+    return ("invalid return code from read()");
   if (bytesleft) {
     LOG_CRITICAL(("%d bytes left to read?!", bytesleft));
-    return("Error whilst loading file");
+    return ("Error whilst loading file");
   }
 
-  imagetype = 1; /* BIN file by default */
+  imagetype = 1;                /* BIN file by default */
 
   /* SMD file format check - Richard Bannister */
   if ((cpu68k_rom[8] == 0xAA) && (cpu68k_rom[9] == 0xBB) &&
       cpu68k_rom[10] == 0x06) {
-    imagetype = 2; /* SMD file */
+    imagetype = 2;              /* SMD file */
   }
   /* check for interleaved 'SEGA' */
   if (cpu68k_rom[0x280] == 'E' && cpu68k_rom[0x281] == 'A' &&
       cpu68k_rom[0x2280] == 'S' && cpu68k_rom[0x2281] == 'G') {
-    imagetype = 2; /* SMD file */
+    imagetype = 2;              /* SMD file */
   }
-
 #ifndef OS_ACORN
   /* Check extension is not wrong */
   extension = filename + strlen(filename) - 3;
   if (extension > filename) {
     if (!strcasecmp(extension, "smd") && (imagetype != 2))
       LOG_REQUEST(("File extension (smd) does not match detected "
-		   "type (bin)"));
+                   "type (bin)"));
     if (!strcasecmp(extension, "bin") && (imagetype != 1))
       LOG_REQUEST(("File extension (bin) does not match detected "
-		   "type (smd)"));
+                   "type (smd)"));
   }
 #endif
 
   /* convert to standard BIN file format */
 
-  switch(imagetype) {
-  case 1: /* BIN */
+  switch (imagetype) {
+  case 1:                      /* BIN */
     break;
-  case 2: /* SMD */
-    blocks = (cpu68k_romlen-512)/16384;
-    if (blocks*16384+512 != cpu68k_romlen)
-      return("Image is corrupt.");
+  case 2:                      /* SMD */
+    blocks = (cpu68k_romlen - 512) / 16384;
+    if (blocks * 16384 + 512 != cpu68k_romlen)
+      return ("Image is corrupt.");
 
-    if ((new = malloc(cpu68k_romlen-512)) == NULL) {
+    if ((new = malloc(cpu68k_romlen - 512)) == NULL) {
       cpu68k_rom = NULL;
       cpu68k_romlen = 0;
-      return("Out of memory!");
+      return ("Out of memory!");
     }
 
     for (i = 0; i < blocks; i++) {
       for (x = 0; x < 8192; x++) {
-        new[i*16384+x*2+0] = cpu68k_rom[512+i*16384+8192+x];
-        new[i*16384+x*2+1] = cpu68k_rom[512+i*16384+x];
+        new[i * 16384 + x * 2 + 0] = cpu68k_rom[512 + i * 16384 + 8192 + x];
+        new[i * 16384 + x * 2 + 1] = cpu68k_rom[512 + i * 16384 + x];
       }
     }
     free(cpu68k_rom);
     cpu68k_rom = new;
-    cpu68k_romlen-= 512;
+    cpu68k_romlen -= 512;
     break;
   default:
-    return("Unknown image type");
+    return ("Unknown image type");
     break;
   }
 
@@ -257,7 +261,7 @@ char *gen_loadimage(const char *filename) {
       (p = strrchr(filename, '\\')) == NULL) {
     snprintf(gen_leafname, sizeof(gen_leafname), "%s", filename);
   } else {
-    snprintf(gen_leafname, sizeof(gen_leafname), "%s", p+1);
+    snprintf(gen_leafname, sizeof(gen_leafname), "%s", p + 1);
   }
   if ((p = strrchr(gen_leafname, '.')) != NULL) {
     if ((!strcasecmp(p, ".smd")) || (!strcasecmp(p, ".bin")))
@@ -267,10 +271,10 @@ char *gen_loadimage(const char *filename) {
     snprintf(gen_leafname, sizeof(gen_leafname), "rom");
 
   memset(&gen_cartinfo, 0, sizeof(gen_cartinfo));
-  gen_nicetext(gen_cartinfo.console, (char *)(cpu68k_rom+0x100), 16);
-  gen_nicetext(gen_cartinfo.copyright, (char *)(cpu68k_rom+0x110), 16);
-  gen_nicetext(gen_cartinfo.name_domestic, (char *)(cpu68k_rom+0x120), 48);
-  gen_nicetext(gen_cartinfo.name_overseas, (char *)(cpu68k_rom+0x150), 48);
+  gen_nicetext(gen_cartinfo.console, (char *)(cpu68k_rom + 0x100), 16);
+  gen_nicetext(gen_cartinfo.copyright, (char *)(cpu68k_rom + 0x110), 16);
+  gen_nicetext(gen_cartinfo.name_domestic, (char *)(cpu68k_rom + 0x120), 48);
+  gen_nicetext(gen_cartinfo.name_overseas, (char *)(cpu68k_rom + 0x150), 48);
   if (cpu68k_rom[0x180] == 'G' && cpu68k_rom[0x181] == 'M') {
     gen_cartinfo.prodtype = pt_game;
   } else if (cpu68k_rom[0x180] == 'A' && cpu68k_rom[0x181] == 'I') {
@@ -278,10 +282,10 @@ char *gen_loadimage(const char *filename) {
   } else {
     gen_cartinfo.prodtype = pt_unknown;
   }
-  gen_nicetext(gen_cartinfo.version, (char *)(cpu68k_rom+0x182), 12);
-  gen_cartinfo.checksum = gen_checksum(((uint8 *)cpu68k_rom)+0x200,
-				       cpu68k_romlen-0x200);
-  gen_nicetext(gen_cartinfo.memo, (char *)(cpu68k_rom+0x1C8), 28);
+  gen_nicetext(gen_cartinfo.version, (char *)(cpu68k_rom + 0x182), 12);
+  gen_cartinfo.checksum = gen_checksum(((uint8 *)cpu68k_rom) + 0x200,
+                                       cpu68k_romlen - 0x200);
+  gen_nicetext(gen_cartinfo.memo, (char *)(cpu68k_rom + 0x1C8), 28);
   for (i = 0x1f0; i < 0x1ff; i++) {
     if (cpu68k_rom[i] == 'J')
       gen_cartinfo.flag_japan = 1;
@@ -304,16 +308,16 @@ char *gen_loadimage(const char *filename) {
 
   ui_setinfo(&gen_cartinfo);
 
-  if (gen_cartinfo.checksum != (cpu68k_rom[0x18e]<<8 | cpu68k_rom[0x18f]))
+  if (gen_cartinfo.checksum != (cpu68k_rom[0x18e] << 8 | cpu68k_rom[0x18f]))
     LOG_REQUEST(("Warning: Checksum does not match in ROM (%04X)",
-                 (cpu68k_rom[0x18e]<<8 | cpu68k_rom[0x18f])));
+                 (cpu68k_rom[0x18e] << 8 | cpu68k_rom[0x18f])));
 
   vdp_pal = (!gen_cartinfo.flag_usa && !gen_cartinfo.flag_japan &&
-	     gen_cartinfo.flag_europe) ? 1 : 0;
+             gen_cartinfo.flag_europe) ? 1 : 0;
 
   LOG_REQUEST(("Loaded '%s'/'%s' (%s %04X %s)", gen_cartinfo.name_domestic,
-	       gen_cartinfo.name_overseas, gen_cartinfo.version,
-	       gen_cartinfo.checksum, gen_cartinfo.country));
+               gen_cartinfo.name_overseas, gen_cartinfo.version,
+               gen_cartinfo.checksum, gen_cartinfo.country));
 
   return NULL;
 }
@@ -326,30 +330,30 @@ void gen_nicetext(char *out, char *in, unsigned int size)
   char c;
   char *start = out;
 
-  flag = 0; /* set if within word, e.g. make lowercase */
-  i = size; /* maximum number of chars in input*/
+  flag = 0;                     /* set if within word, e.g. make lowercase */
+  i = size;                     /* maximum number of chars in input */
   while ((c = *in++) && i--) {
     if (isalpha((int)c)) {
       if (!flag) {
         /* make uppercase */
-	flag = 1;
-	if (islower((int)c)) {
-	  *out++ = c - 'z'-'Z';
-	} else {
-	  *out++ = c;
-	}
+        flag = 1;
+        if (islower((int)c)) {
+          *out++ = c - 'z' - 'Z';
+        } else {
+          *out++ = c;
+        }
       } else {
-	/* make lowercase */
-	if (isupper((int)c)) {
-	  *out++ = (c) + 'z'-'Z';
-	} else {
-	  *out++ = c;
-	}
+        /* make lowercase */
+        if (isupper((int)c)) {
+          *out++ = (c) + 'z' - 'Z';
+        } else {
+          *out++ = c;
+        }
       }
       continue;
     }
     if (c == ' ' && !flag) {
-	continue;
+      continue;
     }
     *out++ = c;
     flag = 0;
@@ -366,13 +370,13 @@ uint16 gen_checksum(uint8 *start, unsigned int length)
   uint16 checksum = 0;
 
   if (length & 1) {
-    length&= ~1;
+    length &= ~1;
     LOG_CRITICAL(("checksum routines given odd length (%d)", length));
   }
 
-  for (; length; length-= 2, start+= 2) {
-    checksum+= start[0]<<8;
-    checksum+= start[1];
+  for (; length; length -= 2, start += 2) {
+    checksum += start[0] << 8;
+    checksum += start[1];
   }
   return checksum;
 }
@@ -382,5 +386,5 @@ uint16 gen_checksum(uint8 *start, unsigned int length)
 char *gen_loadsavepos(const char *filename)
 {
   LOG_REQUEST(("gen_loadsavepos: %s\n", filename));
-  return("Not implemented.");
+  return ("Not implemented.");
 }

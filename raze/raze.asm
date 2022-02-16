@@ -8,6 +8,14 @@
 ; See RAZE.TXT for license information.
 ;----------------------------------------------------------------------------;
 
+; this is needed for compiling with allegro in coff mode
+%macro cglobal 1 
+  global %1 
+%endmacro
+;%macro cglobal 1 
+;  global _%1 
+;  %define %1 _%1 
+;%endmacro
 
 ; You are not expected to understand this.
 
@@ -3131,7 +3139,7 @@ wd_handler:
 ; int z80_emulate(int cycles)
 ; Emulate for 'cycles' T-states,
 ; Returns the number of cycles actually emulated.
-global z80_emulate
+cglobal z80_emulate
 z80_emulate:
    mov eax, [esp+4]
    push ebx
@@ -3162,7 +3170,7 @@ not_halted:
 
 ; void z80_reset(void)
 ; Resets the Z80.
-global z80_reset
+cglobal z80_reset
 z80_reset:
    push edi
    xor eax, eax      ; just zero it all
@@ -3180,7 +3188,7 @@ z80_reset:
 ; In IM 0, the vector has to be an RST opcode.
 ; If interrupts are disabled, the interrupt will still happen as long as
 ; the IRQ line stays raised.
-global z80_raise_IRQ
+cglobal z80_raise_IRQ
 z80_raise_IRQ:
    mov [z80_IRQLine], byte 1
    mov eax, [esp+4]
@@ -3204,7 +3212,7 @@ z80_raise_IRQ:
 
 ; void z80_lower_IRQ(void)
 ; Lowers the IRQ line.
-global z80_lower_IRQ
+cglobal z80_lower_IRQ
 z80_lower_IRQ:
    mov [z80_IRQLine], byte 0
    ret
@@ -3213,7 +3221,7 @@ z80_lower_IRQ:
 ; Causes a non-maskable interrupt.
 ; This will always be accepted.
 ; There is no raise/lower functions, as the NMI is edge-triggered.
-global z80_cause_NMI
+cglobal z80_cause_NMI
 z80_cause_NMI:
    xor edx, edx
    push ebx
@@ -3255,7 +3263,7 @@ z80_cause_NMI:
 
 ; int z80_get_context_size(void)
 ; Returns the size of the context, in bytes
-global z80_get_context_size
+cglobal z80_get_context_size
 z80_get_context_size:
    mov eax, (context_end - context_start) + 4   ; +4 for a safety buffer
    ret
@@ -3263,7 +3271,7 @@ z80_get_context_size:
 
 ; void z80_set_context(void *context)
 ; Copy the given context to the current Z80.
-global z80_set_context
+cglobal z80_set_context
 z80_set_context:
    push esi
    push edi
@@ -3277,7 +3285,7 @@ z80_set_context:
 
 ; void z80_get_context(void *context)
 ; Copy the current Z80 to the given context.
-global z80_get_context
+cglobal z80_get_context
 z80_get_context:
    push esi
    push edi
@@ -3291,7 +3299,7 @@ z80_get_context:
 
 ; int z80_get_cycles_elapsed(void)
 ; Returns the number of cycles emulated since z80_emulate was called.
-global z80_get_cycles_elapsed
+cglobal z80_get_cycles_elapsed
 z80_get_cycles_elapsed:
    mov eax, [z80_Initial_ICount]
    sub eax, [z80_ICount]
@@ -3305,7 +3313,7 @@ z80_gcd_fin:
 ; Stops the emulation dead. (waits for the current instruction to finish
 ; first though).
 ; The return value from z80_execute will obviously be lower than expected.
-global z80_stop_emulating
+cglobal z80_stop_emulating
 z80_stop_emulating:
    mov eax, [z80_ICount]
    sub [z80_Initial_ICount], eax
@@ -3323,7 +3331,7 @@ z80_se_fin:
 ; first though).
 ; The return value from z80_execute will appear as though it had executed
 ; all the instructions like normal.
-global z80_skip_idle
+cglobal z80_skip_idle
 z80_skip_idle:
    mov [z80_ICount], dword 0
    mov [z80_TempICount], dword 0
@@ -3331,14 +3339,14 @@ z80_skip_idle:
 
 ; void z80_do_wait_states(int n)
 ; Halts the CPU temporarily, to execute 'n' memory wait states.
-global z80_do_wait_states
+cglobal z80_do_wait_states
 z80_do_wait_states:
    add [z80_Initial_ICount], eax
    ret
 
 ; UWORD z80_get_reg(z80_register reg)
 ; Return the value of the specified register.
-global z80_get_reg
+cglobal z80_get_reg
 z80_get_reg:
    mov ecx, [esp+4]
    cmp ecx, Z80_REG_HL2
@@ -3397,7 +3405,7 @@ getreg_boolean:
 
 ; void z80_set_reg(z80_register reg, UWORD value)
 ; Set the specified register to a new value.
-global z80_set_reg
+cglobal z80_set_reg
 z80_set_reg:
    mov ecx, [esp+4]
    mov eax, [esp+8]
@@ -3459,7 +3467,7 @@ setreg_value:
 
 ; void z80_init_memmap(void)
 ; Reset the current memory map
-global z80_init_memmap
+cglobal z80_init_memmap
 z80_init_memmap:
    mov [z80_In], dword z80_default_in
    mov [z80_Out], dword z80_default_out
@@ -3496,7 +3504,7 @@ clear_write:
 
 ; void z80_end_memmap(void)
 ; Finishes the current memory map
-global z80_end_memmap
+cglobal z80_end_memmap
 z80_end_memmap:
    ; put the entry at the end of the read table
    mov edx, _read_handlers
@@ -3531,7 +3539,7 @@ ew_find:
 ; Set the given area for op-code fetching
 ; start/end = the area it covers
 ; memory = the ROM/RAM to read from
-global z80_map_fetch
+cglobal z80_map_fetch
 z80_map_fetch:
    push ebx
    mov eax, [esp+8]
@@ -3561,7 +3569,7 @@ mf_finish:
 ; Moves a Z80_MAP_MAPPED area to use a different region of memory
 ; start/end = the area it covers (must be page-aligned)
 ; memory = the ROM/RAM to read from
-global z80_map_read
+cglobal z80_map_read
 z80_map_read:
    push ebx
    mov eax, [esp+8]
@@ -3592,7 +3600,7 @@ mr_finish:
 ; Moves a Z80_MAP_MAPPED area to use a different region of memory
 ; start/end = the area it covers (must be page-aligned)
 ; memory = the ROM/RAM to read from
-global z80_map_write
+cglobal z80_map_write
 z80_map_write:
    push ebx
    mov eax, [esp+8]
@@ -3624,7 +3632,7 @@ mw_finish:
 ; start/end = the area it covers
 ; method = 0 for direct, 1 for handled
 ; data = RAM for direct, handler for handled
-global z80_add_read
+cglobal z80_add_read
 z80_add_read:
    push ebx
    mov eax, [esp+8]
@@ -3719,7 +3727,7 @@ ar_finish:
 ; start/end = the area it covers
 ; method = 0 for direct, 1 for handled
 ; data = RAM for direct, handler for handled
-global z80_add_write
+cglobal z80_add_write
 z80_add_write:
    push ebx
    mov eax, [esp+8]
@@ -3811,7 +3819,7 @@ aw_finish:
 
 ; void z80_set_in(UBYTE (*handler)(UWORD port))
 ; Set the IN port handler to the given function
-global z80_set_in
+cglobal z80_set_in
 z80_set_in:
    mov eax, [esp+4]
    mov [z80_In], eax
@@ -3819,7 +3827,7 @@ z80_set_in:
 
 ; void z80_set_out(void (*handler)(UWORD port, UBYTE value))
 ; Set the OUT port handler to the given function
-global z80_set_out
+cglobal z80_set_out
 z80_set_out:
    mov eax, [esp+4]
    mov [z80_Out], eax
@@ -3827,7 +3835,7 @@ z80_set_out:
 
 ; void z80_set_reti(void (*handler)(void))
 ; Set the RETI handler to the given function
-global z80_set_reti
+cglobal z80_set_reti
 z80_set_reti:
    mov eax, [esp+4]
    mov [z80_RetI], eax
@@ -3835,7 +3843,7 @@ z80_set_reti:
 
 ; void z80_set_fetch_callback(void (*handler)(UWORD pc))
 ; Set the fetch callback to the given function
-global z80_set_fetch_callback
+cglobal z80_set_fetch_callback
 z80_set_fetch_callback:
    mov eax, [esp+4]
    mov [z80_Fetch_Callback], eax
