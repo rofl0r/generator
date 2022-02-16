@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
-/*****************************************************************************/
-/*                                                                           */
-/* z80.c                                                                     */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,12 +22,12 @@ void cpuz80_iowrite_actual(UINT16 addr, UINT8 data, struct z80PortWrite *me);
 uint8 *cpuz80_ram = NULL;
 uint32 cpuz80_bank = 0;
 unsigned int cpuz80_active = 0;
+CONTEXTMZ80 cpuz80_z80;
 
 /*** global variables ***/
 
 static unsigned int cpuz80_lastsync = 0;
 static unsigned int cpuz80_resetting = 0;
-static CONTEXTMZ80 cpuz80_z80;
 
 static struct MemoryReadByte cpuz80_read[] = {
   { 0x0000, 0xFFFF, cpuz80_read_actual, NULL },
@@ -83,7 +77,7 @@ void cpuz80_iowrite_actual(UINT16 addr, UINT8 data, struct z80PortWrite *me)
 
 int cpuz80_init(void)
 {
-  /* mz80init(); */
+  /* mz80init(); - comment in this line if you use assembler z80 */
   cpuz80_reset();
   return 0;
 }
@@ -99,11 +93,10 @@ void cpuz80_reset(void)
     }
   }
   memset(cpuz80_ram, 0, LEN_SRAM);
-  cpuz80_resetcpu();
   cpuz80_bank = 0;
   cpuz80_active = 0;
   cpuz80_lastsync = 0;
-  cpuz80_resetting = 0;
+  cpuz80_resetting = 1;
   /* mz80GetContext(&cpuz80_z80); */
   memset(&cpuz80_z80, 0, sizeof(cpuz80_z80));
   cpuz80_z80.z80Base = cpuz80_ram;
@@ -113,6 +106,13 @@ void cpuz80_reset(void)
   cpuz80_z80.z80IoWrite = cpuz80_iowrite;
   mz80SetContext(&cpuz80_z80);
   mz80reset();
+}
+
+/*** cpuz80_updatecontext - inform z80 processor of changed context ***/
+
+void cpuz80_updatecontext(void)
+{
+  mz80SetContext(&cpuz80_z80);
 }
 
 /*** cpuz80_resetcpu - reset z80 cpu ***/
@@ -169,7 +169,7 @@ void cpuz80_endfield(void)
 void cpuz80_sync(void)
 {
   int cpu68k_wanted = cpu68k_clocks - cpuz80_lastsync;
-  int wanted = (cpu68k_wanted<0?0:cpu68k_wanted)*7/16;
+  int wanted = (cpu68k_wanted<0?0:cpu68k_wanted)*7/15;
   int acheived;
 
   if (cpuz80_active && !cpuz80_resetting) {
@@ -177,14 +177,7 @@ void cpuz80_sync(void)
        cpuz80_z80.z80pc); */
     mz80exec(wanted);
     acheived = mz80GetElapsedTicks(1);
-    /* this if/else statement below, I'm not entirely sure this is a good
-       idea, perhaps just doing cpuz80_lastsync = cpu68k_clocks; always is
-       better? hmm. */
-    if (acheived > wanted) {
-      cpuz80_lastsync = cpu68k_clocks;
-    } else {
-      cpuz80_lastsync = cpuz80_lastsync + acheived*16/7;
-    }
+    cpuz80_lastsync = cpuz80_lastsync + acheived*15/7;
   } else {
     cpuz80_lastsync = cpu68k_clocks;
   }

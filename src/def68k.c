@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
-/*****************************************************************************/
-/*                                                                           */
-/* def68k.c                                                                  */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include <errno.h>
 #include <stdio.h>
@@ -27,6 +21,7 @@ typedef enum {
 /* file-scope global variables */
 
 static int total = 0;
+static int clocks_movetable[]; /* pre-declaration */
 
 /* private functions for forward references */
 
@@ -34,9 +29,8 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
 	      FILE *outproto);
 int clocks_ea(t_datatype type);
 int clocks_eacalc(t_datatype type, t_size size);
-int clocks_eafetch(t_datatype type, t_size size);
-int clocks_standard(t_datatype stype, t_datatype dtype, t_size size);
-int clocks_single(t_datatype type, t_size size);
+int clocks_6or8(t_datatype type);
+int clocks_typetoindex(t_datatype type);
 
 /* program entry routine */
 
@@ -711,6 +705,7 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
     int skip;
     int cc;
     int wordlen, type;
+    int idx;
 
     /* loop through 3 different sizes or just once if no size to loop on */
 
@@ -958,150 +953,229 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
 	      }
 	    }
 
+	    /* BUG: The immediate instructions are probably not correct,
+	       e.g. ADDI, ADDQ, ANDI, CMPI, EORI, MOVEQ, ORI, SUBI, SUBQ */
+
 	    clocks = -1;
 
 	    switch(mnemonic_num) {
-	    case i_OR:
-	    case i_AND:
 	    case i_EOR:
-	      clocks = 4;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
-	      clocks+= clocks_standard(stype, dtype, size);
-	      break;
-	    case i_ORSR:
-	    case i_ANDSR:
-	    case i_EORSR:
-	      clocks = 20;
-	      break;
-	    case i_SUB:
-	    case i_SUBA:
-	    case i_ADD:
-	    case i_ADDA:
-	      clocks = 4;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
-	      clocks+= clocks_standard(stype, dtype, size);
-	      break;
-	    case i_SUBX:
-	    case i_ADDX:
-	      if (stype == dt_Dreg) {
-		if (size != sz_long) {
-		  clocks = 4;
-		} else {
-		  clocks = 8;
-		}
+	      if (dtype == dt_Dreg) {
+		clocks = size != sz_long ? 4 : 8;
+		clocks+= clocks_eacalc(stype, size);
+	      } else if (stype == dt_Dreg) {
+		clocks = size != sz_long ? 8 : 12;
+		clocks+= clocks_eacalc(dtype, size);
 	      } else {
-		if (size != sz_long) {
-		  clocks = 18;
-		} else {
-		  clocks = 30;
-		}
+		clocks = size != sz_long ? 20 : 12;
+		clocks+= clocks_eacalc(dtype, size);
 	      }
 	      break;
-	    case i_MULU:
-	    case i_MULS:
-	      clocks = 54;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
+	    case i_OR:
+	    case i_AND:
+	      if (dtype == dt_Dreg) {
+		clocks = size != sz_long ? 4 : clocks_6or8(stype);
+		clocks+= clocks_eacalc(stype, size);
+	      } else if (stype == dt_Dreg) {
+		clocks = size != sz_long ? 8 : 12;
+		clocks+= clocks_eacalc(dtype, size);
+	      } else {
+		clocks = size != sz_long ? 20 : 12;
+		clocks+= clocks_eacalc(dtype, size);
+	      }
+	      break;
+	    case i_ADDA:
+	    case i_SUBA:
+	      if (dtype == dt_Areg) {
+		clocks = size != sz_long ? 8 : clocks_6or8(stype);
+		clocks+= clocks_eacalc(stype, size);
+	      } else {
+		printf("%d: clock count invalid type\n", lineno);
+		exit(1);
+	      }
+	      break;
+	    case i_ADD:
+	    case i_SUB:
+	      if (dtype == dt_Dreg) {
+		clocks = size != sz_long ? 4 : clocks_6or8(stype);
+		clocks+= clocks_eacalc(stype, size);
+	      } else if (stype == dt_Dreg) {
+		clocks = size != sz_long ? 8 : 12;
+		clocks+= clocks_eacalc(dtype, size);
+	      } else {
+		clocks = size != sz_long ? 20 : 12;
+		clocks+= clocks_eacalc(dtype, size);
+	      }
 	      break;
 	    case i_CMP:
 	    case i_CMPA:
 	      if (dtype == dt_Areg) {
 		clocks = 6;
-	      } else {
-		if (size != sz_long) {
-		  clocks = 4;
-		} else {
-		  clocks = 6;
-		}
+		clocks+= clocks_eacalc(stype, size);
+	      } else if (dtype == dt_Dreg) {
+		clocks = size != sz_long ? 4 : 6;
+		clocks+= clocks_eacalc(stype, size);
+	      } else { /* CMPM */
+		clocks = 12 + clocks_eacalc(stype, size) +
+		  clocks_eacalc(dtype, size);
 	      }
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
 	      break;
-	    case i_BTST:
-	      if (stype == dt_Dreg) {
-		/* dynamic */
-		if (dtype == dt_Dreg) {
-		  clocks = 6;
-		} else {
-		  clocks = 4;
-		}
-	      } else {
-		/* static */
-		if (dtype == dt_Dreg) {
-		  clocks = 10;
-		} else {
-		  clocks = 8;
-		}
-	      }
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
+	    case i_DIVS:
+	      clocks = 158 - 8 + clocks_eacalc(stype, size);
 	      break;
-	    case i_BCHG:
-	    case i_BSET:
-	      if (stype == dt_Dreg) {
-		/* dynamic */
-		clocks = 8;
-	      } else {
-		/* static */
-		clocks = 12;
-	      }
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
+	    case i_DIVU:
+	      clocks = 140 - 8 + clocks_eacalc(stype, size);
 	      break;
-	    case i_BCLR:
-	      if (stype == dt_Dreg) {
-		/* dynamic */
-		if (dtype == dt_Dreg) {
-		  clocks = 10;
-		} else {
-		  clocks = 8;
-		}
-	      } else {
-		/* static */
-		if (dtype == dt_Dreg) {
-		  clocks = 14;
-		} else {
-		  clocks = 12;
-		}
-	      }
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
+	    case i_MULS:
+	      clocks = 38 + clocks_eacalc(stype, size);
+	      break;
+	    case i_MULU:
+	      clocks = 38 + clocks_eacalc(stype, size);
 	      break;
 	    case i_MOVE:
 	    case i_MOVEA:
-	      clocks = 4;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
+	      if ((idx = clocks_typetoindex(dtype)) == -1) {
+		printf("%d: clock count invalid MOVE type\n", lineno);
+		exit(1);
+	      }
+	      clocks = clocks_movetable[clocks_typetoindex(stype)*9+idx];
 	      break;
-	    case i_MOVEPRM:
-	    case i_MOVEPMR:
-	      if (size == sz_long) {
-		clocks = 24;
+	    case i_CLR:
+	    case i_NEG:
+	    case i_NEGX:
+	    case i_NOT:
+	      if (stype == dt_Dreg || stype == dt_Areg) {
+		clocks = size != sz_long ? 4 : 6;
 	      } else {
-		clocks = 16;
+		clocks = size != sz_long ? 8 : 12;
+		clocks+= clocks_eacalc(stype, size);
 	      }
 	      break;
-	    case i_MOVEFSR:
-	      if (stype == dt_Dreg) {
+	    case i_NBCD:
+	      if (stype == dt_Dreg || stype == dt_Areg) {
 		clocks = 6;
 	      } else {
-		clocks = 8;
+		clocks = 8 + clocks_eacalc(stype, size);
 	      }
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
 	      break;
-	    case i_MOVETSR:
-	      clocks = 12;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
+	    case i_Scc:
+	    case i_SF:
+	      if (stype == dt_Dreg || stype == dt_Areg) {
+		clocks = size != sz_long ? 4 : 6;
+	      } else {
+		clocks = 8 + clocks_eacalc(stype, size);
+	      }
+	      break;
+	    case i_TAS:
+	      if (stype == dt_Dreg || stype == dt_Areg) {
+		clocks = 4;
+	      } else {
+		clocks = 10 + clocks_eacalc(stype, size);
+	      }
+	      break;
+	    case i_TST:
+	      if (stype == dt_Dreg || stype == dt_Areg) {
+		clocks = 4;
+	      } else {
+		clocks = 4 + clocks_eacalc(stype, size);
+	      }
+	      break;
+	    case i_ASR:
+	    case i_ASL:
+	    case i_LSR:
+	    case i_LSL:
+	    case i_ROR:
+	    case i_ROL:
+	    case i_ROXR:
+	    case i_ROXL:
+	      if (stype == dt_Dreg || stype == dt_Areg) {
+		clocks = size != sz_long ? 8 : 10; /* minimums */
+	      } else {
+		clocks = 8 + clocks_eacalc(stype, size);
+	      }
+	      break;
+	    case i_BCHG:
+	    case i_BSET:
+	      if (stype == dt_Dreg) { /* dynamic */
+		clocks = (dtype == dt_Dreg) ? 8 : 8 +
+		  clocks_eacalc(stype, size);
+	      } else { /* static */
+		clocks = (dtype == dt_Dreg) ? 14 : 12 +
+		  clocks_eacalc(stype, size);
+	      }
+	    case i_BCLR:
+	      if (stype == dt_Dreg) { /* dynamic */
+		clocks = (dtype == dt_Dreg) ? 10 : 8 +
+		  clocks_eacalc(stype, size);
+	      } else { /* static */
+		clocks = (dtype == dt_Dreg) ? 14 : 12 +
+		  clocks_eacalc(stype, size);
+	      }
+	      break;
+	    case i_BTST:
+	      if (stype == dt_Dreg) { /* dynamic */
+		clocks = (dtype == dt_Dreg) ? 6 : 4 +
+		  clocks_eacalc(stype, size);
+	      } else { /* static */
+		clocks = (dtype == dt_Dreg) ? 10 : 8 +
+		  clocks_eacalc(stype, size);
+	      }
+	      break;
+	    case i_JMP:
+	      switch(stype) {
+	      case dt_Aind: clocks =  8; break;
+	      case dt_Adis: clocks = 10; break;
+	      case dt_Aidx: clocks = 14; break;
+	      case dt_AbsW: clocks = 10; break;
+	      case dt_AbsL: clocks = 12; break;
+	      case dt_Pdis: clocks = 10; break;
+	      case dt_Pidx: clocks = 14; break;
+	      default:
+		printf("%d: clock count invalid type\n", lineno);
+		exit(1);
+	      }
+	      break;
+	    case i_JSR:
+	      switch(stype) {
+	      case dt_Aind: clocks = 16; break;
+	      case dt_Adis: clocks = 18; break;
+	      case dt_Aidx: clocks = 22; break;
+	      case dt_AbsW: clocks = 18; break;
+	      case dt_AbsL: clocks = 20; break;
+	      case dt_Pdis: clocks = 18; break;
+	      case dt_Pidx: clocks = 22; break;
+	      default:
+		printf("%d: clock count invalid type\n", lineno);
+		exit(1);
+	      }
+	      break;
+	    case i_LEA:
+	      switch(stype) {
+	      case dt_Aind: clocks =  4; break;
+	      case dt_Adis: clocks =  8; break;
+	      case dt_Aidx: clocks = 12; break;
+	      case dt_AbsW: clocks =  8; break;
+	      case dt_AbsL: clocks = 12; break;
+	      case dt_Pdis: clocks =  8; break;
+	      case dt_Pidx: clocks = 12; break;
+	      default:
+		printf("%d: clock count invalid type\n", lineno);
+		exit(1);
+	      }
+	      break;
+	    case i_PEA:
+	      switch(stype) {
+	      case dt_Aind: clocks = 12; break;
+	      case dt_Adis: clocks = 16; break;
+	      case dt_Aidx: clocks = 20; break;
+	      case dt_AbsW: clocks = 16; break;
+	      case dt_AbsL: clocks = 20; break;
+	      case dt_Pdis: clocks = 16; break;
+	      case dt_Pidx: clocks = 20; break;
+	      default:
+		printf("%d: clock count invalid type\n", lineno);
+		exit(1);
+	      }
 	      break;
 	    case i_MOVEMMR:
 	      clocks = 20;
@@ -1109,68 +1183,64 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
 	    case i_MOVEMRM:
 	      clocks = 16;
 	      break;
-	    case i_MOVETUSP:
-	    case i_MOVEFUSP:
-	      clocks = 4;
-	    case i_NEG:
-	    case i_NEGX:
-	    case i_CLR:
-	    case i_NOT:
-	      clocks = clocks_single(stype, size);
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
+	    case i_SUBX:
+	    case i_ADDX:
+	      if (stype == dt_Dreg) {
+		clocks = size != sz_long ? 4 : 8;
+	      } else {
+		clocks = size != sz_long ? 18 : 30;
+	      }
 	      break;
 	    case i_ABCD:
 	    case i_SBCD:
-	      if (stype == dt_Dreg) {
-		clocks = 6;
-	      } else {
-		clocks = 18;
-	      }
+	      clocks = (stype == dt_Dreg) ? 6 : 18;
 	      break;
-	    case i_NBCD:
-	      if (stype == dt_Dreg || stype == dt_Areg) {
-		clocks = 6;
-	      } else {
-		clocks = 8;
-		clocks+= clocks_eacalc(stype, size);
-		clocks+= clocks_eafetch(stype, size);
-	      }
+	    case i_ORSR:
+	    case i_ANDSR:
+	    case i_EORSR:
+	      clocks = 20;
 	      break;
-	    case i_SWAP:
-	      clocks = 4;
-	      break;
-	    case i_PEA:
-	      clocks = 8;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
-	      break;
-	    case i_LEA:
-	      clocks = 4;
-	      clocks+= clocks_eacalc(stype, size);
-	      break;
-	    case i_EXT:
-	      clocks = 4;
+	    case i_CHK:
+	      clocks = 10 + clocks_eacalc(stype, size);
 	      break;
 	    case i_EXG:
 	      clocks = 6;
 	      break;
-	    case i_TST:
+	    case i_EXT:
 	      clocks = 4;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
 	      break;
-	    case i_TAS:
-	      if (stype == dt_Dreg || stype == dt_Areg) {
-		clocks = 4;
-	      } else {
-		clocks = 10;
-	      }
+	    case i_LINK:
+	      clocks = 16;
 	      break;
-	    case i_CHK:
-	      clocks = 10;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
+	    case i_MOVEFSR:
+	      clocks = (stype == dt_Dreg) ? 6 : 8 + clocks_eacalc(stype, size);
+	      break;
+	    case i_MOVETSR:
+	      clocks = (stype == dt_Dreg) ? 12 : 12 +
+		clocks_eacalc(stype, size);
+	      break;
+	    case i_MOVETUSP:
+	    case i_MOVEFUSP:
+	      clocks = 4;
+	      break;
+	    case i_NOP:
+	      clocks = 4;
+	      break;
+	    case i_RESET:
+	      clocks = 132;
+	      break;
+	    case i_RTE:
+	    case i_RTR:
+	      clocks = 20;
+	      break;
+	    case i_RTS:
+	      clocks = 20;
+	      break;
+	    case i_STOP:
+	      clocks = 4;
+	      break;
+	    case i_SWAP:
+	      clocks = 4;
 	      break;
 	    case i_TRAPV:
 	      clocks = 4;
@@ -1178,91 +1248,20 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
 	    case i_TRAP:
 	      clocks = 4; /* exception */
 	      break;
-	    case i_RESET:
-	      clocks = 132;
-	      break;
-	    case i_NOP:
-	      clocks = 4;
-	      break;
-	    case i_STOP:
-	      clocks = 4;
-	      break;
-	    case i_LINK:
-	      clocks = 16;
-	      break;
 	    case i_UNLK:
 	      clocks = 12;
 	      break;
-	    case i_RTE:
-	      clocks = 20;
-	      break;
-	    case i_RTS:
-	      clocks = 16;
-	      break;
-	    case i_RTR:
-	      clocks = 20;
-	      break;
-	    case i_JSR:
-	      clocks = 16;
-	      clocks+= clocks_eacalc(stype, size);
-	      break;
-	    case i_JMP:
-	      clocks = 8;
-	      clocks+= clocks_eacalc(stype, size);
-	      break;
-	    case i_Scc:
-	      if (stype == dt_Dreg || stype == dt_Areg) {
-		clocks = 4;
-	      } else {
-		clocks = 8;
-		clocks+= clocks_eacalc(stype, size);
-		clocks+= clocks_eafetch(stype, size);
-	      }
-	      break;
-	    case i_SF:
-	      if (stype == dt_Dreg || stype == dt_Areg) {
-		clocks = 4;
-	      } else {
-		clocks = 8;
-		clocks+= clocks_eacalc(stype, size);
-		clocks+= clocks_eafetch(stype, size);
-	      }
-	      break;
 	    case i_DBcc:
 	    case i_DBRA:
-	      clocks = 10;
-	      break;
 	    case i_Bcc:
-	      if (size == sz_byte) {
-		clocks = 8;
-	      } else {
-		clocks = 10;
-	      }
+	      clocks = 10;
 	      break;
 	    case i_BSR:
 	      clocks = 18;
 	      break;
-	    case i_DIVU:
-	      clocks = 140;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
-	      break;
-	    case i_DIVS:
-	      clocks = 128;
-	      clocks+= clocks_eacalc(stype, size);
-	      clocks+= clocks_eafetch(stype, size);
-	      break;
-	    case i_ASR:
-	    case i_LSR:
-	    case i_ROXR:
-	    case i_ROR:
-	    case i_ASL:
-	    case i_LSL:
-	    case i_ROXL:
-	    case i_ROL:
-	      clocks = 8;
-	      clocks+= clocks_eacalc(dtype, size);
-	      clocks+= clocks_eafetch(dtype, size);
+	    case i_MOVEPRM:
+	    case i_MOVEPMR:
+	      clocks = (size != sz_long) ? 16 : 24;
 	      break;
 	    case i_ILLG:
 	      clocks = 0;
@@ -1315,153 +1314,86 @@ void procline(char *line, int lineno, FILE *outiibs, FILE *outfuncs,
   } /* block */
 }
 
+int clocks_movetable[] = {
+   4,   4,  8,  8,  8, 12, 14, 12, 16,
+   4,   4,  8,  8,  8, 12, 14, 12, 16,
+   8,   8, 12, 12, 12, 16, 18, 16, 20,
+   8,   8, 12, 12, 12, 16, 18, 16, 20,
+   10, 10, 14, 14, 14, 18, 20, 18, 22,
+   12, 12, 16, 16, 16, 20, 22, 20, 24,
+   14, 14, 18, 18, 18, 22, 24, 22, 26,
+   12, 12, 16, 16, 16, 20, 22, 20, 24,
+   16, 16, 20, 20, 20, 24, 26, 24, 28,
+   12, 12, 16, 16, 16, 20, 22, 20, 24,
+   14, 14, 18, 18, 18, 22, 24, 22, 26,
+    8,  8, 12, 12, 12, 16, 18, 16, 20
+};
+
+int clocks_typetoindex(t_datatype type)
+{
+  switch(type) {
+  case dt_Dreg: return 0;
+  case dt_Areg: return 1;
+  case dt_Aind: return 2;
+  case dt_Ainc: return 3;
+  case dt_Adec: return 4;
+  case dt_Adis: return 5;
+  case dt_Aidx: return 6;
+  case dt_AbsW: return 7;
+  case dt_AbsL: return 8;
+  case dt_Pdis: return 9;
+  case dt_Pidx: return 10;
+  case dt_ImmB:
+  case dt_ImmW:
+  case dt_ImmL:
+  case dt_ImmS:
+  case dt_Imm3:
+  case dt_Imm4:
+  case dt_Imm8:
+  case dt_Imm8s: return 11;
+  default:
+    break;
+  }
+  printf("Invalid type for clocks\n");
+  exit(1);
+}
+
 int clocks_eacalc(t_datatype type, t_size size)
 {
+  int clks = 0;
+
   switch(type) {
   case dt_Dreg:
-  case dt_Areg:
-    break;
-  case dt_Aind:
-  case dt_Ainc:
-    break;
-  case dt_Adec:
-    return 2;
-  case dt_Adis:
-    return 4;
-  case dt_Aidx:
-    return 6;
-  case dt_AbsW:
-    return 4;
-  case dt_AbsL:
-    return 8;
-  case dt_Pdis:
-    return 4;
-  case dt_Pidx:
-    return 6;
+  case dt_Areg: return 0;
+  case dt_Aind: return (size != sz_long) ? 4 : 8;
+  case dt_Ainc: return (size != sz_long) ? 6 : 10; /* should this be 4/8? */
+  case dt_Adec: return (size != sz_long) ? 6 : 10;
+  case dt_Adis: return (size != sz_long) ? 8 : 12;
+  case dt_Aidx: return (size != sz_long) ? 10 : 14;
+  case dt_AbsW: return (size != sz_long) ? 8 : 12;
+  case dt_AbsL: return (size != sz_long) ? 12 : 16;
+  case dt_Pdis: return (size != sz_long) ? 8 : 12;
+  case dt_Pidx: return (size != sz_long) ? 10 : 14;
   case dt_ImmB:
   case dt_ImmW:
-  case dt_ImmL:
-    break;
+  case dt_ImmL: return (size != sz_long) ? 4 : 8;
   case dt_ImmS:
   case dt_Imm3:
   case dt_Imm4:
   case dt_Imm8:
   case dt_Imm8s:
-  case dt_Ill:
-    break;
+  case dt_Ill: return 0;
   default:
-    printf("Invalid type for clocks\n");
-    exit(1);
   }
-  return 0;
+  printf("Invalid type for clocks\n");
+  exit(1);
 }
 
-int clocks_eafetch(t_datatype type, t_size size)
+int clocks_6or8(t_datatype type)
 {
-  switch(type) {
-  case dt_Dreg:
-  case dt_Areg:
-    break;
-  case dt_Aind:
-  case dt_Ainc:
-  case dt_Adec:
-  case dt_Adis:
-  case dt_Aidx:
-  case dt_AbsW:
-  case dt_AbsL:
-  case dt_Pdis:
-  case dt_Pidx:
-  case dt_ImmB:
-  case dt_ImmW:
-  case dt_ImmL:
-    if (size == sz_long)
-      return 8;
-    else
-      return 4;
-    break;
-  case dt_ImmS:
-  case dt_Imm3:
-  case dt_Imm4:
-  case dt_Imm8:
-  case dt_Imm8s:
-  case dt_Ill:
-    break;
-  default:
-    printf("Invalid type for clocks\n");
-    exit(1);
-  }
-  return 0;
-}
+  int type_imm = (type == dt_ImmB) || (type == dt_ImmW) ||
+    (type == dt_ImmL) || (type == dt_Imm3) || (type == dt_Imm4) ||
+    (type == dt_Imm8) || (type == dt_Imm8s) || (type == dt_ImmS);
 
-int clocks_standard(t_datatype stype, t_datatype dtype, t_size size)
-{
-  int stype_imm = (stype == dt_ImmB) || (stype == dt_ImmW) ||
-    (stype == dt_ImmL) || (stype == dt_Imm3) || (stype == dt_Imm4) ||
-    (stype == dt_Imm8) || (stype == dt_Imm8s) || (stype == dt_ImmS);
-
-  if (stype_imm) {
-    if (dtype == dt_Areg) {
-      return 4;
-    } else if (dtype == dt_Dreg) {
-      if (size != sz_long) {
-	return 0;
-      } else {
-	return 4;
-      }
-    } else {
-      if (size != sz_long) {
-	return 4;
-      } else {
-	return 8;
-      }
-    }
-  }
-
-  if (dtype == dt_Areg) {
-    if (size != sz_long) {
-      return 4;
-    } else {
-      if (stype == dt_Dreg || stype_imm) {
-	return 4;
-      } else {
-	return 2;
-      }
-    }
-  } else if (dtype == dt_Dreg) {
-    if (size != sz_long) {
-      return 0;
-    } else {
-      if (stype == dt_Dreg || stype_imm) {
-	return 4;
-      } else {
-	return 2;
-      }
-    }
-  } else if (stype == dt_Dreg) {
-    if (size != sz_long) {
-      return 4;
-    } else {
-      return 8;
-    }
-  } else {
-    printf("Error %d %d.\n", stype, dtype);
-    exit(1);
-  }
-}
-
-int clocks_single(t_datatype type, t_size size)
-{
-  if (type == dt_Dreg || type == dt_Areg) {
-    if (size != sz_long) {
-      return 4;
-    } else {
-      return 6;
-    }
-  } else {
-    if (size != sz_long) {
-      return 8;
-    } else {
-      return 12;
-    }
-  }
+  return (type_imm || type == dt_Dreg || type == dt_Areg) ? 8 : 6;
 }

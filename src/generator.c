@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
-/*****************************************************************************/
-/*                                                                           */
-/* generator.c                                                               */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,6 +12,8 @@
 #include <errno.h>
 
 #include "generator.h"
+#include "snprintf.h"
+
 #include "ui.h"
 #include "memz80.h"
 #include "mem68k.h"
@@ -33,9 +29,10 @@
 /*** variables externed in generator.h ***/
 
 unsigned int gen_quit = 0;
-unsigned int gen_debugmode = 1;
-unsigned int gen_loglevel = 1; /* 2 = NORMAL, 1 = CRITICAL */
+unsigned int gen_debugmode = 0;
+unsigned int gen_loglevel = 2; /* 2 = NORMAL, 1 = CRITICAL */
 t_cartinfo gen_cartinfo;
+char gen_leafname[128];
 
 /*** forward references ***/
 
@@ -81,8 +78,6 @@ int main(int argc, char *argv[]) {
 	    "correctly\n", argv[0]);
     return 1;
   }
-
-  /*  chdir(GAMEDIR); */
 
   /* initialise user interface */
   if ((retval = ui_init(argc, argv)))
@@ -131,6 +126,12 @@ void gen_reset(void) {
   if (sound_reset()) {
     ui_err("sound failure");
   }
+}
+
+/*** gen_softreset - reset system ***/
+
+void gen_softreset(void) {
+  cpu68k_reset();
 }
 
 /*** gen_loadimage - load ROM image ***/
@@ -251,6 +252,20 @@ char *gen_loadimage(const char *filename) {
   /* reset system */
   gen_reset();
 
+  /* is this icky? */
+  if ((p = strrchr(filename, '/')) == NULL &&
+      (p = strrchr(filename, '\\')) == NULL) {
+    snprintf(gen_leafname, sizeof(gen_leafname), "%s", filename);
+  } else {
+    snprintf(gen_leafname, sizeof(gen_leafname), "%s", p+1);
+  }
+  if ((p = strrchr(gen_leafname, '.')) != NULL) {
+    if ((!strcasecmp(p, ".smd")) || (!strcasecmp(p, ".bin")))
+      *p = '\0';
+  }
+  if (gen_leafname[0] == '\0')
+    snprintf(gen_leafname, sizeof(gen_leafname), "rom");
+
   memset(&gen_cartinfo, 0, sizeof(gen_cartinfo));
   gen_nicetext(gen_cartinfo.console, (char *)(cpu68k_rom+0x100), 16);
   gen_nicetext(gen_cartinfo.copyright, (char *)(cpu68k_rom+0x110), 16);
@@ -290,9 +305,13 @@ char *gen_loadimage(const char *filename) {
   ui_setinfo(&gen_cartinfo);
 
   if (gen_cartinfo.checksum != (cpu68k_rom[0x18e]<<8 | cpu68k_rom[0x18f]))
-    LOG_REQUEST(("Warning: Checksum does not match in ROM"));
+    LOG_REQUEST(("Warning: Checksum does not match in ROM (%04X)",
+                 (cpu68k_rom[0x18e]<<8 | cpu68k_rom[0x18f])));
 
-  LOG_REQUEST(("Loaded '%s'/'%s' (%s %X %s)", gen_cartinfo.name_domestic,
+  vdp_pal = (!gen_cartinfo.flag_usa && !gen_cartinfo.flag_japan &&
+	     gen_cartinfo.flag_europe) ? 1 : 0;
+
+  LOG_REQUEST(("Loaded '%s'/'%s' (%s %04X %s)", gen_cartinfo.name_domestic,
 	       gen_cartinfo.name_overseas, gen_cartinfo.version,
 	       gen_cartinfo.checksum, gen_cartinfo.country));
 
@@ -345,6 +364,11 @@ void gen_nicetext(char *out, char *in, unsigned int size)
 uint16 gen_checksum(uint8 *start, unsigned int length)
 {
   uint16 checksum = 0;
+
+  if (length & 1) {
+    length&= ~1;
+    LOG_CRITICAL(("checksum routines given odd length (%d)", length));
+  }
 
   for (; length; length-= 2, start+= 2) {
     checksum+= start[0]<<8;

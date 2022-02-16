@@ -1,10 +1,6 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
-/*****************************************************************************/
-/*                                                                           */
-/* ui-tcltk.c - User interface for tcl/tk                                    */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
+
+/* user interface for X tcl/tk */
 
 #include <string.h>
 #include <unistd.h>
@@ -40,7 +36,7 @@
 #include "ui.h"
 #include "vdp.h"
 #include "mem68k.h"
-#include "reg68k.h"
+#include "event.h"
 
 #ifdef XF86DGA
 #include <X11/extensions/xf86dga.h>
@@ -352,7 +348,7 @@ int Gen_Step(ClientData cdata, Tcl_Interp *interp, int objc,
 		  TCL_STATIC);
     return TCL_ERROR;
   }
-  reg68k_step();
+  event_dostep();
   ui_updateregs();
   return TCL_OK;
 }
@@ -385,7 +381,7 @@ int Gen_Cont(ClientData cdata, Tcl_Interp *interp, int objc,
   do {
     while (Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT));
     for (i = 0; i < 128; i++) {
-      reg68k_step();
+      event_dostep();
       if ((regs.pc & 0xFFFFFF) == stopaddr || gen_quit)
 	break;
     }
@@ -410,7 +406,7 @@ int Gen_FrameStep(ClientData cdata, Tcl_Interp *interp, int objc,
   }
   gen_quit = 0;
   do {
-    reg68k_framestep();
+    event_doframe();
     while (Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT));
   } while(!gen_quit);
   ui_updateregs();
@@ -1120,7 +1116,7 @@ int ui_loop(void)
       Tcl_DoOneEvent(TCL_ALL_EVENTS);
       break;
     case 2: /* playing */
-      reg68k_framestep();
+      event_doframe();
       Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
       break;
     }
@@ -1545,7 +1541,7 @@ void ui_run(void)
 {
   gen_quit = 0;
   do {
-    reg68k_framestep();
+    event_doframe();
     while (Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT));
   } while(!gen_quit);
   if (gen_debugmode) {
@@ -1600,7 +1596,7 @@ void ui_fullscreen(int onoff)
 { \
   va_list ap; \
   if (gen_loglevel >= level) { \
-    printf("%s", txt); \
+    printf("%s (%05X) ", txt, cpu68k_clocks); \
     va_start(ap, text); \
     vprintf(text, ap); \
     va_end(ap); \

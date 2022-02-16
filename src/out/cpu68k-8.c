@@ -1756,7 +1756,7 @@ void cpu_op_1118a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1775,7 +1775,7 @@ void cpu_op_1118b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1802,7 +1802,7 @@ void cpu_op_1119a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1822,7 +1822,7 @@ void cpu_op_1119b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1849,7 +1849,7 @@ void cpu_op_1120a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1869,7 +1869,7 @@ void cpu_op_1120b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1896,7 +1896,7 @@ void cpu_op_1121a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1916,7 +1916,7 @@ void cpu_op_1121b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1943,7 +1943,7 @@ void cpu_op_1122a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1963,7 +1963,7 @@ void cpu_op_1122b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -1990,7 +1990,7 @@ void cpu_op_1123a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2010,7 +2010,7 @@ void cpu_op_1123b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2036,7 +2036,7 @@ void cpu_op_1124a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2055,7 +2055,7 @@ void cpu_op_1124b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2081,7 +2081,7 @@ void cpu_op_1125a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+6);
+    reg68k_internal_vector(V_ZERO, PC+6);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2100,7 +2100,7 @@ void cpu_op_1125b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+6);
+    reg68k_internal_vector(V_ZERO, PC+6);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2126,7 +2126,7 @@ void cpu_op_1126a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2145,7 +2145,7 @@ void cpu_op_1126b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2171,7 +2171,7 @@ void cpu_op_1127a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2190,7 +2190,7 @@ void cpu_op_1127b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2215,7 +2215,7 @@ void cpu_op_1128a(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2233,7 +2233,7 @@ void cpu_op_1128b(t_ipc *ipc) /* DIVU */ {
   uint32 quotient;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / srcdata;
@@ -2260,7 +2260,7 @@ void cpu_op_1129a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2284,7 +2284,7 @@ void cpu_op_1129b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2316,7 +2316,7 @@ void cpu_op_1130a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2341,7 +2341,7 @@ void cpu_op_1130b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2373,7 +2373,7 @@ void cpu_op_1131a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2398,7 +2398,7 @@ void cpu_op_1131b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2430,7 +2430,7 @@ void cpu_op_1132a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2455,7 +2455,7 @@ void cpu_op_1132b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+2);
+    reg68k_internal_vector(V_ZERO, PC+2);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2487,7 +2487,7 @@ void cpu_op_1133a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2512,7 +2512,7 @@ void cpu_op_1133b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2544,7 +2544,7 @@ void cpu_op_1134a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2569,7 +2569,7 @@ void cpu_op_1134b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2600,7 +2600,7 @@ void cpu_op_1135a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2624,7 +2624,7 @@ void cpu_op_1135b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2655,7 +2655,7 @@ void cpu_op_1136a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+6);
+    reg68k_internal_vector(V_ZERO, PC+6);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2679,7 +2679,7 @@ void cpu_op_1136b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+6);
+    reg68k_internal_vector(V_ZERO, PC+6);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2710,7 +2710,7 @@ void cpu_op_1137a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2734,7 +2734,7 @@ void cpu_op_1137b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2765,7 +2765,7 @@ void cpu_op_1138a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2789,7 +2789,7 @@ void cpu_op_1138b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2819,7 +2819,7 @@ void cpu_op_1139a(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;
@@ -2842,7 +2842,7 @@ void cpu_op_1139b(t_ipc *ipc) /* DIVS */ {
   sint16 remainder;
 
   if (srcdata == 0) {
-    reg68k_vector(V_ZERO, PC+4);
+    reg68k_internal_vector(V_ZERO, PC+4);
     return;
   }
   quotient = dstdata / (sint16)srcdata;

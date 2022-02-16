@@ -2953,7 +2953,7 @@ void cpu_op_649a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -2970,7 +2970,7 @@ void cpu_op_649b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -2988,7 +2988,7 @@ void cpu_op_650a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3006,7 +3006,7 @@ void cpu_op_650b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3024,7 +3024,7 @@ void cpu_op_651a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3042,7 +3042,7 @@ void cpu_op_651b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3060,7 +3060,7 @@ void cpu_op_652a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3078,7 +3078,7 @@ void cpu_op_652b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3096,7 +3096,7 @@ void cpu_op_653a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3114,7 +3114,7 @@ void cpu_op_653b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3132,7 +3132,7 @@ void cpu_op_654a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3150,7 +3150,7 @@ void cpu_op_654b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3167,7 +3167,7 @@ void cpu_op_655a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3184,7 +3184,7 @@ void cpu_op_655b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3201,7 +3201,7 @@ void cpu_op_656a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+6);
+    reg68k_internal_vector(V_PRIVILEGE, PC+6);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3218,7 +3218,7 @@ void cpu_op_656b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+6);
+    reg68k_internal_vector(V_PRIVILEGE, PC+6);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3235,7 +3235,7 @@ void cpu_op_657a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3252,7 +3252,7 @@ void cpu_op_657b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3269,7 +3269,7 @@ void cpu_op_658a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3286,7 +3286,7 @@ void cpu_op_658b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3302,7 +3302,7 @@ void cpu_op_659a(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3318,7 +3318,7 @@ void cpu_op_659b(t_ipc *ipc) /* MOVETSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR = srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -5166,7 +5166,7 @@ void cpu_op_739a(t_ipc *ipc) /* TRAP */ {
   /* mask fff0, bits 4e40, mnemonic 47, priv 0, endblk -1, imm_notzero 0, used -1     set 0, size 0, stype 16, dtype 20, sbitpos 0, dbitpos 0, immvalue 0 */
   unsigned int srcdata = ipc->src;
 
-  reg68k_vector(V_TRAP+srcdata, PC+2);
+  reg68k_internal_vector(V_TRAP+srcdata, PC+2);
 }
 
 void cpu_op_740a(t_ipc *ipc) /* LINK */ {
@@ -5198,7 +5198,7 @@ void cpu_op_742a(t_ipc *ipc) /* MOVETUSP */ {
   uint32 srcdata = ADDRREG(srcreg);
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SP = srcdata;
   PC+= 2;
@@ -5210,7 +5210,7 @@ void cpu_op_743a(t_ipc *ipc) /* MOVEFUSP */ {
   uint32 outdata;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   outdata = SP;
   ADDRREG(srcreg) = outdata;
@@ -5233,48 +5233,36 @@ void cpu_op_746a(t_ipc *ipc) /* STOP */ {
   /* mask ffff, bits 4e72, mnemonic 50, priv -1, endblk -1, imm_notzero 0, used 0     set -1, size 0, stype 12, dtype 20, sbitpos 0, dbitpos 0, immvalue 0 */
   uint16 srcdata = ipc->src;
 
-  switch(regs.stop) {
-  case 1:
-    break;
-  case 2:
-    PC+= 2;
-    break;
-  default:
-    if (!(SFLAG && (srcdata & 1<<13)))
-      reg68k_vector(V_PRIVILEGE, PC+4);
+  if (regs.stop)
+    return;
+  if (!(SFLAG && (srcdata & 1<<13))) {
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
+    PC+= 4;
+  } else {
     SR = srcdata;
     STOP = 1;
-    printf("STOP @ %%x\n", PC);
-    exit(1);
   }
-  PC+= 4;
 }
 
 void cpu_op_746b(t_ipc *ipc) /* STOP */ {
   /* mask ffff, bits 4e72, mnemonic 50, priv -1, endblk -1, imm_notzero 0, used 0     set -1, size 0, stype 12, dtype 20, sbitpos 0, dbitpos 0, immvalue 0 */
   uint16 srcdata = ipc->src;
 
-  switch(regs.stop) {
-  case 1:
-    break;
-  case 2:
-    PC+= 2;
-    break;
-  default:
-    if (!(SFLAG && (srcdata & 1<<13)))
-      reg68k_vector(V_PRIVILEGE, PC+4);
+  if (regs.stop)
+    return;
+  if (!(SFLAG && (srcdata & 1<<13))) {
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
+    PC+= 4;
+  } else {
     SR = srcdata;
     STOP = 1;
-    printf("STOP @ %%x\n", PC);
-    exit(1);
   }
-  PC+= 4;
 }
 
 void cpu_op_747a(t_ipc *ipc) /* RTE */ {
   /* mask ffff, bits 4e73, mnemonic 53, priv -1, endblk -1, imm_notzero 0, used 0     set -1, size 0, stype 20, dtype 20, sbitpos 0, dbitpos 0, immvalue 0 */
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = fetchword(ADDRREG(7));
   PC = fetchlong(ADDRREG(7)+2);
@@ -5288,7 +5276,7 @@ void cpu_op_747a(t_ipc *ipc) /* RTE */ {
 void cpu_op_747b(t_ipc *ipc) /* RTE */ {
   /* mask ffff, bits 4e73, mnemonic 53, priv -1, endblk -1, imm_notzero 0, used 0     set -1, size 0, stype 20, dtype 20, sbitpos 0, dbitpos 0, immvalue 0 */
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+2);
+    reg68k_internal_vector(V_PRIVILEGE, PC+2);
 
   SR = fetchword(ADDRREG(7));
   PC = fetchlong(ADDRREG(7)+2);
@@ -5308,7 +5296,7 @@ void cpu_op_748a(t_ipc *ipc) /* RTS */ {
 void cpu_op_749a(t_ipc *ipc) /* TRAPV */ {
   /* mask ffff, bits 4e76, mnemonic 46, priv 0, endblk -1, imm_notzero 0, used 8     set 0, size 0, stype 20, dtype 20, sbitpos 0, dbitpos 0, immvalue 0 */
   if (VFLAG) {
-    reg68k_vector(V_TRAPV, PC+2);
+    reg68k_internal_vector(V_TRAPV, PC+2);
   }
   PC+= 2;
 }
@@ -5453,9 +5441,9 @@ void cpu_op_765a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5469,10 +5457,10 @@ void cpu_op_765b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5486,9 +5474,9 @@ void cpu_op_766a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5503,10 +5491,10 @@ void cpu_op_766b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5520,9 +5508,9 @@ void cpu_op_767a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5537,10 +5525,10 @@ void cpu_op_767b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5554,9 +5542,9 @@ void cpu_op_768a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5571,10 +5559,10 @@ void cpu_op_768b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+2);
+    reg68k_internal_vector(V_CHK, PC+2);
   }
   PC+= 2;
 }
@@ -5588,9 +5576,9 @@ void cpu_op_769a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5605,10 +5593,10 @@ void cpu_op_769b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5622,9 +5610,9 @@ void cpu_op_770a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5639,10 +5627,10 @@ void cpu_op_770b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5655,9 +5643,9 @@ void cpu_op_771a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5671,10 +5659,10 @@ void cpu_op_771b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5687,9 +5675,9 @@ void cpu_op_772a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+6);
+    reg68k_internal_vector(V_CHK, PC+6);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+6);
+    reg68k_internal_vector(V_CHK, PC+6);
   }
   PC+= 6;
 }
@@ -5703,10 +5691,10 @@ void cpu_op_772b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+6);
+    reg68k_internal_vector(V_CHK, PC+6);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+6);
+    reg68k_internal_vector(V_CHK, PC+6);
   }
   PC+= 6;
 }
@@ -5719,9 +5707,9 @@ void cpu_op_773a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5735,10 +5723,10 @@ void cpu_op_773b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5751,9 +5739,9 @@ void cpu_op_774a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5767,10 +5755,10 @@ void cpu_op_774b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5782,9 +5770,9 @@ void cpu_op_775a(t_ipc *ipc) /* CHK */ {
   uint16 dstdata = DATAREG(dstreg);
 
   if ((sint16)srcdata < 0) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }
@@ -5797,10 +5785,10 @@ void cpu_op_775b(t_ipc *ipc) /* CHK */ {
 
   if ((sint16)srcdata < 0) {
     NFLAG = 1;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   } else if (dstdata > srcdata) {
     NFLAG = 0;
-    reg68k_vector(V_CHK, PC+4);
+    reg68k_internal_vector(V_CHK, PC+4);
   }
   PC+= 4;
 }

@@ -762,7 +762,7 @@ void cpu_op_25a(t_ipc *ipc) /* ORSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR|= srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -1519,7 +1519,7 @@ void cpu_op_51a(t_ipc *ipc) /* ANDSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR&= srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {
@@ -3848,7 +3848,7 @@ void cpu_op_135a(t_ipc *ipc) /* EORSR */ {
   unsigned int sr = reg68k_sr.sr_struct.s;
 
   if (!SFLAG)
-    reg68k_vector(V_PRIVILEGE, PC+4);
+    reg68k_internal_vector(V_PRIVILEGE, PC+4);
 
   SR^= srcdata;
   if (sr != (uint8)reg68k_sr.sr_struct.s) {

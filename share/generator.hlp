@@ -1,48 +1,6 @@
 Generator - Main help file
 -=-=-=-=-=-=-=-=-=-=-=-=-=
 
-Please read the associated documentation available on the web site
-at http://www.squish.net/generator/ including a 67 page PS/PDF file.
+This file is no longer kept up to date - please visit
 
-Introduction
--=-=-=-=-=-=
-
-This is a Genesis (Mega Drive) emulator.
-
-This version emulates most things, most notably it does not
-do:
-
- * Interlacing
- * Joypads
- * Load/save games
-
-The technique this emulator uses is one of block-marking and includes such
-optimisations as flag calculation removal, operand pre-calculation and
-endian pre-conversion.  There are approximately 1600 routines to cope with
-the 67 different 68000 instructions.
-
-This emulator has been designed for dynamic recompiling and supports
-(poorly) the ARM series of processors if so compiled.
-
-
-Display menu
--=-=-=-=-=-=
-
-The display menu allows you to scale the image up to 200%.  Note that this
-requires that the emulator construct the image at twice the resolution
-and send it all to the server - this is a large amount of data and will
-slow down.  This is X's fault.  There is a 'smooth' feature, but this was
-added just to see if I could do it, and is quite slow.
-
-You can also toggle any layer - they are listed in the order of priority
-that they are plotted.  Turning off layers that a game doesn't use will
-speed the emulation up.
-
-If you find your machine cannot cope, you can ask the emulator to not
-display all frames.  The game will not be affected.
-
-
-Author
--=-=-=
-
-Written by James Ponder (james@squish.net), November 1997 to March 1998.
+  http://www.squish.net/generator/

@@ -1,5 +1,15 @@
+typedef enum {
+  cd_vram_fetch, cd_vram_store,
+  cd_2, cd_cram_store,
+  cd_vsram_fetch, cd_vsram_store,
+  cd_6, cd_7,
+  cd_cram_fetch
+} t_code;
+
 extern unsigned int vdp_event;
 extern unsigned int vdp_vislines;
+extern unsigned int vdp_visstartline;
+extern unsigned int vdp_visendline;
 extern unsigned int vdp_totlines;
 extern unsigned int vdp_framerate;
 extern unsigned int vdp_clock;
@@ -9,9 +19,9 @@ extern unsigned int vdp_oddframe;
 extern unsigned int vdp_hinton;
 extern unsigned int vdp_vblank;
 extern unsigned int vdp_hblank;
-extern unsigned int vdp_interlace;
 extern unsigned int vdp_line;
 extern unsigned int vdp_vsync;
+extern unsigned int vdp_dmabusy;
 extern unsigned int vdp_pal;
 extern unsigned int vdp_overseas;
 extern unsigned int vdp_basepixel;
@@ -34,18 +44,22 @@ extern unsigned int vdp_event_vint;
 extern unsigned int vdp_event_hint;
 extern unsigned int vdp_event_hdisplay;
 extern unsigned int vdp_event_end;
+extern signed int vdp_nextevent;
+extern signed int vdp_dmabytes;
 extern signed int vdp_hskip_countdown;
-extern unsigned int vdp_event_startofcurrentline;
+extern uint16 vdp_address;
+extern t_code vdp_code;
+extern unsigned int vdp_ctrlflag;
+extern uint16 vdp_first;
+extern uint16 vdp_second;
 
 void vdp_reset(void);
 int vdp_init(void);
 uint16 vdp_status(void);
 void vdp_storectrl(uint16 data);
-void vdp_storedata_byte(uint8 data);
-void vdp_storedata_word(uint16 data);
-uint8  vdp_fetchdata_byte(void);
-uint16 vdp_fetchdata_word(void);
-void vdp_renderline(unsigned int line, uint8 *linedata);
+void vdp_storedata(uint16 data);
+uint16 vdp_fetchdata(void);
+void vdp_renderline(unsigned int line, uint8 *linedata, unsigned int odd);
 void vdp_renderline_interlace2(unsigned int line, uint8 *linedata);
 void vdp_showregs(void);
 void vdp_describe(void);
@@ -56,7 +70,7 @@ void vdp_setupvideo(void);
 uint8 vdp_gethpos(void);
 
 #define LEN_CRAM 128
-#define LEN_VSRAM 40*2*2
+#define LEN_VSRAM 80
 #define LEN_VRAM 64*1024
 
 /* an estimate of the total cell width including HBLANK, for calculations */

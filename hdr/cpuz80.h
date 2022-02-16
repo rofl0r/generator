@@ -1,8 +1,11 @@
+#include "z80/mz80.h"
+
 #define LEN_SRAM 0x2000
 
 extern uint8 *cpuz80_ram;
 extern uint32 cpuz80_bank;
 extern unsigned int cpuz80_active;
+CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
 
 void cpuz80_reset(void);
 void cpuz80_resetcpu(void);
@@ -16,3 +19,4 @@ void cpuz80_interrupt(void);
 uint8 cpuz80_portread(uint8 port);
 void cpuz80_portwrite(uint8 port, uint8 value);
 int cpuz80_init(void);
+void cpuz80_updatecontext(void);

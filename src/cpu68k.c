@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
-/*****************************************************************************/
-/*                                                                           */
-/* cpu68k.c                                                                  */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include <stdio.h>
 #include <string.h>
@@ -338,8 +332,12 @@ t_ipclist *cpu68k_makeipclist(uint32 pc)
   do {
     instrs++;
     if (instrs > size) {
+      if (size > 10000)
+        ui_err("Something has gone seriously wrong @ %08X", pc);
       size+= 16;
       list = realloc(list, sizeof(t_ipclist) + size*sizeof(t_ipc) + 8);
+      if (list == NULL)
+        ui_err("Out of memory whilst making ipc list @ %08X", pc);
       ipc = ((t_ipc *)(list+1))+instrs-1;
     }
     if (!(iib = cpu68k_iibtable[fetchword(pc)])) {

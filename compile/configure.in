@@ -12,6 +12,7 @@ dnl Checks for programs.
   AC_PROG_RANLIB
   AC_TYPE_SIGNAL
 
+  CFLAGS=-O3
   HEADERS="-I. -Iz80 -I../hdr -I../src/snd"
 
   program=""
@@ -87,9 +88,9 @@ dnl Checks for libraries.
     fi
     OLDLIBS=$LIBS
     LIBS="$LIBS -lXext";
-    AC_CHECK_LIB(Xxf86dga,XF86DGAQueryVersion,[
-      LIBS="$LIBS -lXxf86dga";CFLAGS="$CFLAGS -DXF86DGA";
-      lib=yes],LIBS=$OLDLIBS;lib=no)
+#    AC_CHECK_LIB(Xxf86dga,XF86DGAQueryVersion,[
+#      LIBS="$LIBS -lXxf86dga";CFLAGS="$CFLAGS -DXF86DGA";
+#      lib=yes],LIBS=$OLDLIBS;lib=no)
   fi
 
   if [[ "x$program" = "xgenerator-svgalib" ]]; then

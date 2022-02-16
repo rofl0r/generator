@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */
-/*****************************************************************************/
-/*                                                                           */
-/* gen68k.c                                                                  */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include <stdio.h>
 
@@ -44,7 +38,7 @@ void generate_bits(FILE *o, t_iib *iib);
 
 /* defines */
 
-#define HEADER "/*****************************************************************************/\n/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       */\n/*****************************************************************************/\n/*                                                                           */\n/* cpu68k-%x.c                                                                */\n/*                                                                           */\n/*****************************************************************************/\n\n"
+#define HEADER "/*****************************************************************************/\n/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-2001       */\n/*****************************************************************************/\n/*                                                                           */\n/* cpu68k-%x.c                                                                */\n/*                                                                           */\n/*****************************************************************************/\n\n"
 
 #define OUT(x) fputs(x,output);
 
@@ -189,7 +183,7 @@ void generate(FILE *output, int topnibble)
 		output);
 	if (iib->size == sz_word) {
 	  OUT("  if (!SFLAG)\n");
-	  fprintf(output, "    reg68k_vector(V_PRIVILEGE, PC+%d);\n",
+	  fprintf(output, "    reg68k_internal_vector(V_PRIVILEGE, PC+%d);\n",
 		  (iib->wordlen)*2);
 	  OUT("\n");
 	}
@@ -649,7 +643,7 @@ void generate(FILE *output, int topnibble)
 	  break;
 	case sz_word:
 	  OUT("  if (!SFLAG)\n");
-	  fprintf(output, "    reg68k_vector(V_PRIVILEGE, PC+%d);\n",
+	  fprintf(output, "    reg68k_internal_vector(V_PRIVILEGE, PC+%d);\n",
 		  (iib->wordlen)*2);
 	  OUT("\n");
 	  OUT("  SR = srcdata;\n");
@@ -797,7 +791,7 @@ void generate(FILE *output, int topnibble)
 	generate_eaval(output, iib, tp_src);
 	OUT("\n");
         OUT("  if (!SFLAG)\n");
-	fprintf(output, "    reg68k_vector(V_PRIVILEGE, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_PRIVILEGE, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("\n");
 	OUT("  SP = srcdata;\n");
@@ -808,7 +802,7 @@ void generate(FILE *output, int topnibble)
 	OUT("  uint32 outdata;\n");
 	OUT("\n");
 	OUT("  if (!SFLAG)\n");
-	fprintf(output, "    reg68k_vector(V_PRIVILEGE, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_PRIVILEGE, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("\n");
 	OUT("  outdata = SP;\n");
@@ -1160,19 +1154,19 @@ void generate(FILE *output, int topnibble)
 	fprintf(output, "  if ((sint16)srcdata < 0) {\n");
 	if (flags)
 	  OUT("    NFLAG = 1;\n");
-	fprintf(output, "    reg68k_vector(V_CHK, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_CHK, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("  } else if (dstdata > srcdata) {\n");
 	if (flags)
 	  OUT("    NFLAG = 0;\n");
-	fprintf(output, "    reg68k_vector(V_CHK, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_CHK, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("  }\n");
 	break;
 
       case i_TRAPV:
 	OUT("  if (VFLAG) {\n");
-	fprintf(output, "    reg68k_vector(V_TRAPV, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_TRAPV, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("  }\n");
 	break;
@@ -1181,7 +1175,7 @@ void generate(FILE *output, int topnibble)
 	generate_ea(output, iib, tp_src, 1);
 	generate_eaval(output, iib, tp_src);
 	OUT("\n");
-	fprintf(output, "  reg68k_vector(V_TRAP+srcdata, PC+%d);\n",
+	fprintf(output, "  reg68k_internal_vector(V_TRAP+srcdata, PC+%d);\n",
 		(iib->wordlen)*2);
 	pcinc = 0;
 	break;
@@ -1199,21 +1193,17 @@ void generate(FILE *output, int topnibble)
 	generate_ea(output, iib, tp_src, 1);
 	generate_eaval(output, iib, tp_src);
 	OUT("\n");
-	OUT("  switch(regs.stop) {\n");
-	OUT("  case 1:\n");
-	OUT("    break;\n");
-	OUT("  case 2:\n");
-	OUT("    PC+= 2;\n");
-	OUT("    break;\n");
-	OUT("  default:\n");
-	OUT("    if (!(SFLAG && (srcdata & 1<<13)))\n");
-	fprintf(output, "      reg68k_vector(V_PRIVILEGE, PC+%d);\n",
+        OUT("  if (regs.stop)\n");
+	OUT("    return;\n");
+	OUT("  if (!(SFLAG && (srcdata & 1<<13))) {\n");
+	fprintf(output, "    reg68k_internal_vector(V_PRIVILEGE, PC+%d);\n",
 		(iib->wordlen)*2);
+	fprintf(output, "    PC+= %d;\n", (iib->wordlen)*2);
+        OUT("  } else {\n");
 	OUT("    SR = srcdata;\n");
 	OUT("    STOP = 1;\n");
-	OUT("    printf(\"STOP @ %%x\\n\", PC);\n");
-	OUT("    exit(1);\n");
-	OUT("  }\n");
+        OUT("  }\n");
+	pcinc = 0;
 	break;
 
       case i_LINK:
@@ -1245,7 +1235,7 @@ void generate(FILE *output, int topnibble)
 	  fputs("  printf(\"SR: %08X %04X\\n\", PC, reg68k_sr.sr_int);\n",
 		output);
 	OUT("  if (!SFLAG)\n");
-	fprintf(output, "    reg68k_vector(V_PRIVILEGE, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_PRIVILEGE, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("\n");
 	OUT("  SR = fetchword(ADDRREG(7));\n");
@@ -1413,7 +1403,7 @@ void generate(FILE *output, int topnibble)
         OUT("  uint32 quotient;\n");
 	OUT("\n");
 	OUT("  if (srcdata == 0) {\n");
-	fprintf(output, "    reg68k_vector(V_ZERO, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_ZERO, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("    return;\n");
 	OUT("  }\n");
@@ -1453,7 +1443,7 @@ void generate(FILE *output, int topnibble)
 	OUT("  sint16 remainder;\n");
 	OUT("\n");
 	OUT("  if (srcdata == 0) {\n");
-	fprintf(output, "    reg68k_vector(V_ZERO, PC+%d);\n",
+	fprintf(output, "    reg68k_internal_vector(V_ZERO, PC+%d);\n",
 		(iib->wordlen)*2);
 	OUT("    return;\n");
 	OUT("  }\n");
@@ -1753,13 +1743,13 @@ void generate(FILE *output, int topnibble)
 
       case i_LINE10:
 	OUT("\n");
-	fprintf(output, "  reg68k_vector(V_LINE10, PC);\n");
+	fprintf(output, "  reg68k_internal_vector(V_LINE10, PC);\n");
 	pcinc = 0;
 	break;
 
       case i_LINE15:
 	OUT("\n");
-	fprintf(output, "  reg68k_vector(V_LINE15, PC);\n");
+	fprintf(output, "  reg68k_internal_vector(V_LINE15, PC);\n");
 	pcinc = 0;
 	break;
 

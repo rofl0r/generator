@@ -1,13 +1,21 @@
-Copyright (C) 1997-2000 James Ponder
+Copyright (C) 1997-2001 James Ponder
 
 This program is licensed to you according to the conditions within the file
 LICENSE.  Please read this license before continuing.
 
+!! I recommend that you use a binary version, Generator is quite a complicated
+!! project.  The tcl/tk version contains the debugger but has an out of date
+!! user interface and is of course slower as it runs in X.  Of course, if you
+!! don't have an intel processor you will have to use the tcl/tk version.
+!!
+!! Please email me if you have compilation problems, I haven't had any
+!! feedback in ages about compiling this on different platforms.
+
 Generator Installation
 ======================
-    ./configure --prefix="/usr/local" --enable-svgalib      (SVGALIB version)
-                                      --enable-allegro      (ALLEGRO version)
-                                      --enable-tcltk        (TCL/TK version)
+    ./configure  --enable-svgalib                    (SVGALIB version)
+                 --enable-allegro                    (ALLEGRO version)
+                 --enable-tcltk                       (TCL/TK version)
     (edit ../hdr/config.h, e.g. set #define PROCESSOR_INTEL)
     make
     cd ../src
@@ -32,12 +40,13 @@ All versions on Intel
   code written by Edward Massey.  There is an i386 object file compiled from
   the mz80 assembler version written by Neil Bradley in the .extra directory.
 
-  If you are using an i386 processor (Pentium I, II, III etc) then I strongly
+  If you are using an i386 processor (Pentiums etc.) then I strongly
   advise you do the following, AFTER following the compilation procedure
   above:
 
     cd src
     cp .extra/z80.o.elfmz80 obj/z80/z80.o  (overwriting the file already there)
+    edit cpuz80.c and comment-in the mz80init() call
     make
 
   This z80 emulation has much better timing, which means that games sound a lot
@@ -48,7 +57,7 @@ Allegro cross-compilation
   Assuming you have setup djgpp and allegro in cross-compilation mode, you
   should be able to do:
 
-    PATH=/usr/i586-pc-msdosdjgpp/bin ./configure --enable-allegro
-    PATH=/usr/i586-pc-msdosdjgpp/bin make
+    PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH ./configure --enable-allegro
+    PATH=/usr/i586-pc-msdosdjgpp/bin:$PATH make
 
 -=- James Ponder -=- james@squish.net -=- http://www.squish.net/ -=-

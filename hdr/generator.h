@@ -1,7 +1,7 @@
 #include "config.h"
 #include "machine.h"
 
-#define VERSTRING "v0.15"
+#define VERSTRING "v0.31"
 #define PROGNAME generator
 #define FNAME_TCLSCRIPT SHAREDIR "/gen.tcl"
 #define FNAME_GEN68K_CPU_OUT "out/cpu68k-%x.c"
@@ -12,10 +12,12 @@
 char *gen_loadimage(const char *filename);
 char *gen_loadsavepos(const char *filename);
 void gen_reset(void);
+void gen_softreset(void);
 
 extern unsigned int gen_quit;
 extern unsigned int gen_debugmode;
 extern unsigned int gen_loglevel;
+extern char gen_leafname[];
 
 #ifdef WORDS_BIGENDIAN
 #define LOCENDIAN16(y) (y)
@@ -29,6 +31,10 @@ extern unsigned int gen_loglevel;
 #endif
 
 #define SWAP16(y) ((((y)>>8)&0x00FF)+((((y)<<8)&0xFF00)))
+#define SWAP32(y) ( (((y)>>24) & 0x000000FF) + \
+		    (((y)>>8)  & 0x0000FF00) + \
+		    (((y)<<8)  & 0x00FF0000) + \
+		    (((y)<<24) & 0xFF000000) )
 
 typedef enum {
   tp_src, tp_dst
@@ -161,6 +167,7 @@ typedef struct {
   t_sr sr;
   uint16 stop;
   uint32 regs[16];
+  uint16 pending;
 } t_regs;
 
 #define SR_CFLAG (1<<0)

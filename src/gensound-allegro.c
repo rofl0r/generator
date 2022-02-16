@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-2000       */
-/*****************************************************************************/
-/*                                                                           */
-/* gensound-allegro.c                                                        */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include <string.h>
 #include <stdio.h>
@@ -22,6 +16,7 @@
 #include "gensound.h"
 #include "vdp.h"
 #include "ui.h"
+#include "ui-console.h"
 
 #ifdef JFM
 #  include "jfm.h"
@@ -32,8 +27,11 @@
 
 /*** variables externed ***/
 
-int sound_feedback = 0; /* -1, running out of sound
-			   +0, lots of sound, do something */
+int sound_feedback = 0;           /* -1, running out of sound
+                                     +0, lots of sound, do something */
+int sound_debug = 0;              /* 0 for no debug, 1 for debug */
+int sound_minfields = 5;          /* minimum fields to try to keep buffered */
+int sound_maxfields = 10;         /* max fields to buffer before blocking */
 
 /* SN76489 snd_cpu; */
 
@@ -45,18 +43,16 @@ void sound_readyblock(void);
 /*** file scoped variables ***/
 
 #define SOUND_MAXRATE 44100
-#define SOUND_THRESHOLD 5
 
 static unsigned int sound_sampsperfield = 0;
-static int sound_dev = 0;
-/* static int sound_dump = 0; */
 static uint16 soundbuf[2][SOUND_MAXRATE/50]; /* pal is lowest framerate */
+static int sound_active = 0;
 static unsigned int sound_speed;
 static unsigned int sound_blocks;
 static unsigned int sound_block;
 static SAMPLE *sound_sample;
 static int sound_voice;
-static int sound_inited = 0; /* flag to say whether we've inited */
+static unsigned int sound_threshold; /* bytes in buffer we're trying for */
 
 #ifdef JFM
   static t_jfm_ctx *sound_ctx;
@@ -70,10 +66,11 @@ int sound_init(void)
   uint16 *p;
   static int once = 0;
 
+  /* see sound_init in gensound.c for comments */
+
   if (!once) {
     once = 1;
-    LOG_NORMAL(("Initialising sound..."));
-    sound_blocks = SOUND_THRESHOLD*2;
+    LOG_VERBOSE(("Initialising sound..."));
     sound_speed = SOUND_SAMPLERATE;
     if (detect_digi_driver(DIGI_AUTODETECT) < 1) {
       LOG_CRITICAL(("Allegro failed to detect hardware"));
@@ -84,10 +81,14 @@ int sound_init(void)
       return 1;
     }
   }
+  if (sound_active)
+    sound_final();
+  sound_threshold = sound_minfields;
+  sound_blocks = sound_threshold*2;
   sound_sampsperfield = SOUND_SAMPLERATE / vdp_framerate;
   /* allocate block capable of holding sound_blocks frames */
   if ((sound_sample = create_sample(16, 1, sound_speed, sound_sampsperfield *
-				    sound_blocks)) == NULL) {
+                                    sound_blocks)) == NULL) {
     LOG_CRITICAL(("Failed to create sample"));
     return 1;
   }
@@ -96,6 +97,7 @@ int sound_init(void)
     p[i] = 0x8000;
   if ((sound_voice = allocate_voice(sound_sample)) == -1) {
     LOG_CRITICAL(("Failed to allocate voice"));
+    destroy_sample(sound_sample);
     return 1;
   }
   voice_set_playmode(sound_voice, PLAYMODE_LOOP);
@@ -106,12 +108,17 @@ int sound_init(void)
   sound_block = sound_blocks-1; /* next block to write to */
 #ifdef JFM
   if ((sound_ctx = jfm_init(0, 2612, vdp_clock/7, sound_speed,
-                            NULL, NULL)) == NULL)
+                            NULL, NULL)) == NULL) {
 #else
-  if (YM2612Init(1, vdp_clock/7, sound_speed, NULL, NULL))
+  if (YM2612Init(1, vdp_clock/7, sound_speed, NULL, NULL)) {
 #endif
+    voice_stop(sound_voice);
+    deallocate_voice(sound_voice);
+    destroy_sample(sound_sample);
     return 1;
-  LOG_NORMAL(("YM2612 Initialised @ sample rate %d", sound_speed));
+  }
+  LOG_VERBOSE(("YM2612 Initialised @ sample rate %d", sound_speed));
+  sound_active = 1;
   sound_readyblock();
   return 0;
 }
@@ -120,6 +127,9 @@ int sound_init(void)
 
 void sound_final(void)
 {
+  if (!sound_active)
+    return;
+  LOG_VERBOSE(("Finalising sound..."));
 #ifdef JFM
   jfm_final(sound_ctx);
 #else
@@ -128,6 +138,8 @@ void sound_final(void)
   voice_stop(sound_voice);
   deallocate_voice(sound_voice);
   destroy_sample(sound_sample);
+  sound_active = 0;
+  LOG_VERBOSE(("Finalised sound."));
 }
 
 /*** sound_reset - reset sound sub-unit ***/
@@ -193,15 +205,15 @@ void sound_endfield(void)
     sound_feedback = -1;
   } else {
     if (blockpos < sound_block) {
-      if ((sound_block - blockpos) < SOUND_THRESHOLD)
-	sound_feedback = -1;
+      if ((sound_block - blockpos) < sound_threshold)
+        sound_feedback = -1;
       else
-	sound_feedback = 0;
+        sound_feedback = 0;
     } else {
-      if ((sound_block - blockpos + sound_blocks) < SOUND_THRESHOLD)
-	sound_feedback = -1;
+      if ((sound_block - blockpos + sound_blocks) < sound_threshold)
+        sound_feedback = -1;
       else
-	sound_feedback = 0;
+        sound_feedback = 0;
     }
   }
   sound_block++;
@@ -220,20 +232,20 @@ void sound_readyblock(void)
     digi_driver->unlock_voice(sound_voice);
 
   while((voice_get_position(sound_voice) /
-	 sound_sampsperfield) == sound_block) {
+         sound_sampsperfield) == sound_block) {
     usleep(100);
     a++;
     if (a > 100000) {
       LOG_CRITICAL(("Sound error - pos=%d %d=%d",
-		    voice_get_position(sound_voice),
-		    sound_sampsperfield, sound_block));
+                    voice_get_position(sound_voice),
+                    sound_sampsperfield, sound_block));
       exit(0);
     }
     /* cannot write to the next block until it's played! */
   }
   if (digi_driver->lock_voice) {
     digi_driver->lock_voice(sound_voice, writepos,
-			    writepos+sound_sampsperfield);
+                            writepos+sound_sampsperfield);
     locked = 1;
   }
 }

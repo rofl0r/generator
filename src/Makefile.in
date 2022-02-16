@@ -1,12 +1,4 @@
 
-#############################################################################
-#     Generator - Sega Genesis emulation - (c) James Ponder 1997-1998       #
-#############################################################################
-#                                                                           #
-# Makefile.in -> Makefile                                                   #
-#                                                                           #
-#############################################################################
-
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 SHAREDIR = @datadir@/generator
@@ -30,14 +22,14 @@ OBJS1 = obj/tab68k.o obj/def68k.o
 SRCS2 = tab68k.c gen68k.c
 OBJS2 = obj/tab68k.o obj/gen68k.o
 
-SRCS3 = cpu68k.c diss68k.c tab68k.c mem68k.c reg68k.c ui-tcltk.c generator.c cpuz80.c vdp.c gensound.c z80/z80.c memz80.c obj/snd/fm.c
-OBJS3 = obj/reg68k.o obj/cpu68k-0.o obj/cpu68k-1.o obj/cpu68k-2.o obj/cpu68k-3.o obj/cpu68k-4.o obj/cpu68k-5.o obj/cpu68k-6.o obj/cpu68k-7.o obj/cpu68k-8.o obj/cpu68k-9.o obj/cpu68k-a.o obj/cpu68k-b.o obj/cpu68k-c.o obj/cpu68k-d.o obj/cpu68k-e.o obj/cpu68k-f.o obj/cpu68k.o obj/diss68k.o obj/tab68k.o obj/mem68k.o obj/ui-tcltk.o obj/generator.o obj/cpuz80.o obj/vdp.o obj/gensound.o obj/z80/z80.o obj/memz80.o obj/snd/fm.o
+SRCS3 = cpu68k.c diss68k.c tab68k.c mem68k.c reg68k.c event.c ui-tcltk.c generator.c state.c cpuz80.c vdp.c gensound.c gensoundi.c z80/z80.c memz80.c obj/snd/fm.c snprintf.c
+OBJS3 = obj/reg68k.o obj/event.o obj/cpu68k-0.o obj/cpu68k-1.o obj/cpu68k-2.o obj/cpu68k-3.o obj/cpu68k-4.o obj/cpu68k-5.o obj/cpu68k-6.o obj/cpu68k-7.o obj/cpu68k-8.o obj/cpu68k-9.o obj/cpu68k-a.o obj/cpu68k-b.o obj/cpu68k-c.o obj/cpu68k-d.o obj/cpu68k-e.o obj/cpu68k-f.o obj/cpu68k.o obj/diss68k.o obj/tab68k.o obj/mem68k.o obj/ui-tcltk.o obj/generator.o obj/state.o obj/cpuz80.o obj/vdp.o obj/gensound.o obj/gensoundi.o obj/z80/z80.o obj/memz80.o obj/snd/fm.o obj/snprintf.o
 
-SRCS4 = cpu68k.c mem68k.c reg68k.c ui-console.c uip-svgalib.c logo.c font.c generator.c cpuz80.c vdp.c gensound.c z80/z80.c memz80.c snd/fm.c
-OBJS4 = obj/reg68k.o obj/cpu68k-0.o obj/cpu68k-1.o obj/cpu68k-2.o obj/cpu68k-3.o obj/cpu68k-4.o obj/cpu68k-5.o obj/cpu68k-6.o obj/cpu68k-7.o obj/cpu68k-8.o obj/cpu68k-9.o obj/cpu68k-a.o obj/cpu68k-b.o obj/cpu68k-c.o obj/cpu68k-d.o obj/cpu68k-e.o obj/cpu68k-f.o obj/cpu68k.o obj/mem68k.o obj/ui-console.o obj/uip-svgalib.o obj/logo.o obj/font.o obj/generator.o obj/cpuz80.o obj/vdp.o obj/gensound.o obj/z80/z80.o obj/memz80.o obj/snd/fm.o
+SRCS4 = cpu68k.c mem68k.c reg68k.c event.c ui-console.c uip-svgalib.c logo.c font.c generator.c state.c cpuz80.c vdp.c gensound.c gensoundi.c z80/z80.c memz80.c snd/fm.c snprintf.c
+OBJS4 = obj/reg68k.o obj/event.o obj/cpu68k-0.o obj/cpu68k-1.o obj/cpu68k-2.o obj/cpu68k-3.o obj/cpu68k-4.o obj/cpu68k-5.o obj/cpu68k-6.o obj/cpu68k-7.o obj/cpu68k-8.o obj/cpu68k-9.o obj/cpu68k-a.o obj/cpu68k-b.o obj/cpu68k-c.o obj/cpu68k-d.o obj/cpu68k-e.o obj/cpu68k-f.o obj/cpu68k.o obj/mem68k.o obj/ui-console.o obj/uip-svgalib.o obj/logo.o obj/font.o obj/generator.o obj/state.o obj/cpuz80.o obj/vdp.o obj/gensound.o obj/gensoundi.o obj/z80/z80.o obj/memz80.o obj/snd/fm.o obj/snprintf.o
 
-SRCS5 = cpu68k.c mem68k.c reg68k.c ui-console.c uip-allegro.c logo.c font.c generator.c cpuz80.c vdp.c gensound-allegro.c z80/z80.c memz80.c snd/fm.c
-OBJS5 = obj/reg68k.o obj/cpu68k-0.o obj/cpu68k-1.o obj/cpu68k-2.o obj/cpu68k-3.o obj/cpu68k-4.o obj/cpu68k-5.o obj/cpu68k-6.o obj/cpu68k-7.o obj/cpu68k-8.o obj/cpu68k-9.o obj/cpu68k-a.o obj/cpu68k-b.o obj/cpu68k-c.o obj/cpu68k-d.o obj/cpu68k-e.o obj/cpu68k-f.o obj/cpu68k.o obj/mem68k.o obj/ui-console.o obj/uip-allegro.o obj/logo.o obj/font.o obj/generator.o obj/cpuz80.o obj/vdp.o obj/gensound-allegro.o obj/z80/z80.o obj/memz80.o obj/snd/fm.o
+SRCS5 = cpu68k.c mem68k.c reg68k.c event.c ui-console.c uip-allegro.c logo.c font.c generator.c state.c cpuz80.c vdp.c gensound-allegro.c gensoundi.c z80/z80.c memz80.c snd/fm.c snprintf.c
+OBJS5 = obj/reg68k.o obj/event.o obj/cpu68k-0.o obj/cpu68k-1.o obj/cpu68k-2.o obj/cpu68k-3.o obj/cpu68k-4.o obj/cpu68k-5.o obj/cpu68k-6.o obj/cpu68k-7.o obj/cpu68k-8.o obj/cpu68k-9.o obj/cpu68k-a.o obj/cpu68k-b.o obj/cpu68k-c.o obj/cpu68k-d.o obj/cpu68k-e.o obj/cpu68k-f.o obj/cpu68k.o obj/mem68k.o obj/ui-console.o obj/uip-allegro.o obj/logo.o obj/font.o obj/generator.o obj/state.o obj/cpuz80.o obj/vdp.o obj/gensound-allegro.o obj/gensoundi.o obj/z80/z80.o obj/memz80.o obj/snd/fm.o obj/snprintf.o
 
 default:	@program@
 		@echo "### All compiled."
@@ -76,7 +68,7 @@ clean:
 		rm -f obj/snd/*.o obj/z80/*.o
 
 allclean:	clean
-		rm -out/* bin/*
+		rm -f out/* bin/*
 
 obj/%.o : %.c
 		@echo "### Compiling $<..."

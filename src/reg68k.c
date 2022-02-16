@@ -1,10 +1,4 @@
-/*****************************************************************************/
-/*     Generator - Sega Genesis emulation - (c) James Ponder 1997-2000       */
-/*****************************************************************************/
-/*                                                                           */
-/* reg68k.c                                                                  */
-/*                                                                           */
-/*****************************************************************************/
+/* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
 #include "generator.h"
 #include "registers.h"
@@ -14,6 +8,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+#include "reg68k.h"
 #include "mem68k.h"
 #include "cpu68k.h"
 #include "cpuz80.h"
@@ -33,154 +28,49 @@
 
 /*** forward references ***/
 
-inline void reg68k_checkevent(void);
-void reg68k_autovector(int avno);
 
-static unsigned int reg68k_eventdelay;
+/*** reg68k_external_step - execute one instruction ***/
 
-void reg68k_step(void)
+unsigned int reg68k_external_step(void)
 {
-  /* PAL: 312 lines, 224 or 240 visible @ 50Hz - CPU @ 7.60Mhz */
-  /* NTSC: 262 lines, 224 visible @ 60Hz - CPU @ 7.67Mhz */
-
   static t_ipc ipc;
   static t_iib *piib;
   jmp_buf jb;
+  static unsigned int clks;
+
+  if (!(piib = cpu68k_iibtable[fetchword(regs.pc)]))
+    ui_err("Invalid instruction @ %08X\n", regs.pc);
 
   /* !!! entering global register usage area !!! */
 
   if (!setjmp(jb)) {
-    if (!(piib = cpu68k_iibtable[fetchword(regs.pc)]))
-      ui_err("Invalid instruction @ %08X\n", regs.pc);
-    /* move PC and register block into global variables */
+    /* move PC and register block into global processor register variables */
     reg68k_pc = regs.pc;
     reg68k_regs = regs.regs;
     reg68k_sr = regs.sr;
+
+    if (regs.pending && ((reg68k_sr.sr_int >> 8) & 7) < regs.pending)
+      reg68k_internal_autovector(regs.pending);
 
     cpu68k_ipc(reg68k_pc,
 	       mem68k_memptr[(reg68k_pc>>12) & 0xfff](reg68k_pc & 0xFFFFFF),
 	       piib, &ipc);
     cpu68k_functable[fetchword(reg68k_pc)*2+1](&ipc);
     cpu68k_clocks+= piib->clocks;
-    reg68k_checkevent();
+    clks = cpu68k_clocks;
     /* restore global registers back to permanent storage */
     regs.pc = reg68k_pc;
     regs.sr = reg68k_sr;
     longjmp(jb, 1);
   }
+  return clks; /* number of clocks done */
 }
 
-inline void reg68k_checkevent(void)
+/*** reg68k_external_execute - execute at least given number of clocks,
+     and return number of clocks executed too much (-ve) ***/
+
+unsigned int reg68k_external_execute(unsigned int clocks)
 {
-  switch(vdp_event) {
-  case 0:
-    if (cpu68k_clocks >= vdp_event_start) {
-      vdp_event_startofcurrentline = vdp_event_start;
-      LOG_USER(("%08X due %08X, %d A: %d (cd=%d)",
-		cpu68k_clocks, vdp_event_start, vdp_line, vdp_reg[10],
-		vdp_hskip_countdown));
-      vdp_event++;
-      vdp_event_start+= vdp_clksperline_68k;
-      cpuz80_sync();
-      if (vdp_line == 0) {
-	vdp_vblank = 0;
-	vdp_hskip_countdown = vdp_reg[10];
-	ui_line(0);
-      }
-      if (vdp_line < vdp_vislines)
-	ui_line(vdp_line);
-    }
-    break;
-  case 1:
-    if (cpu68k_clocks >= vdp_event_vint) {
-      LOG_USER(("%08X due %08X, %d B: %d (cd=%d)",
-		cpu68k_clocks, vdp_event_vint, vdp_line, vdp_reg[10],
-		vdp_hskip_countdown));
-      vdp_event++;
-      vdp_event_vint+= vdp_clksperline_68k;
-      if (vdp_line == vdp_vislines) {
-	vdp_vblank = 1;
-	vdp_vsync = 1;
-	if (vdp_reg[1] & 1<<5)
-	  reg68k_autovector(6); /* vertical interrupt */
-      }
-    }
-    break;
-  case 2:
-    if (cpu68k_clocks >= vdp_event_hint) {
-      LOG_USER(("%08X due %08X, %d C: %d (cd=%d)",
-		cpu68k_clocks, vdp_event_hint, vdp_line, vdp_reg[10],
-		vdp_hskip_countdown));
-      /* delay hdisplay if hint is delayed */
-      vdp_event++;
-      vdp_event_hint+= vdp_clksperline_68k;
-      cpuz80_sync();
-      /* if (vdp_line < vdp_vislines) */
-	vdp_hblank = 1;
-      if (vdp_reg[0] & 1<<4) {
-	if (vdp_hskip_countdown-- == 0) {
-	  /* re-initialise counter */
-	  vdp_hskip_countdown = vdp_reg[10];
-	  if (vdp_line < vdp_vislines)
-	    reg68k_autovector(4); /* horizontal interrupt */
-	  /* since this game is obviously timing sensitive, we sacrifice
-	     executing the right number of 68k clocks this frame in order
-	     to accurately do the moments following H-Int */
-	  cpu68k_clocks = vdp_event_hint - vdp_clksperline_68k;
-	}
-      }
-    }
-    break;
-  case 3:
-    if (cpu68k_clocks >= vdp_event_hdisplay) {
-      LOG_USER(("%08X due %08X, %d D: %d (cd=%d)",
-		cpu68k_clocks, vdp_event_hdisplay, vdp_line, vdp_reg[10],
-		vdp_hskip_countdown));
-      vdp_event_hdisplay-= reg68k_eventdelay;
-      vdp_event++;
-      vdp_event_hdisplay+= vdp_clksperline_68k;
-      cpuz80_sync();
-      /* err
-      if (vdp_line+1 < vdp_vislines)
-	ui_line(vdp_line+1);
-      */
-    }
-    break;
-  case 4:
-    if (cpu68k_clocks >= vdp_event_end) {
-      /* end of line, do sound, platform stuff */
-      LOG_USER(("%08X due %08X, %d E: %d (cd=%d)",
-		cpu68k_clocks, vdp_event_end, vdp_line, vdp_reg[10],
-		vdp_hskip_countdown));
-      vdp_event = 0;
-      vdp_event_end+= vdp_clksperline_68k;
-      /* if (vdp_line < vdp_vislines) */
-	vdp_hblank = 0;
-      cpuz80_sync();
-      sound_process();
-      vdp_line++;
-      if (vdp_line == vdp_totlines) {
-	ui_endfield();
-	sound_endfield();
-	cpuz80_interrupt();
-	vdp_endfield();
-	cpuz80_endfield();
-	cpu68k_endfield();
-	cpu68k_frames++;
-      }
-    }
-    break;
-  } /* switch */
-}
-
-/*** reg68k_framestep - do a frame and return ***/
-
-void reg68k_framestep(void)
-{
-  /* PAL: 312 lines, 224 or 240 visible @ 50Hz - CPU @ 7.60Mhz */
-  /* NTSC: 262 lines, 224 visible @ 60Hz - CPU @ 7.67Mhz */
-
-  unsigned int startframe = cpu68k_frames;
   unsigned int index, i;
   t_ipclist *list;
   t_ipc *ipc;
@@ -188,12 +78,18 @@ void reg68k_framestep(void)
   jmp_buf jb;
   static t_ipc step_ipc;
   static t_iib *step_piib;
+  static int clks;
+
+  clks = clocks;
 
   if (!setjmp(jb)) {
     /* move PC and register block into global variables */
     reg68k_pc = regs.pc;
     reg68k_regs = regs.regs;
     reg68k_sr = regs.sr;
+
+    if (regs.pending && ((reg68k_sr.sr_int >> 8) & 7) < regs.pending)
+      reg68k_internal_autovector(regs.pending);
 
     do {
       pc24 = reg68k_pc & 0xffffff;
@@ -206,6 +102,7 @@ void reg68k_framestep(void)
 				  0xfff](reg68k_pc & 0xFFFFFF),
 		     step_piib, &step_ipc);
 	  cpu68k_functable[fetchword(reg68k_pc)*2+1](&step_ipc);
+	  clks-= step_piib->clocks;
 	  cpu68k_clocks+= step_piib->clocks;
 	} while (!step_piib->flags.endblk);
 	list = NULL; /* stop compiler warning ;(  */
@@ -236,10 +133,32 @@ void reg68k_framestep(void)
 	  ipc++;
 	} while (*(int *)ipc);
 #endif
+	clks-= list->clocks;
 	cpu68k_clocks+= list->clocks;
       }
-      reg68k_checkevent();
-    } while (cpu68k_frames == startframe);
+    } while (clks > 0);
+    /* restore global registers back to permanent storage */
+    regs.pc = reg68k_pc;
+    regs.sr = reg68k_sr;
+    longjmp(jb, 1);
+  }
+  return -clks; /* i.e. number of clocks done too much */
+}
+
+/*** reg68k_external_autovector - for external use ***/
+
+void reg68k_external_autovector(int avno)
+{
+  jmp_buf jb;
+
+  if (!setjmp(jb)) {
+    /* move PC and register block into global processor register variables */
+    reg68k_pc = regs.pc;
+    reg68k_regs = regs.regs;
+    reg68k_sr = regs.sr;
+
+    reg68k_internal_autovector(avno);
+
     /* restore global registers back to permanent storage */
     regs.pc = reg68k_pc;
     regs.sr = reg68k_sr;
@@ -247,13 +166,22 @@ void reg68k_framestep(void)
   }
 }
 
-void reg68k_autovector(int avno)
+/*** reg68k_internal_autovector - go to autovector - this call assumes global
+     registers are already setup ***/
+
+void reg68k_internal_autovector(int avno)
 {
   int curlevel = (reg68k_sr.sr_int>>8) & 7;
   uint32 tmpaddr;
 
-  LOG_VERBOSE(("autovector %d\n", avno));
+  LOG_DEBUG1(("autovector %d", avno));
   if (curlevel < avno || avno == 7) {
+    if (regs.stop) {
+      LOG_DEBUG1(("stop finished"));
+      /* autovector whilst in a STOP instruction */
+      reg68k_pc+= 4;
+      regs.stop = 0;
+    }
     if (!reg68k_sr.sr_struct.s) {
       regs.regs[15]^= regs.sp;   /* swap A7 and SP */
       regs.sp^= regs.regs[15];
@@ -270,10 +198,17 @@ void reg68k_autovector(int avno)
     tmpaddr = reg68k_pc;
     reg68k_pc = fetchlong((V_AUTO+avno-1)*4);
     LOG_DEBUG1(("AUTOVECTOR %d: %X -> %X", avno, tmpaddr, reg68k_pc));
+    regs.pending = 0;
+  } else {
+    LOG_DEBUG1(("%08X autovector %d pending", reg68k_pc, avno));
+    regs.pending = avno;
   }
 }
 
-void reg68k_vector(int vno, uint32 oldpc)
+/*** reg68k_internal_vector - go to vector - this call assumes global
+     registers are already setup ***/
+
+void reg68k_internal_vector(int vno, uint32 oldpc)
 {
   LOG_DEBUG1(("Vector %d called from %8x!", vno, regs.pc));
   if (!reg68k_sr.sr_struct.s) {
