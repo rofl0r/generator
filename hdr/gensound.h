@@ -14,6 +14,8 @@ extern int sound_debug;
 extern int sound_minfields;
 extern int sound_maxfields;
 
+int sound_start(void);
+void sound_stop(void);
 int sound_init(void);
 void sound_final(void);
 int sound_reset(void);

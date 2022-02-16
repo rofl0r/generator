@@ -1,10 +1,8 @@
-#include "config.h"
+#include "../config.h"
 #include "machine.h"
 
-#define VERSTRING "v0.31"
+#define VERSTRING VERSION
 #define PROGNAME generator
-#define FNAME_TCLSCRIPT SHAREDIR "/gen.tcl"
-#define FNAME_GEN68K_CPU_OUT "out/cpu68k-%x.c"
 #define GEN_RAMLENGTH 64*1024
 
 #define LEN_IPCLISTTABLE 16*1024

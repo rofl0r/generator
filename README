@@ -1,15 +1,18 @@
-Copyright (c) 1997-2001 James Ponder
+This directory contains Generator, a Sega Genesis (Mega Drive) emulator.
 
-This program is licensed to you according to the conditions within the file
-LICENSE.  Please read this license before continuing.
+Generator is free software.  See the file COPYING for copying permission.
+Some parts of Generator are distributed under different terms; see the
+individual source files for details.
 
-Install
-=======
-Please see the INSTALL document inside the 'compile' directory.
+Documentation for project is maintained online on the web site, although
+the INSTALL file details information on installing the program from source.
 
-Contact
-=======
-For the latest version of this program, and the on-line manual, please
-see http://www.squish.net/generator/
+This distribution contains:
+  cpu68k/                       68000 processor files
+  raze/                         RAZE Z80 files
+  ym2612/                       YM2612 files
+  hdr/                          header files
+  main/                         main source files
+  extra/                        extra files not used in compilation
 
-If you like this program, please email to james@squish.net with your comments.
+See http://www.squish.net/generator/ for more information.

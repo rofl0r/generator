@@ -1,0 +1,69 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
+/* Define if you need to in order for stat and other things to work.  */
+#undef _POSIX_SOURCE
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if your processor stores words with the most significant
+   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
+#undef WORDS_BIGENDIAN
+
+/* The number of bytes in a unsigned char.  */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The number of bytes in a unsigned int.  */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The number of bytes in a unsigned long.  */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The number of bytes in a unsigned long long.  */
+#undef SIZEOF_UNSIGNED_LONG_LONG
+
+/* The number of bytes in a unsigned short.  */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* Define if you have the snprintf function.  */
+#undef HAVE_SNPRINTF
+
+/* Define if you have the <tcl8.0.h> header file.  */
+#undef HAVE_TCL8_0_H
+
+/* Define if you have the <tk8.0.h> header file.  */
+#undef HAVE_TK8_0_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
+/* Allegro version */
+#undef ALLEGRO
+
+/* Define for RAZE z80, undef for mz80 */
+#undef RAZE
+
+/* Define if you have an x86 processor */
+#undef PROCESSOR_INTEL
+
+/* Define if you have a sparc processor */
+#undef PROCESSOR_SPARC
+
+/* Define if you have an ARM processor */
+#undef PROCESSOR_ARM
+
+/* Undefine if your processor can read unaligned 32-bit values */
+#undef ALIGNLONGS
+

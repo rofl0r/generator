@@ -32,11 +32,13 @@ extern t_regs regs;
 extern t_ipclist *ipclist[LEN_IPCLISTTABLE];
 extern uint8 movem_bit[256];
 extern unsigned int cpu68k_adaptive;
+extern unsigned int cpu68k_frozen;
 
 extern t_iib iibs[];
 extern int iibs_num;
 
 int cpu68k_init(void);
+void cpu68k_printipc(t_ipc *ipc);
 void cpu68k_ipc(uint32 addr68k, uint8 *addr, t_iib *iib, t_ipc *ipc);
 void cpu68k_reset(void);
 void cpu68k_step(void);

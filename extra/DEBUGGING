@@ -1,0 +1,44 @@
+Debugging
+-=-=-=-=-
+
+Nobody will want to do this, but I thought I'd write a text file describing
+it anyway :)
+
+This has no use unless you're building the tcl/tk version.
+
+There are quite a few debugging options - but to get them, you need
+to edit the source, specifically:
+
+gen68k.c:  int DEBUG_BRANCH = 0;
+gen68k.c:  int DEBUG_SR = 0;
+gen68k.c:  int DEBUG_RTE = 0;
+
+and
+
+vdp.c:#undef DEBUG_VDP
+vdp.c:#undef DEBUG_VDPDMA
+vdp.c:#undef DEBUG_VDPDATA
+
+and
+
+mem68k.c:#undef DEBUG_BUS
+mem68k.c:#undef DEBUG_SRAM
+mem68k.c:#undef DEBUG_RAM
+mem68k.c:#undef DEBUG_UNIMPL
+
+and
+
+generator.c:unsigned int gen_debugmode = 0;
+
+Note that the last one is passed along to the gen.tcl script, and hence
+all the user interface debugging facilities are enabled.  gen68k.c is the
+generating C source, so editing the DEBUG options means it'll have to
+create new C source files and recompile them... <yawn>.  The DEBUG_xxx flags
+just print stuff to stdout, so they're not too interesting.
+
+If you're doing any debug at all, you'll want to enable DEBUG_UNIMPL, I
+added it just before releasing this source because I felt that I should try
+and print out nothing whilst attempting to run a game - most of the warnings
+are rather important if a game uses an unimplemented memory access!
+
+-=- James Ponder -=- james@squish.net -=- http://www.squish.net/ -=-
