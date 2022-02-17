@@ -14,6 +14,10 @@
 #include "allegro.h"
 #endif
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #if defined(USE_BZIP2) && defined(HAVE_BZLIB_H)
 #include <bzlib.h>
 #endif /* USE_BZIP2 && HAVE_BZLIB_H */
@@ -871,11 +875,7 @@ char *gen_loadimage(const char *filename)
   cpu68k_romlen = 0;
   gen_freerom = 1;
 
-#ifdef ALLEGRO
   if ((fd = open(filename, O_RDONLY | O_BINARY, 0)) == -1) {
-#else
-  if ((fd = open(filename, O_RDONLY, 0)) == -1) {
-#endif
     perror("open");
     return ("Unable to open file.");
   }
