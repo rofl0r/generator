@@ -41,6 +41,9 @@ Status _XInitImageFuncPtrs(XImage *);
 
 #define MAXDEPTHBYTES 4
 
+// FIXME: dummy for now
+void ui_musiclog(uint8 *data, unsigned int length) {}
+
 /*** forward reference declarations ***/
 
 int ui_loadimage(Tcl_Interp * interp, const char *filename);
