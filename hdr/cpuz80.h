@@ -5,7 +5,7 @@
 #  include "raze.h"
 #else
 #  include "cmz80.h"
-CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
+extern CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
 #endif
 
 #define LEN_SRAM 0x2000

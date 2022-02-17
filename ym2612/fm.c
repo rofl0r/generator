@@ -898,7 +898,7 @@ INLINE void FM_CALC_CH( FM_CH *CH )
 }
 
 /* ---------- update phase increment counter of operator ---------- */
-INLINE void CALC_FCSLOT(FM_SLOT *SLOT , int fc , int kc )
+void CALC_FCSLOT(FM_SLOT *SLOT , int fc , int kc )
 {
 	int ksr;
 
