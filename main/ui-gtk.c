@@ -31,6 +31,7 @@
 #include "patch.h"
 #include "dib.h"
 #include "avi.h"
+#include "diss68k.h"
 
 #define HBORDER_MAX 32
 #define HBORDER_DEFAULT 8
