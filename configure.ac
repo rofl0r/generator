@@ -274,7 +274,7 @@ dnl Checks for libraries.
 
   if [[ "x$MY_PROG" = "xgenerator-gtk" ]]; then
     MY_SUBDIRS="glade gtkopts $MY_SUBDIRS"
-    AM_PATH_GTK(1.2.10,,AC_MSG_ERROR(Generator needs gtk 1.2.10 or later))
+    AM_PATH_GTK_2_0(2.4.0,,AC_MSG_ERROR(Generator needs gtk 2.4.0 or later))
     AM_PATH_SDL(1.2.6,,AC_MSG_ERROR(Generator needs sdk 1.2.6 or later))
 
     MY_LIBS="$MY_LIBS $X_PRE_LIBS $X_LIBS $X_EXTRA_LIBS"
