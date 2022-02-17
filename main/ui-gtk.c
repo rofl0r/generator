@@ -2467,6 +2467,8 @@ void ui_gtk_saveoptions(void)
 
 void ui_gtk_redraw(void)
 {
+  if(!screen) return;
+
   SDL_Rect rect;
 
   rect.x = 0;
