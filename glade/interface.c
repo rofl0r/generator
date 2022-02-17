@@ -4050,6 +4050,8 @@ create_codes (void)
   GtkWidget *vbox_codesinner;
   GtkWidget *scrolledwindow_codes;
   GtkWidget *clist_codes;
+  GtkWidget *label101;
+  GtkWidget *label102;
   GtkWidget *hbox6;
   GtkWidget *button_clearsel;
   GtkWidget *button_deleteall;
@@ -4072,6 +4074,7 @@ create_codes (void)
   tooltips = gtk_tooltips_new ();
 
   codes = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  gtk_container_set_border_width (GTK_CONTAINER (codes), 2);
   gtk_window_set_title (GTK_WINDOW (codes), "Game Genie patch file manager");
 
   vbox_codes = gtk_vbox_new (FALSE, 0);
@@ -4095,12 +4098,24 @@ create_codes (void)
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow_codes), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolledwindow_codes), GTK_SHADOW_IN);
 
-  clist_codes = gtk_tree_view_new ();
+  clist_codes = gtk_clist_new (2);
   gtk_widget_show (clist_codes);
   gtk_container_add (GTK_CONTAINER (scrolledwindow_codes), clist_codes);
   gtk_container_set_border_width (GTK_CONTAINER (clist_codes), 2);
   GTK_WIDGET_SET_FLAGS (clist_codes, GTK_CAN_DEFAULT);
   gtk_tooltips_set_tip (tooltips, clist_codes, "Select one or more codes and click on \"Apply\" to activate them.", NULL);
+  gtk_clist_set_column_width (GTK_CLIST (clist_codes), 0, 80);
+  gtk_clist_set_column_width (GTK_CLIST (clist_codes), 1, 80);
+  gtk_clist_set_selection_mode (GTK_CLIST (clist_codes), GTK_SELECTION_MULTIPLE);
+  gtk_clist_column_titles_show (GTK_CLIST (clist_codes));
+
+  label101 = gtk_label_new ("");
+  gtk_widget_show (label101);
+  gtk_clist_set_column_widget (GTK_CLIST (clist_codes), 0, label101);
+
+  label102 = gtk_label_new ("");
+  gtk_widget_show (label102);
+  gtk_clist_set_column_widget (GTK_CLIST (clist_codes), 1, label102);
 
   hbox6 = gtk_hbox_new (FALSE, 0);
   gtk_widget_show (hbox6);
@@ -4229,6 +4244,8 @@ create_codes (void)
   GLADE_HOOKUP_OBJECT (codes, vbox_codesinner, "vbox_codesinner");
   GLADE_HOOKUP_OBJECT (codes, scrolledwindow_codes, "scrolledwindow_codes");
   GLADE_HOOKUP_OBJECT (codes, clist_codes, "clist_codes");
+  GLADE_HOOKUP_OBJECT (codes, label101, "label101");
+  GLADE_HOOKUP_OBJECT (codes, label102, "label102");
   GLADE_HOOKUP_OBJECT (codes, hbox6, "hbox6");
   GLADE_HOOKUP_OBJECT (codes, button_clearsel, "button_clearsel");
   GLADE_HOOKUP_OBJECT (codes, button_deleteall, "button_deleteall");
