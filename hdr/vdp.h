@@ -1,3 +1,6 @@
+#ifndef VDP_HEADER_FILE
+#define VDP_HEADER_FILE
+
 typedef enum {
   cd_vram_fetch, cd_vram_store,
   cd_2, cd_cram_store,
@@ -75,3 +78,5 @@ uint8 vdp_gethpos(void);
 #define TOTAL_CELLWIDTH 64
 
 extern uint8 vdp_reg[];
+
+#endif /* VDP_HEADER_FILE */

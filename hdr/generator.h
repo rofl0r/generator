@@ -1,34 +1,63 @@
-#include "../config.h"
+#ifndef GENERATOR_HEADER_FILE
+#define GENERATOR_HEADER_FILE
+
+#include "config.h"
+
 #include "machine.h"
+
+typedef union {
+  struct {
+#ifndef WORDS_BIGENDIAN 
+    unsigned int c:1;
+    unsigned int v:1;
+    unsigned int z:1;
+    unsigned int n:1;
+    unsigned int x:1;
+    unsigned int :3;
+    unsigned int i0:1;
+    unsigned int i1:1;
+    unsigned int i2:1;
+    unsigned int :2;
+    unsigned int s:1;
+    unsigned int :1;
+    unsigned int t:1;
+#else
+    unsigned int t:1;
+    unsigned int :1;
+    unsigned int s:1;
+    unsigned int :2;
+    unsigned int i2:1;
+    unsigned int i1:1;
+    unsigned int i0:1;
+    unsigned int :3;
+    unsigned int x:1;
+    unsigned int n:1;
+    unsigned int z:1;
+    unsigned int v:1;
+    unsigned int c:1;
+#endif
+  } sr_struct;
+  uint16 sr_int;
+} t_sr;
+
+#ifdef INCLUDE_REGISTERS_H
+#include "registers.h"
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif /* HAVE_SYS_PARAM_H */
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif /* HAVE_INTTYPES_H */
 
 /* VERSION set by autoconf */
 /* PACKAGE set by autoconf */
-
-#define GEN_RAMLENGTH 64*1024
-
-#define LEN_IPCLISTTABLE 16*1024
-
-char *gen_loadimage(const char *filename);
-void gen_reset(void);
-void gen_softreset(void);
-void gen_loadmemrom(const char *rom, int romlen);
-
-#if defined(linux)
-  #include <byteswap.h>
-  #define SWAP16(x) bswap_16((x))
-  #define SWAP32(x) bswap_32((x))
-#elif defined(__OpenBSD__)
-  #include <machine/endian.h>
-  #define SWAP16(x) bswap_16((x))
-  #define SWAP32(x) bswap_32((x))
-#else
-  #define SWAP16(y) (( ((y)>>8) & 0x00ff) | (( ((y)<<8) & 0xff00)))
-  #define SWAP32(y) (( ((y)>>24) & 0x000000ff) | \
-  		    (((y) >> 8)  & 0x0000ff00) | \
-  		    (((y) << 8)  & 0x00ff0000) | \
-          (((y) << 24) & 0xff000000) )
-  #warning "No native byte conversion"
-#endif
 
 /*
  * LOCENDIANxx takes data that came from a big endian source and converts it
@@ -54,13 +83,21 @@ void gen_loadmemrom(const char *rom, int romlen);
 #define LOCENDIAN32(y) (y)
 #define LOCENDIAN16L(y) SWAP16(y)
 #define LOCENDIAN32L(y) SWAP32(y)
-#define BYTES_HIGHFIRST 1
 #else
 #define LOCENDIAN16(y) SWAP16(y)
 #define LOCENDIAN32(y) SWAP32(y)
 #define LOCENDIAN16L(y) (y)
 #define LOCENDIAN32L(y) (y)
 #endif
+
+#define GEN_RAMLENGTH 64*1024
+
+#define LEN_IPCLISTTABLE 16*1024
+
+char *gen_loadimage(const char *filename);
+void gen_reset(void);
+void gen_softreset(void);
+void gen_loadmemrom(const void *rom, int romlen);
 
 typedef enum {
   tp_src, tp_dst
@@ -152,41 +189,6 @@ extern t_mnemonic_table mnemonic_table[];
 
 extern char *condition_table[];
 
-typedef union {
-  struct {
-#ifndef BYTES_HIGHFIRST
-    unsigned int c:1;
-    unsigned int v:1;
-    unsigned int z:1;
-    unsigned int n:1;
-    unsigned int x:1;
-    unsigned int :3;
-    unsigned int i0:1;
-    unsigned int i1:1;
-    unsigned int i2:1;
-    unsigned int :2;
-    unsigned int s:1;
-    unsigned int :1;
-    unsigned int t:1;
-#else
-    unsigned int t:1;
-    unsigned int :1;
-    unsigned int s:1;
-    unsigned int :2;
-    unsigned int i2:1;
-    unsigned int i1:1;
-    unsigned int i0:1;
-    unsigned int :3;
-    unsigned int x:1;
-    unsigned int n:1;
-    unsigned int z:1;
-    unsigned int v:1;
-    unsigned int c:1;
-#endif
-  } sr_struct;
-  uint16 sr_int;
-} t_sr;
-
 typedef struct {
   uint32 pc;
   uint32 sp;
@@ -204,28 +206,63 @@ typedef struct {
 #define SR_SFLAG (1<<13)
 #define SR_TFLAG (1<<15)
 
+#include <errno.h>
+
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif /* HAVE_STDLIB_H */
+
+#include <stdarg.h>
+
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif /* HAVE_SYS_TIME_H */
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif /* HAVE_SYS_STAT_H */
+
+#include <ctype.h>
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif /* HAVE_STRING_H */
+
+#include <time.h>
+#include <limits.h>
+#include <fcntl.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
+#include <stdio.h>
+#include <signal.h>
+#include <assert.h>
+
+
 /* Steve Snake / Charles MacDonald (msgid <3C427237.3CEC@value.net>) -
  * TAS on Genesis 1 and 2 (but not 3) do not write back with TAS */
 #define BROKEN_TAS
 
 #ifdef NOLOGGING
-#  define LOG_DEBUG3(x)   /* */
-#  define LOG_DEBUG2(x)   /* */
-#  define LOG_DEBUG1(x)   /* */
-#  define LOG_USER(x)     /* */
-#  define LOG_VERBOSE(x)  /* */
-#  define LOG_NORMAL(x)   /* */
-#  define LOG_CRITICAL(x) /* */
-#  define LOG_REQUEST(x)  /* */
+#  define LOG_DEBUG3(x)
+#  define LOG_DEBUG2(x)
+#  define LOG_DEBUG1(x)
+#  define LOG_USER(x)
+#  define LOG_VERBOSE(x)
+#  define LOG_NORMAL(x)
+#  define LOG_CRITICAL(x)
+#  define LOG_REQUEST(x)
 #else
-#  define LOG_DEBUG3(x)   /* ui_log_debug3 ## x */
-#  define LOG_DEBUG2(x)   /* ui_log_debug2 ## x */
-#  define LOG_DEBUG1(x)   /* ui_log_debug1 ## x */
-#  define LOG_USER(x)     ui_log_user ## x
-#  define LOG_VERBOSE(x)  ui_log_verbose ## x
-#  define LOG_NORMAL(x)   ui_log_normal ## x
-#  define LOG_CRITICAL(x) ui_log_critical ## x
-#  define LOG_REQUEST(x)  ui_log_request ## x
+#  define LOG_DEBUG3(x)   /* ui_log_debug3 x */
+#  define LOG_DEBUG2(x)   /* ui_log_debug2 x */
+#  define LOG_DEBUG1(x)   /* ui_log_debug1 x */
+#  define LOG_USER(x)     ui_log_user x
+#  define LOG_VERBOSE(x)  ui_log_verbose x
+#  define LOG_NORMAL(x)   ui_log_normal x
+#  define LOG_CRITICAL(x) ui_log_critical x
+#  define LOG_REQUEST(x)  ui_log_request x
 #endif
 
 typedef struct {
@@ -264,8 +301,228 @@ extern t_cartinfo gen_cartinfo;
 
 extern unsigned int gen_quit;
 extern unsigned int gen_debugmode;
-extern unsigned int gen_loglevel;
 extern unsigned int gen_autodetect;
 extern unsigned int gen_modifiedrom;
+extern int gen_loglevel;
 extern t_musiclog gen_musiclog;
 extern char gen_leafname[];
+
+#define SWAP16(y) (( ((y)>>8) & 0x00ff) | (( ((y)<<8) & 0xff00)))
+#define SWAP32(y) (( ((y)>>24) & 0x000000ff) | \
+  		    (((y) >> 8)  & 0x0000ff00) | \
+  		    (((y) << 8)  & 0x00ff0000) | \
+          (((y) << 24) & 0xff000000) )
+
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif /* MAX */
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif /* MIN */
+
+#define le_compose(v, byte, i) ((v) | ((byte) << ((i) << 3)))
+#define be_compose(v, byte, i) (((v) << 8) | (byte)) 
+
+#define PEEK(bits, endian)                \
+static inline uint ## bits                \
+peek_ ## endian ## bits(const void *p)    \
+{                                         \
+  const uint8 *q = (const uint8 *) p;     \
+  uint ## bits v;                         \
+  int i;                                  \
+                                          \
+  v = q[0];                               \
+  for (i = 1; i < (bits >> 3); i++)       \
+    v = endian ## _compose(v, (uint ## bits) q[i], i);   \
+                                          \
+  return v;                               \
+}
+
+PEEK(16, le)
+PEEK(32, le)
+
+PEEK(16, be)
+PEEK(32, be)
+#undef PEEK
+
+#undef le_compose
+#undef be_compose
+
+#define POKE_LE(bits)                                   \
+static inline void                                      \
+poke_le ## bits(void *p, uint ## bits v)                \
+{                                                       \
+  unsigned int i;                                       \
+  uint8 *q = (uint8 *) p;                               \
+                                                        \
+  for (i = 0; i < (bits >> 3); i++) {                   \
+    q[i] = v;                                           \
+    v >>= 8;                                            \
+  }                                                     \
+}
+
+POKE_LE(16)
+POKE_LE(32)
+#undef POKE_LE
+
+#define POKE_BE(bits)                                   \
+static inline void                                      \
+poke_be ## bits(void *p, uint ## bits v)                \
+{                                                       \
+  int i;                                                \
+  uint8 *q = (uint8 *) p;                               \
+                                                        \
+  for (i = (bits >> 3); i-- > 0; /* NOTHING */) {       \
+    q[i] = v;                                           \
+    v >>= 8;                                            \
+  }                                                     \
+}
+
+POKE_BE(16)
+POKE_BE(32)
+#undef POKE_BE
+
+static inline void *
+deconstify_void_ptr(const void *p)
+{
+  return (void *) p;
+}
+
+static inline void *
+cast_to_void_ptr(void *p)
+{
+  return p;
+}
+
+static inline char *
+cast_to_char_ptr(void *p)
+{
+  return p;
+}
+
+static inline char *
+print_uint_hex(char *dst, size_t size, unsigned int v)
+{
+  static const char hexa[] = "0123456789abcdef";
+  char buf[21], *p, *q;
+
+  if (size < 1)
+    return dst;
+
+  p = &buf[sizeof buf];
+  while (--p != buf) {
+    *p = hexa[v & 0x0f];
+    if (v < 16)
+      break;
+    v >>= 4;
+  }
+
+  for (q = dst; --size > 0 && p < &buf[sizeof buf]; p++) {
+    *q++ = *p;
+  }
+  *q = '\0';
+  return q; /* points to trailing NUL */
+}
+
+static inline char *
+print_ulong_hex(char *dst, size_t size, unsigned long v)
+{
+  static const char hexa[] = "0123456789abcdef";
+  char buf[128], *p, *q;
+
+  if (size < 1)
+    return dst;
+
+  p = &buf[sizeof buf];
+  while (--p != buf) {
+    *p = hexa[v & 0x0f];
+    if (v < 16)
+      break;
+    v >>= 4;
+  }
+
+  for (q = dst; --size > 0 && p < &buf[sizeof buf]; p++) {
+    *q++ = *p;
+  }
+  *q = '\0';
+  return q; /* points to trailing NUL */
+}
+
+static inline char *
+print_uint(char *dst, size_t size, unsigned int v)
+{
+  static const char deca[] = "0123456789";
+  char buf[21], *p, *q;
+
+  if (size < 1)
+    return dst;
+
+  p = &buf[sizeof buf];
+  while (--p != buf) {
+    *p = deca[v % 10];
+    if (v < 10)
+      break;
+    v /= 10;
+  }
+
+  for (q = dst; --size > 0 && p < &buf[sizeof buf]; p++) {
+    *q++ = *p;
+  }
+  *q = '\0';
+  return q; /* points to trailing NUL */
+}
+
+static inline char *
+append_string(char *dst, size_t *size, const char *src)
+{
+  size_t left;
+  const char *p;
+  char *q;
+  int c;
+  
+  q = dst;
+  left = *size;
+  if (left != 0) {
+    for (p = src; (c = *p) != '\0' && --left != 0; ++p, ++q) {
+      *q = c;
+    }
+ 
+    *q = '\0';
+    *size = left;
+  }
+  return q;
+}
+
+static inline char *
+append_uint(char *buf, size_t *size, unsigned int v)
+{
+  char *p;
+  
+  p = print_uint(buf, *size, v);
+  *size -= p - buf;
+  return p;
+}
+
+static inline char *
+append_uint_hex(char *buf, size_t *size, unsigned int v)
+{
+  char *p;
+  
+  p = print_uint_hex(buf, *size, v);
+  *size -= p - buf;
+  return p;
+}
+
+static inline char *
+append_ulong_hex(char *buf, size_t *size, unsigned long v)
+{
+  char *p;
+  
+  p = print_ulong_hex(buf, *size, v);
+  *size -= p - buf;
+  return p;
+}
+
+#endif /* GENERATOR_HEADER_FILE */
+/* vi: set ts=2 sw=2 et cindent: */

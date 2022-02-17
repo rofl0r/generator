@@ -6,12 +6,14 @@
 #define _BSD_SOURCE 1
 #define __EXTENSIONS__ 1
 
+#include "generator.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <ctype.h>
 
-#include "generator.h"
 #include "gtkopts.h"
 
 t_conf *gtkopts_conf = NULL;
@@ -30,7 +32,7 @@ typedef struct {
 /* *INDENT-OFF* */
 
 static t_opts gtkopts_opts[] = {
-  { "view", "100, 200", "100",
+  { "view", "100, 200, fullscreen", "100",
     "view mode to use in percent" },
   { "region", "domestic, overseas", "overseas",
     "hardware region" },
@@ -44,9 +46,9 @@ static t_opts gtkopts_opts[] = {
     "style of de-interlacing to use in 200% view mode" },
   { "frameskip", "auto, 1..10", "auto",
     "skip frames to keep up - auto setting needs sound turned on" },
-  { "hborder", "0..32", "8",
+  { "hborder", "0..32", "0",
     "horizontal over-scan border surrounding main playing area" },
-  { "vborder", "0..32", "8",
+  { "vborder", "0..32", "0",
     "vertical retrace border surrounding main playing area" },
   { "sound", "on, off", "on",
     "sound system toggle, also turns off fm and psg (not z80)" },
@@ -98,6 +100,41 @@ static t_opts gtkopts_opts[] = {
     "keyboard player 2 right" },
   { "key2_start", "gdk keysym", "KP_Enter",
     "keyboard player 2 start button" },
+
+  { "joy1_a", "0..255", "0",
+    "joypad player 1 'A' button" },
+  { "joy1_b", "0..255", "1",
+    "joypad player 1 'B' button" },
+  { "joy1_c", "0..255", "2",
+    "joypad player 1 'C' button" },
+  { "joy1_start", "0..255", "3",
+    "joypad player 1 start button" },
+  { "joy1_up", "0..255", "4",
+    "joypad player 1 up button" },
+  { "joy1_down", "0..255", "5",
+    "joypad player 1 down button" },
+  { "joy1_left", "0..255", "6",
+    "joypad player 1 left button" },
+  { "joy1_right", "0..255", "7",
+    "joypad player 1 right button" },
+
+  { "joy2_a", "0..255", "0",
+    "joypad player 2 'A' button" },
+  { "joy2_b", "0..255", "1",
+    "joypad player 2 'B' button" },
+  { "joy2_c", "0..255", "2",
+    "joypad player 2 'C' button" },
+  { "joy2_start", "0..255", "3",
+    "joypad player 2 start button" },
+  { "joy2_up", "0..255", "4",
+    "joypad player 2 up button" },
+  { "joy2_down", "0..255", "5",
+    "joypad player 2 down button" },
+  { "joy2_left", "0..255", "6",
+    "joypad player 2 left button" },
+  { "joy2_right", "0..255", "7",
+    "joypad player 2 right button" },
+
   { "aviframeskip", "integer", "2",
     "AVI forced skip, e.g. 2 is 30fps" },
   { "aviformat", "rgb, jpeg", "jpeg",
@@ -106,6 +143,8 @@ static t_opts gtkopts_opts[] = {
     "JPEG quality - 100 is least compression but best picture" },
   { "lowpassfilter", "0-100", "50",
     "Low-pass sound filter - 0 turns it off, 100 filters too much" },
+  { "samplerate", "11025, 22050, 44100, 48000", "44100",
+    "Samplerate to use for audio" },
   { NULL, NULL, NULL, NULL }
 };
 
@@ -115,9 +154,9 @@ int gtkopts_load(const char *file)
 {
   char buffer[CONFLINELEN];
   FILE *fd;
-  char *a, *p, *q, *t;
   int line = 0;
-  t_conf *conf, *confi;
+  t_conf **conf_iter = &gtkopts_conf;
+  int truncated = 0;
 
   if ((fd = fopen(file, "r")) == NULL) {
     fprintf(stderr, "%s: unable to open conf '%s' for reading: %s\n",
@@ -125,61 +164,72 @@ int gtkopts_load(const char *file)
     return -1;
   }
   while (fgets(buffer, CONFLINELEN, fd)) {
+    t_conf *conf;
+    char *p, *q, *t;
+    size_t len;
+
     line++;
-    if (buffer[strlen(buffer) - 1] != '\n') {
+
+    len = strlen(buffer);
+    if (0 == len || buffer[len - 1] != '\n') {
       fprintf(stderr, "%s: line %d too long in conf file, ignoring.\n",
               PACKAGE, line);
-      while ((a = fgets(buffer, CONFLINELEN, fd))) {
-        if (buffer[strlen(buffer) - 1] == '\n')
-          continue;
-      }
-      if (!a)
-        goto finished;
+      truncated = 1;
+      continue;
+    } else if (truncated) {
+      truncated = 0;
       continue;
     }
-    buffer[strlen(buffer) - 1] = '\0';
-    /* remove whitespace off start and end */
-    p = buffer + strlen(buffer) - 1;
-    while (p > buffer && *p == ' ')
-      *p-- = '\0';
+
+    /* remove whitespace off end */
+    p = &buffer[len - 1];
+    do {
+      if (!isspace((unsigned char) *p))
+        break;
+      *p = '\0';
+    } while (p-- != buffer);
+
+    /* remove whitespace off start */
     p = buffer;
-    while (*p == ' ')
+    while (isspace((unsigned char) *p))
       p++;
+
     /* check for comment */
     if (!*p || *p == '#' || *p == ';')
       continue;
-    if ((conf = malloc(sizeof(t_conf))) == NULL) {
-      fprintf(stderr, "%s: Out of memory adding to conf\n", PACKAGE);
-      goto error;
-    }
-    q = p;
-    strsep(&q, "=");
-    if (q == NULL) {
+    q = strchr(p, '=');
+    if (q == NULL || q == p) {
       fprintf(stderr, "%s: line %d not understood in conf file\n", PACKAGE,
               line);
       goto error;
     }
+    t = q;
+    *q++ = '\0';
     /* remove whitespace off end of p and start of q */
-    t = p + strlen(p) - 1;
-    while (t > p && *t == ' ')
-      *t-- = '\0';
-    while (*q == ' ')
+    while (--t != p && isspace((unsigned char) *t))
+      *t = '\0';
+    while (isspace((unsigned char) *q))
       q++;
-    if ((conf->key = malloc(strlen(p) + 1)) == NULL ||
-        (conf->value = malloc(strlen(q) + 1)) == NULL) {
+
+    if ((conf = malloc(sizeof *conf)) == NULL) {
+      fprintf(stderr, "%s: Out of memory adding to conf\n", PACKAGE);
+      goto error;
+    }
+    conf->key = strdup(p);
+    conf->value = strdup(q);
+    conf->next = NULL;
+    if (NULL == conf->key || NULL == conf->value) {
+      free(conf->key);
+      free(conf->value);
+      free(conf);
       fprintf(stderr, "%s: Out of memory building conf\n", PACKAGE);
       goto error;
     }
-    strcpy(conf->key, p);
-    strcpy(conf->value, q);
-    conf->next = NULL;
-    for (confi = gtkopts_conf; confi && confi->next; confi = confi->next);
-    if (!confi)
-      gtkopts_conf = conf;
-    else
-      confi->next = conf;
+
+    (*conf_iter) = conf;
+    conf_iter = &conf->next;
   }
-finished:
+
   if (ferror(fd) || fclose(fd)) {
     fprintf(stderr, "%s: error whilst reading conf: %s\n", PACKAGE,
             strerror(errno));

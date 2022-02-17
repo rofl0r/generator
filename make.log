@@ -1,0 +1,72 @@
+make  all-recursive
+Making all in gtkopts
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c gtkopts.c
+rm -f libgtkopts.a
+ar cru libgtkopts.a gtkopts.o 
+ranlib libgtkopts.a
+Making all in raze
+nasm -e raze.asm -o raze2.asm
+nasm -f elf raze2.asm -o raze.o -praze.reg
+rm -f libraze.a
+ar cru libraze.a  raze.o
+ranlib libraze.a
+Making all in cpu68k
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c def68k.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c tab68k.c
+/usr/pkg/gcc3/bin/cc  -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include   -o def68k  def68k.o tab68k.o  
+./def68k
+Writing CPU definitions... done.
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c gen68k.c
+/usr/pkg/gcc3/bin/cc  -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include   -o gen68k  gen68k.o tab68k.o  
+./gen68k
+Writing C files... 0. 1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12. 13. 14. 15. done.
+make  all-am
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-0.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-1.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-2.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-3.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-4.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-5.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-6.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-7.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-8.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-9.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-a.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-b.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-c.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-d.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-e.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k-f.c
+rm -f lib68k.a
+ar cru lib68k.a cpu68k-0.o cpu68k-1.o  cpu68k-2.o cpu68k-3.o cpu68k-4.o  cpu68k-5.o cpu68k-6.o cpu68k-7.o  cpu68k-8.o cpu68k-9.o cpu68k-a.o  cpu68k-b.o cpu68k-c.o cpu68k-d.o  cpu68k-e.o cpu68k-f.o 
+ranlib lib68k.a
+Making all in ym2612
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c fm.c
+rm -f libym2612.a
+ar cru libym2612.a fm.o 
+ranlib libym2612.a
+Making all in sn76496
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I.     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c sn76496.c
+rm -f libsn76496.a
+ar cru libsn76496.a sn76496.o 
+ranlib libsn76496.a
+Making all in main
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpu68k.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c mem68k.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c reg68k.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c event.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c generator.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c state.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c cpuz80.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c vdp.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c gensound.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c memz80.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c ui-sdl.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c uiplot.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c gensoundp-unix.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c initcart.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c patch.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c dib.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c avi.c
+/usr/pkg/gcc3/bin/cc -DHAVE_CONFIG_H -I. -I. -I.. -I../hdr -I. -I../cpu68k -I../ym2612 -I../raze -I../cmz80  -I../sn76496 -I../gtkopts  -DFNAME_TCLSCRIPT=\"/usr/local/share/generator/gen.tcl\"  -I/usr/pkg/include/SDL -D_REENTRANT     -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include -c diss68k.c
+/usr/pkg/gcc3/bin/cc  -march=athlon-tbird -W -Wall -Wformat=2 -O3 -fomit-frame-pointer -fno-math-errno  -I/usr/X11R6/include   -o generator-sdl  cpu68k.o mem68k.o  reg68k.o event.o generator.o  state.o cpuz80.o vdp.o  gensound.o memz80.o ui-sdl.o  uiplot.o gensoundp-unix.o initcart.o  patch.o dib.o avi.o diss68k.o ../cpu68k/lib68k.a ../ym2612/libym2612.a -lz -lbz2 ../raze/libraze.a  -lossaudio  -lSM -lICE  -L/usr/X11R6/lib   ../sn76496/libsn76496.a -L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib -lSDL -lossaudio -lpthread -L/usr/pkg/lib -Wl,-R/usr/pkg/lib -L/usr/X11R6/lib -Wl,-R/usr/X11R6/lib -lm -L/usr/X11R6/lib -lX11 -lXext -lusbhid -laa  ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o 

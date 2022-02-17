@@ -233,3 +233,7 @@ gboolean
 on_drawingarea_diss_expose_event       (GtkWidget       *widget,
                                         GdkEventExpose  *event,
                                         gpointer         user_data);
+
+void
+on_fullscreen_activate                 (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);

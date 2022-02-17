@@ -1,3 +1,6 @@
+#ifndef UI_GTK_HEADER_FILE
+#define UI_GTK_HEADER_FILE
+
 typedef enum {
     DEINTERLACE_BOB, DEINTERLACE_WEAVE, DEINTERLACE_WEAVEFILTER
 } t_interlace;
@@ -32,3 +35,5 @@ void ui_gtk_closeavi(void);
 GtkWidget *ui_gtk_newdiss(unsigned int type);
 void ui_gtk_updatediss(GtkWidget *disswin);
 void ui_gtk_redrawdiss(GtkWidget *canvas, GdkEventExpose *event);
+
+#endif /* UI_GTK_HEADER_FILE */

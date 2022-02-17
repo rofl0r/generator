@@ -1,3 +1,6 @@
+#ifndef MEMZ80_HEADER_FILE
+#define MEMZ80_HEADER_FILE
+
 int memz80_init(void);
 
 extern uint8 (*memz80_fetch_byte[0x100])(uint16 addr);
@@ -15,3 +18,5 @@ typedef struct {
 } t_memz80_def;
 
 extern t_memz80_def memz80_def[];
+
+#endif /* MEMZ80_HEADER_FILE */

@@ -10,19 +10,7 @@
    platform dependent calls are in the uip file - see uip.h for the calls
    required */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-
 #include "generator.h"
-#include "snprintf.h"
 
 #include "cpu68k.h"
 #include "cpuz80.h"
@@ -100,7 +88,6 @@ static char *ui_initload = NULL;        /* filename to load on init */
 static uint8 ui_plotfield = 0;  /* flag indicating plotting this field */
 static uint8 ui_plotprevfield = 0;      /* did we plot the previous field? */
 static uint16 *ui_font;         /* unpacked font */
-static uint8 bigbuffer[8192];   /* stupid no-vsnprintf platforms */
 static t_uipinfo ui_uipinfo;    /* uipinfo filled in by uip 'sub-system' */
 static uint16 *ui_screen0;      /* pointer to screen block for bank 0 */
 static uint16 *ui_screen1;      /* pointer to screen block for bank 1 */
@@ -112,7 +99,7 @@ static uint16 ui_screen[3][320 * 240];     /* screen buffers */
 
 /*** Program entry point ***/
 
-int ui_init(int argc, char *argv[])
+int ui_init(int argc, const char *argv[])
 {
   int i;
   int ch;
@@ -131,7 +118,10 @@ int ui_init(int argc, char *argv[])
     fprintf(stderr, "Failed to unpack font, out of memory?\n");
     return 1;
   }
-  while ((ch = getopt(argc, argv, "i:c:w:f:sd:v:l:j:k:")) != -1) {
+  while (
+     -1 != (ch = getopt(argc, deconstify_void_ptr(argv),
+                    "i:c:w:f:sd:v:l:j:k:"))
+  ) {
     switch (ch) {
     case 'c':                  /* set colour bit positions */
       if (ui_setcolourbits(optarg)) {
@@ -321,7 +311,8 @@ int ui_setcolourbits(const char *str)
   char s[32];
   int r, g, b;
 
-  snprintf(s, sizeof(s), "%s", str);
+  strncpy(s, str, sizeof s);
+  s[sizeof s - 1] = '\0';
 
   if ((green = strchr(s, ',')) == NULL)
     return -1;
@@ -353,7 +344,9 @@ int ui_setcontrollers(const char *str)
   int i;
   char *p;
 
-  snprintf(s, sizeof(s), "%s", str);
+  strncpy(s, str, sizeof s);
+  s[sizeof s - 1] = '\0';
+
   cont0 = s;
   if ((cont1 = strchr(s, ',')) == NULL)
     return -1;
@@ -519,20 +512,22 @@ void ui_setupscreen(void)
   ui_drawbox(grey, 0, 416, 640, 1);
   ui_drawbox(red, 0, 65, 640, 1);
   ui_drawbox(grey, 0, 66, 640, 1);
-  ;
+
+#if 0
   /* draw marker for 320x224 box */
-  // ui_drawbox(grey, 160, 128, 320, 224);
+  ui_drawbox(grey, 160, 128, 320, 224);
   /* draw marker for 320x240 box */
-  // ui_drawbox(grey, 160, 120, 320, 240);
+  ui_drawbox(grey, 160, 120, 320, 240);
   /* draw marker for 256x224 box */
-  // ui_drawbox(grey, 192, 128, 256, 224);
+  ui_drawbox(grey, 192, 128, 256, 224);
   /* draw marker for 256x240 box */
-  // ui_drawbox(grey, 192, 120, 256, 240);
-  ;
+  ui_drawbox(grey, 192, 120, 256, 240);
+#endif
+
   ui_plotstring("Generator is (c) James Ponder 1997-2001, "
                 "all rights reserved.", 0, 0);
   ui_plotstring(VERSION, 640 - (strlen(VERSION) * 6), 0);
-  ;
+
   if (ui_bindings[0].joystick != -1) {
     ui_plotstring("Joystick", 0, 420);
   } else {
@@ -552,31 +547,40 @@ void ui_setupscreen(void)
       ui_plotstring("[RETURN]  2) Start", 0, 470);
     }
   }
-  ;
+
   ui_plotstring("FPS:  00", 120, 420);
   ui_plotstring("Skip: 00", 120, 430);
   ui_plotstring(":", 622, 470);
-  ;
+
   ui_plotstring("[F1] License", 0, 20);
   ui_plotstring("[F2] Load/Save state", 0, 30);
   ui_plotstring("[F3] -", 0, 40);
   ui_plotstring("[F4] Save image", 0, 50);
-  ;
+
   ui_plotstring("[F5] Toggle info:", 216, 20);
   ui_plotstring("[F6] Toggle video:", 216, 30);
   ui_plotstring("[F7] Toggle country:", 216, 40);
   ui_plotstring("[F8] Toggle plotter:", 216, 50);
-  ;
+
   ui_plotstring("[F9] Toggle vsync:", 432, 20);
   ui_plotstring("[F10] Full screen", 432, 30);
   ui_plotstring("[F11] -", 432, 40);
   ui_plotstring("[F12] Reset", 432, 50);
-  ;
+
   ui_plotsettings();
-  ;
-  sprintf(bigbuffer, "%s %X %s", gen_cartinfo.version,
-          gen_cartinfo.checksum, gen_cartinfo.country);
-  ui_plotstring(bigbuffer, 216, 420);
+
+  {
+    char buf[4096], *p = buf;
+    size_t size = sizeof buf;
+    
+    p = append_string(p, &size, gen_cartinfo.version);
+    p = append_string(p, &size, " ");
+    p = append_uint_hex(p, &size, gen_cartinfo.checksum);
+    p = append_string(p, &size, gen_cartinfo.country);
+    
+    ui_plotstring(buf, 216, 420);
+  }
+
   ui_plotstring(gen_cartinfo.name_domestic, 216, 430);
   ui_plotstring(gen_cartinfo.name_overseas, 216, 440);
 }
@@ -595,24 +599,36 @@ void ui_plotsettings(void)
 
 int ui_loop(void)
 {
-  char *p;
-  int f;
-
   if (ui_initload) {
-    p = gen_loadimage(ui_initload);
-    if (p) {
-      LOG_CRITICAL(("Failed to load ROM image: %s", p));
+    const char *error;
+    if (NULL != (error = gen_loadimage(ui_initload))) {
+      LOG_CRITICAL(("Failed to load ROM image: %s", error));
       return 1;
     }
     if (ui_saverom) {
-      snprintf(bigbuffer, sizeof(bigbuffer) - 1, "%s (%X-%s)",
-               gen_cartinfo.name_overseas, gen_cartinfo.checksum,
-               gen_cartinfo.country);
-      if ((f = open(bigbuffer, O_CREAT | O_EXCL | O_WRONLY, 0777)) == -1
-          || write(f, cpu68k_rom, cpu68k_romlen) == -1 || close(f) == -1) {
-        fprintf(stderr, "Failed to write file: %s\n", strerror(errno));
+      char filename[4096], *p = filename;
+      size_t size = sizeof filename;
+      FILE *f;
+      
+      p = append_string(p, &size, gen_cartinfo.name_overseas);
+      p = append_string(p, &size, " (");
+      p = append_uint_hex(p, &size, gen_cartinfo.checksum);
+      p = append_string(p, &size, "-");
+      p = append_string(p, &size, gen_cartinfo.country);
+      p = append_string(p, &size, ")");
+     
+      f = fopen(filename, "wb"); 
+      if (NULL == f) {
+        fprintf(stderr, "Failed to open file: %s\n", strerror(errno));
+      } else {
+        size_t n = cpu68k_romlen;
+        
+        if (n != fwrite(cpu68k_rom, 1, n, f))
+          fprintf(stderr, "Failed to write file: %s\n", strerror(errno));
+
+        fclose(f);
+        printf("Successfully wrote: %s\n", filename);
       }
-      printf("Successfully wrote: %s\n", bigbuffer);
       gen_quit = 1;
       return 0;
     }
@@ -1025,29 +1041,41 @@ void ui_statescreen_main(void)
 
 int ui_statescreen_loadsavestate(int save)
 {
-  char c;
-  time_t t;
-  char buf[64];
-  int i, y;
-
   for (;;) {
+    char c;
+    int i;
+
     uip_clearmiddle();
     if (save)
       ui_plotstring("Save state", 160, 120);
     else
       ui_plotstring("Load state", 160, 120);
     ui_plotstring("----------", 160, 130);
+    
     for (i = 1; i <= 9; i++) {
-      y = 140 + 10 * i;
-      snprintf(buf, sizeof(buf), "[%d]", i);
-      ui_plotstring(buf, 160, y);
+      int y = 140 + 10 * i;
+      time_t t;
+      
+      {
+        char buf[64], *p = buf;
+        size_t size = sizeof buf;
+
+        p = append_string(p, &size, "[");
+        p = append_uint(p, &size, i);
+        p = append_string(p, &size, "]");
+        ui_plotstring(buf, 160, y);
+      }
+
       if ((t = state_date(i)) == 0) {
         ui_plotstring("empty slot", 160 + 4 * 6, y);
       } else {
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&t));
+        char buf[64];
+
+        strftime(buf, sizeof buf, "%Y-%m-%d %H:%M:%S", localtime(&t));
         ui_plotstring(buf, 160 + 4 * 6, y);
       }
     }
+    
     ui_plotstring("[0] ...back", 160, 140 + 10 * 11);
     if ((c = uip_getchar()) == '0')
       return 0;
@@ -1082,7 +1110,6 @@ void ui_imagescreen_main(void)
 {
   char c;
   char filename[256];
-  char buf[256];
   int xsize, ysize;
 
   for (;;) {
@@ -1104,11 +1131,23 @@ void ui_imagescreen_main(void)
         ui_plotstring("Press any key to continue", 160, 140);
         uip_getchar();
       } else {
+        char buf[1024], *p = buf;
+        size_t size = sizeof buf;
+
         uip_clearmiddle();
-        snprintf(buf, sizeof(buf), "Successfully saved %s", filename);
+        p = append_string(p, &size, "Successfully saved ");
+        p = append_string(p, &size, filename);
+        
         ui_plotstring(buf, 160, 120);
-        snprintf(buf, sizeof(buf), "(%d x %d 24 bit raw image)",
-                 xsize, ysize);
+
+        p = buf;
+        size = sizeof buf;
+        p = append_string(p, &size, "(");
+        p = append_uint(p, &size, xsize);
+        p = append_string(p, &size, " x ");
+        p = append_uint(p, &size, ysize);
+        p = append_string(p, &size, " 24 bit raw image)");
+        
         ui_plotstring(buf, 160, 130);
         ui_plotstring("Press any key to continue", 160, 150);
         uip_getchar();
@@ -1120,14 +1159,19 @@ void ui_imagescreen_main(void)
 int ui_saveimage(const char *type, char *filename, int buflen,
                  int *xsize, int *ysize)
 {
+  FILE *f = NULL;
   int i, y;
-  int fd = 0;
   char out[3];
-  int count;
 
   for (i = 1; i <= 9; i++) {
-    snprintf(filename, buflen, "%s.ss%d", gen_leafname, i);
-    if ((fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0644)) != -1)
+    char *p = filename;
+    size_t size = buflen > 0 ? buflen : 0;
+
+    p = append_string(p, &size, gen_leafname);
+    p = append_string(p, &size, ".ss");
+    p = append_uint(p, &size, i);
+    
+    if (NULL != fopen(filename, "wb"))
       break;
   }
   if (i < 1 || i > 9) {
@@ -1144,18 +1188,16 @@ int ui_saveimage(const char *type, char *filename, int buflen,
     for (y = 0; y < 480; y++) {
       line = (uint16 *)(scr + y * ui_uipinfo.linewidth);
       for (i = 0; i < 640; i++) {
+        size_t ret;
+        
         out[0] = ((line[i] >> ui_uipinfo.redshift) & 0x1f) << 3;
         out[1] = ((line[i] >> ui_uipinfo.greenshift) & 0x1f) << 3;
         out[2] = ((line[i] >> ui_uipinfo.blueshift) & 0x1f) << 3;
-        count = write(fd, out, 3);
-        if (count == -1) {
+        ret = fwrite(out, 1, sizeof out, f);
+        if (sizeof out != ret) {
           LOG_CRITICAL(("Error whilst writing to output image file: %s",
                         strerror(errno)));
-          close(fd);
-          return -1;
-        } else if (count != 3) {
-          LOG_CRITICAL(("Short write - wrote 3 bytes, got %d", count));
-          close(fd);
+          fclose(f);
           return -1;
         }
       }
@@ -1169,19 +1211,17 @@ int ui_saveimage(const char *type, char *filename, int buflen,
     *ysize = vdp_vislines;
     for (y = 0; y < *ysize; y++) {
       for (i = 0; i < *xsize; i++) {
+        size_t ret;
+        
         data = scr[320 * y + i];
         out[0] = ((data >> ui_uipinfo.redshift) & 0x1f) << 3;
         out[1] = ((data >> ui_uipinfo.greenshift) & 0x1f) << 3;
         out[2] = ((data >> ui_uipinfo.blueshift) & 0x1f) << 3;
-        count = write(fd, out, 3);
-        if (count == -1) {
+        ret = fwrite(out, 1, sizeof out, f);
+        if (sizeof out != ret) {
           LOG_CRITICAL(("Error whilst writing to output image file: %s",
                         strerror(errno)));
-          close(fd);
-          return -1;
-        } else if (count != 3) {
-          LOG_CRITICAL(("Short write - wrote 3 bytes, got %d", count));
-          close(fd);
+          fclose(f);
           return -1;
         }
       }
@@ -1189,10 +1229,10 @@ int ui_saveimage(const char *type, char *filename, int buflen,
   } else {
     LOG_CRITICAL(("Invalid image type '%s' passed to image save routine",
                   type));
-    close(fd);
+    fclose(f);
     return -1;
   }
-  if (close(fd)) {
+  if (fclose(f)) {
     LOG_CRITICAL(("Close returned error whilst writing image"));
     return -1;
   }
@@ -1205,24 +1245,24 @@ int ui_saveimage(const char *type, char *filename, int buflen,
    whilst battling with macros that can only take fixed numbers of arguments */
 
 #ifdef ALLEGRO
-#define LOG_FUNC(name,level,txt) void ui_log_ ## name ## (const char *text, ...) \
+#define LOG_FUNC(name,level,txt) void ui_log_ ## name (const char *text, ...) \
 { \
   va_list ap; \
-  char *ll = ui_loglines[ui_logline]; \
-  char *p = bigbuffer; \
   if (gen_loglevel >= level) { \
-    p+= sprintf(p, "%d ", ui_logcount++); \
-    p+= sprintf(p, txt); \
+    char *ll = ui_loglines[ui_logline]; \
+    char buf[8192], *p = buf; \
+    p += sprintf(p, "%d ", ui_logcount++); \
+    p += sprintf(p, txt); \
     va_start(ap, text); \
     vsprintf(p, text, ap); \
     va_end(ap); \
-    strncpy(ll, bigbuffer, UI_LOGLINESIZE); \
+    strncpy(ll, buf, UI_LOGLINESIZE); \
     if (++ui_logline >= UI_LOGLINES) \
       ui_logline = 0; \
   } \
 }
 #else
-#define LOG_FUNC(name,level,txt) void ui_log_ ## name ## (const char *text, ...) \
+#define LOG_FUNC(name,level,txt) void ui_log_ ## name (const char *text, ...) \
 { \
   va_list ap; \
   if (gen_loglevel >= level) { \
@@ -1280,3 +1320,5 @@ void ui_musiclog(uint8 *data, unsigned int length)
   (void)data;
   (void)length;
 }
+
+/* vi: set ts=2 sw=2 et cindent: */

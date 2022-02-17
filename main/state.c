@@ -1,16 +1,6 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <time.h>
-#include <string.h>
-#include <errno.h>
-
 #include "generator.h"
-#include "snprintf.h"
 
 #include "state.h"
 #include "ui.h"
@@ -43,39 +33,55 @@ t_statelist *state_statelist;   /* loaded state */
 
 /*** state_date - return the modification date or 0 for non-existant ***/
 
-time_t state_date(const int slot)
+time_t
+state_date(const int slot)
 {
-  char filename[256];
+  char filename[256], *p = filename;
+  size_t size = sizeof filename;
   struct stat statbuf;
 
-  snprintf(filename, sizeof(filename), "%s.gt%d", gen_leafname, slot);
+  p = append_string(p, &size, gen_leafname);
+  p = append_string(p, &size, ".gt");
+  p = append_uint(p, &size, slot);
 
-  if (stat(filename, &statbuf) != 0)
+  if (0 != stat(filename, &statbuf))
     return 0;
+
   return statbuf.st_mtime;
 }
 
 /*** state_load - load the given slot ***/
 
-int state_load(const int slot)
+int
+state_load(const int slot)
 {
-  char filename[256];
+  char filename[256], *p = filename;
+  size_t size = sizeof filename;
 
-  snprintf(filename, sizeof(filename), "%s.gt%d", gen_leafname, slot);
+  p = append_string(p, &size, gen_leafname);
+  p = append_string(p, &size, ".gt");
+  p = append_uint(p, &size, slot);
+
   return state_loadfile(filename);
 }
 
 /*** state_save - save to the given slot ***/
 
-int state_save(const int slot)
+int
+state_save(const int slot)
 {
-  char filename[256];
+  char filename[256], *p = filename;
+  size_t size = sizeof filename;
 
-  snprintf(filename, sizeof(filename), "%s.gt%d", gen_leafname, slot);
+  p = append_string(p, &size, gen_leafname);
+  p = append_string(p, &size, ".gt");
+  p = append_uint(p, &size, slot);
+
   return state_savefile(filename);
 }
 
-void state_transfer8(const char *mod, const char *name, uint8 instance,
+void
+state_transfer8(const char *mod, const char *name, uint8 instance,
                      uint8 *data, uint32 size)
 {
   t_statelist *l;
@@ -113,90 +119,94 @@ void state_transfer8(const char *mod, const char *name, uint8 instance,
   }
 }
 
-void state_transfer16(const char *mod, const char *name, uint8 instance,
+void
+state_transfer16(const char *mod, const char *name, uint8 instance,
                       uint16 *data, uint32 size)
 {
   t_statelist *l;
   uint8 buf[4];
   uint32 i;
 
-  if (state_transfermode == 0) {
+  if (0 == state_transfermode) {
     /* save */
-    fwrite(mod, strlen(mod)+1, 1, state_outputfile);
-    fwrite(name, strlen(name)+1, 1, state_outputfile);
+    fwrite(mod, 1 + strlen(mod), 1, state_outputfile);
+    fwrite(name, 1 + strlen(name), 1, state_outputfile);
     buf[0] = instance;
     buf[1] = 2; /* bytes per object */
     fwrite(buf, 2, 1, state_outputfile);
-    buf[0] = (size >> 24) & 0xff;
-    buf[1] = (size >> 16) & 0xff;
-    buf[2] = (size >> 8) & 0xff;
-    buf[3] = size & 0xff;
+    poke_be32(&buf, size);
     fwrite(buf, 4, 1, state_outputfile);
     for (i = 0; i < size; i++) {
-      buf[0] = (data[i] >> 8) & 0xff;
-      buf[1] = data[i] & 0xff;
+      poke_be16(&buf, data[i]);
       fwrite(buf, 2, 1, state_outputfile);
     }
   } else {
     /* load */
     for (l = state_statelist; l; l = l->next) {
-      if (!strcasecmp(l->mod, mod) && !strcasecmp(l->name, name) &&
-          l->instance == instance && l->size == size && l->bytes == 2) {
-        for (i = 0; i < size; i++)
-          data[i] = ((((uint8 *)l->data)[(i << 1)] << 8) |
-                     (((uint8 *)l->data)[(i << 1) + 1]));
+      if (
+        0 == strcasecmp(l->mod, mod) &&
+        0 == strcasecmp(l->name, name) &&
+        l->instance == instance &&
+        l->size == size &&
+        2 == l->bytes
+      ) {
+        for (i = 0; i < size; i++) {
+          const uint8 *p = l->data;
+          
+          data[i] = peek_be16(&p[i << 1]);
+        }
         LOG_VERBOSE(("Loaded %s %s (%d)", mod, name, instance));
         break;
       }
     }
-    if (l == NULL) {
+    if (NULL == l) {
       LOG_CRITICAL(("bad %s/%s\n", mod, name));
       memset(data, 0, size * 2);
     }
   }
 }
 
-void state_transfer32(const char *mod, const char *name, uint8 instance,
+void
+state_transfer32(const char *mod, const char *name, uint8 instance,
                       uint32 *data, uint32 size)
 {
   t_statelist *l;
   uint8 buf[4];
   uint32 i;
 
-  if (state_transfermode == 0) {
+  if (0 == state_transfermode) {
     /* save */
-    fwrite(mod, strlen(mod)+1, 1, state_outputfile);
-    fwrite(name, strlen(name)+1, 1, state_outputfile);
+    fwrite(mod, 1 + strlen(mod), 1, state_outputfile);
+    fwrite(name, 1 + strlen(name), 1, state_outputfile);
     buf[0] = instance;
     buf[1] = 4; /* bytes per object */
     fwrite(buf, 2, 1, state_outputfile);
-    buf[0] = (size >> 24) & 0xff;
-    buf[1] = (size >> 16) & 0xff;
-    buf[2] = (size >> 8) & 0xff;
-    buf[3] = size & 0xff;
+    poke_be32(buf, size);
     fwrite(buf, 4, 1, state_outputfile);
     for (i = 0; i < size; i++) {
-      buf[0] = (data[i] >> 24) & 0xff;
-      buf[1] = (data[i] >> 16) & 0xff;
-      buf[2] = (data[i] >> 8) & 0xff;
-      buf[3] = data[i] & 0xff;
+      poke_be32(buf, data[i]);
       fwrite(buf, 4, 1, state_outputfile);
     }
   } else {
     /* load */
     for (l = state_statelist; l; l = l->next) {
-      if (!strcasecmp(l->mod, mod) && !strcasecmp(l->name, name) &&
-          l->instance == instance && l->size == size && l->bytes == 4) {
-        for (i = 0; i < size; i++)
-          data[i] = ((((uint8 *)l->data)[(i << 2)] << 24) |
-                     (((uint8 *)l->data)[(i << 2) + 1] << 16) |
-                     (((uint8 *)l->data)[(i << 2) + 2] << 8) |
-                     (((uint8 *)l->data)[(i << 2) + 3]));
+      if (
+        0 == strcasecmp(l->mod, mod) &&
+        0 == strcasecmp(l->name, name) &&
+        l->instance == instance &&
+        l->size == size &&
+        4 == l->bytes
+      ) {
+        for (i = 0; i < size; i++) {
+          const uint8 *p = l->data;
+          
+          data[i] = peek_be32(&p[i << 2]);
+        }
         LOG_VERBOSE(("Loaded %s %s (%d)", mod, name, instance));
         break;
       }
     }
-    if (l == NULL) {
+    if (NULL == l) {
       LOG_CRITICAL(("bad %s/%s\n", mod, name));
       memset(data, 0, size * 4);
     }
@@ -205,12 +215,11 @@ void state_transfer32(const char *mod, const char *name, uint8 instance,
 
 /*** state_dotransfer - do transfer of data, either save or load ***/
 
-static void state_dotransfer(unsigned int mode)
+static void
+state_dotransfer(unsigned int mode)
 {
-  uint8 i8, i8b;
-  uint16 i16;
+  uint8 i8;
 
-  (void)i8b;
   state_transfermode = mode; /* 0 = save, 1 = load */
   state_transfer8("ver", "major", 0, &state_major, 1);
   state_transfer8("ver" ,"minor", 0, &state_minor, 1);
@@ -225,7 +234,7 @@ static void state_dotransfer(unsigned int mode)
   state_transfer8("vdp", "code", 0, (uint8 *)&vdp_code, 1);
   state_transfer16("vdp", "first", 0, &vdp_first, 1);
   state_transfer16("vdp", "second", 0, &vdp_second, 1);
-  state_transfer32("vdp", "dmabytes", 0, &vdp_dmabytes, 1);
+  state_transfer32("vdp", "dmabytes", 0, cast_to_void_ptr(&vdp_dmabytes), 1);
   state_transfer16("vdp", "address", 0, &vdp_address, 1);
   state_transfer8("68k", "ram", 0, cpu68k_ram, 0x10000);
   state_transfer32("68k", "regs", 0, regs.regs, 16);
@@ -240,6 +249,8 @@ static void state_dotransfer(unsigned int mode)
   state_transfer32("z80", "bank", 0, &cpuz80_bank, 1);
 #ifdef RAZE
   if (state_transfermode == 0) {
+    uint16 i16;
+    
     /* save */
     i16 = z80_get_reg(Z80_REG_AF); state_transfer16("z80", "af", 0, &i16, 1);
     i16 = z80_get_reg(Z80_REG_BC); state_transfer16("z80", "bc", 0, &i16, 1);
@@ -263,6 +274,9 @@ static void state_dotransfer(unsigned int mode)
     i8 = z80_get_reg(Z80_REG_Halted);
     state_transfer8("z80", "halted", 0, &i8, 1);
   } else {
+    uint16 i16;
+    uint8 i8b;
+
     /* load */
     state_transfer16("z80", "af", 0, &i16, 1); z80_set_reg(Z80_REG_AF, i16);
     state_transfer16("z80", "bc", 0, &i16, 1); z80_set_reg(Z80_REG_BC, i16);
@@ -337,9 +351,10 @@ static void state_dotransfer(unsigned int mode)
 
 /*** state_savefile - save to the given filename */
 
-int state_savefile(const char *filename)
+int
+state_savefile(const char *filename)
 {
-  if ((state_outputfile = fopen(filename, "wb")) == NULL) {
+  if (NULL == (state_outputfile = fopen(filename, "wb"))) {
     LOG_CRITICAL(("Failed to open '%s' for writing: %s",
                   filename, strerror(errno)));
     return -1;
@@ -354,29 +369,31 @@ int state_savefile(const char *filename)
 
 /*** state_loadfile - load the given filename ***/
 
-int state_loadfile(const char *filename)
+int
+state_loadfile(const char *filename)
 {
-  char *blk;
-  uint8 *p, *e;
+  void *blk;
+  const uint8 *e;
+  uint8 *p;
   struct stat statbuf;
   FILE *f;
   t_statelist *ent;
 
-  if (stat(filename, &statbuf) != 0) {
+  if (0 != stat(filename, &statbuf)) {
     errno = ENOENT;
     return -1;
   }
 
-  if ((blk = malloc(statbuf.st_size)) == NULL) {
+  if (NULL == (blk = malloc(statbuf.st_size))) {
     LOG_CRITICAL(("Failed to allocate memory whilst loading '%s'", filename));
     return -1;
   }
-  if ((f = fopen(filename, "rb")) == NULL) {
+  if (NULL == (f = fopen(filename, "rb"))) {
     LOG_CRITICAL(("Failed to open '%s': %s", filename, strerror(errno)));
     free(blk);
     return -1;
   }
-  if (fread(blk, statbuf.st_size, 1, f) != 1) {
+  if (1 != fread(blk, statbuf.st_size, 1, f)) {
     if (feof(f)) {
       LOG_CRITICAL(("EOF whilst reading save state file '%s'", filename));
       free(blk);
@@ -390,10 +407,12 @@ int state_loadfile(const char *filename)
   fclose(f);
 
   p = blk;
-  e = blk + statbuf.st_size;
+  e = &p[statbuf.st_size];
 
   /* skip first line comment */
-  while (p < e && *p++ != '\n') ;
+  while (p < e && '\n' != *p++)
+    continue;
+
   if (p >= e)
     goto OVERRUN;
 
@@ -404,26 +423,28 @@ int state_loadfile(const char *filename)
     if (e == p)
       /* EOF */
       break;
-    if ((ent = malloc(sizeof(t_statelist))) == NULL)
+    if (NULL == (ent = malloc(sizeof *ent)))
       ui_err("out of memory");
-    if ((e-p) < 8)
+    if ((e - p) < 8)
       goto OVERRUN;
-    ent->mod = p;
-    while (p < e && *p++) ;
-    if ((e-p) < 7)
+    ent->mod = cast_to_char_ptr(p);
+    while (p < e && *p++)
+      continue;
+    if ((e - p) < 7)
       goto OVERRUN;
-    ent->name = p;
-    while (p < e && *p++) ;
-    if ((e-p) < 6)
+    ent->name = cast_to_char_ptr(p);
+    while (p < e && *p++)
+      continue;
+    if ((e - p) < 6)
       goto OVERRUN;
     ent->instance = p[0];
     ent->bytes = p[1];
-    ent->size = (p[2] << 24) | (p[3] << 16) | (p[4] << 8) | p[5];
-    if ((e-p) < (int)(ent->bytes * ent->size))
+    ent->size = peek_be32(&p[2]);
+    if ((e - p) < (int)(ent->bytes * ent->size))
       goto OVERRUN;
-    p+= 6;
+    p += 6;
     ent->data = p;
-    p+= ent->bytes * ent->size;
+    p += ent->bytes * ent->size;
     ent->next = state_statelist;
     state_statelist = ent;
   }
@@ -435,8 +456,7 @@ int state_loadfile(const char *filename)
 
   /* free memory */
   free(blk);
-  while (state_statelist) {
-    ent = state_statelist;
+  while (NULL != (ent = state_statelist)) {
     state_statelist = state_statelist->next;
     free(ent);
   }
@@ -457,7 +477,7 @@ OVERRUN:
   LOG_CRITICAL(("Invalid state file '%s': overrun encountered", filename));
   errno = EINVAL;
   free(blk);
-  while (state_statelist) {
+  while (NULL != (ent = state_statelist)) {
     ent = state_statelist;
     state_statelist = state_statelist->next;
     free(ent);
@@ -465,3 +485,4 @@ OVERRUN:
   return -1;
 }
 
+/* vi: set ts=2 sw=2 et cindent: */

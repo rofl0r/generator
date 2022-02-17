@@ -44,13 +44,20 @@
 
 /* noise feedback for white noise mode */
 #define FB_WNOISE 0x12000       /* bit15.d(16bits) = bit0(out) ^ bit2 */
-//#define FB_WNOISE 0x14000     /* bit15.d(16bits) = bit0(out) ^ bit1 */
-//#define FB_WNOISE 0x28000     /* bit16.d(17bits) = bit0(out) ^ bit2 (same to AY-3-8910) */
-//#define FB_WNOISE 0x50000     /* bit17.d(18bits) = bit0(out) ^ bit2 */
+
+#if 0
+/* bit15.d(16bits) = bit0(out) ^ bit1 */
+#define FB_WNOISE 0x14000
+/* bit16.d(17bits) = bit0(out) ^ bit2 (same to AY-3-8910) */
+#define FB_WNOISE 0x28000
+/* bit17.d(18bits) = bit0(out) ^ bit2 */
+#define FB_WNOISE 0x50000
 
 /* noise feedback for periodic noise mode */
 /* it is correct maybe (it was in the Megadrive sound manual) */
-//#define FB_PNOISE 0x10000     /* 16bit rorate */
+#define FB_PNOISE 0x10000     /* 16bit rorate */
+#endif /* 0 */
+
 #define FB_PNOISE 0x08000       /* JH 981127 - fixes Do Run Run */
 
 /* noise generator start preset (for periodic noise) */
@@ -96,7 +103,7 @@ void SN76496Write(int chip, int data)
         n &= 3;
         /* N/512,N/1024,N/2048,Tone #3 output */
         R->Period[3] =
-          (n == 3) ? 2 * R->Period[2] : (R->UpdateStep << (5 + n));
+          (n == 3) ? 2 * R->Period[2] : (int) (R->UpdateStep << (5 + n));
 
         /* reset noise shifter */
         R->RNG = NG_PRESET;
@@ -253,7 +260,6 @@ int SN76496Init(int chip, int clock, int gain, int sample_rate)
 {
   int i;
   struct SN76496 *R = &sn[chip];
-  char name[40];
 
   R->SampleRate = sample_rate;
   SN76496_set_clock(chip, clock);

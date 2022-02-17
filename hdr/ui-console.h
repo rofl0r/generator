@@ -1,3 +1,6 @@
+#ifndef UI_CONSOLE_HEADER_FILE
+#define UI_CONSOLE_HEADER_FILE
+
 typedef enum {
   DEINTERLACE_BOB, DEINTERLACE_WEAVE, DEINTERLACE_WEAVEFILTER
 } t_interlace;
@@ -20,3 +23,4 @@ extern t_binding ui_bindings[2];  /* keyboard/joystick bindings for players */
 int ui_topbit(unsigned long int bits);
 void ui_setupscreen(void);
 
+#endif /* UI_CONSOLE_HEADER_FILE */

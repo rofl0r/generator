@@ -1,8 +1,5 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <assert.h>
-#include <stdlib.h>
-
 #include "generator.h"
 
 #include "dib.h"

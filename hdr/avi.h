@@ -1,3 +1,6 @@
+#ifndef AVI_HEADER_FILE
+#define AVI_HEADER_FILE
+
 /* these structures are based on vfw.h
  *
  * here is a nice example from http://www.microsoft.com/
@@ -241,3 +244,5 @@ t_avi *avi_open(char *filename, t_aviinfo *info, int jpeg);
 int avi_close(t_avi *avi);
 int avi_video(t_avi *avi, uint8 *video);
 int avi_audio(t_avi *avi, uint8 *audio, uint32 samples);
+
+#endif /* AVI_HEADER_FILE */

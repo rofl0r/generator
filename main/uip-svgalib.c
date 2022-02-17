@@ -5,10 +5,8 @@
 /* this part of generator is 'slaved' from the ui-console.c file - only
    platform specific code is contained here */
 
-#include <stdio.h>
-#include <unistd.h>
-
 #include "generator.h"
+
 #include <vga.h>
 #include <vgakeyboard.h>
 #include <vgajoystick.h>

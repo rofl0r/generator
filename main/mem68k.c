@@ -1,8 +1,7 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <stdio.h>
-
 #include "generator.h"
+
 #include "cpu68k.h"
 #include "mem68k.h"
 #include "vdp.h"
@@ -567,6 +566,7 @@ uint8 mem68k_fetch_io_byte(uint32 addr)
   switch (addr >> 1) {
   case 0:                      /* 0x1 */
     /* version */
+    LOG_VERBOSE(("PAL: %d; Overseas: %d", vdp_pal, vdp_overseas));
     return (1 << 5 | vdp_pal << 6 | vdp_overseas << 7);
   case 1:                      /* 0x3 */
     /* get input state */

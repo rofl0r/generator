@@ -106,6 +106,7 @@ on_100_activate                        (GtkMenuItem     *menuitem,
 {
   (void)menuitem;
   (void)user_data;
+
   gtkopts_setvalue("view", "100");
   ui_gtk_newoptions();
 }
@@ -117,6 +118,16 @@ on_200_activate                        (GtkMenuItem     *menuitem,
   (void)menuitem;
   (void)user_data;
   gtkopts_setvalue("view", "200");
+  ui_gtk_newoptions();
+}
+
+void
+on_fullscreen_activate                 (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+  (void)menuitem;
+  (void)user_data;
+  gtkopts_setvalue("view", "fullscreen");
   ui_gtk_newoptions();
 }
 
@@ -502,7 +513,9 @@ on_drawingarea_diss_expose_event       (GtkWidget       *widget,
                                         GdkEventExpose  *event,
                                         gpointer         user_data)
 {
+  (void) user_data;
   ui_gtk_redrawdiss(widget, event);
   return TRUE;
 }
+
 

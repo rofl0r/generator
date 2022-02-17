@@ -1,3 +1,6 @@
+#ifndef REGISTERS_HEADER_FILE
+#define REGISTERS_HEADER_FILE
+
 /* These registers must be registers that are preserved over function calls
    in C.  What I mean by this is that if we're using these registers and we
    call a C function, then when that C function returns these registers are
@@ -24,3 +27,5 @@
 #    endif
 #  endif
 #endif
+
+#endif /* REGISTERS_HEADER_FILE */

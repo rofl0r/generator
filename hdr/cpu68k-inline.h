@@ -1,10 +1,12 @@
+#ifndef CPU68K_INLINE_HEADER_FILE
+#define CPU68K_INLINE_HEADER_FILE
+
 /* the ordering of these includes is important - stdio can have inline
    functions - so can mem68k.h - and registers.h must appear before them */
 
+#define INCLUDE_REGISTERS_H
 #include "generator.h"
-#include "registers.h"
-
-#include <stdio.h>
+#undef INCLUDE_REGISTERS_H
 
 #include "cpu68k.h"
 #include "mem68k.h"
@@ -51,3 +53,5 @@ static __inline__ sint32 idxval_src(t_ipc *ipc) {
   }
   return 0;
 }
+
+#endif /* CPU68K_INLINE_HEADER_FILE */

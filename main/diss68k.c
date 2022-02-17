@@ -1,9 +1,5 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-
 #include "generator.h"
 #include "cpu68k.h"
 
@@ -138,7 +134,7 @@ void diss68k_getoperand(char *text, t_ipc * ipc, t_iib * iib, t_type type)
     sprintf(text, "#%d", (sint32)val);
     break;
   default:
-    sprintf(text, "");
+    *text = '\0';
     break;
   }
 }

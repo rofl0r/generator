@@ -1,9 +1,6 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+#include "generator.h"
 #include "cpuz80.h"
 #include "cpu68k.h"
 #include "memz80.h"

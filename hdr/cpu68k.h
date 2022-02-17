@@ -1,3 +1,6 @@
+#ifndef CPU68K_HEADER_FILE
+#define CPU68K_HEADER_FILE
+
 typedef struct _t_ipc {
   void (*function)(struct _t_ipc *ipc);
   uint8 used;               /* bitmap of XNZVC flags inspected */
@@ -41,6 +44,7 @@ int cpu68k_init(void);
 void cpu68k_printipc(t_ipc *ipc);
 void cpu68k_ipc(uint32 addr68k, uint8 *addr, t_iib *iib, t_ipc *ipc);
 void cpu68k_reset(void);
+void cpu68k_ram_clear(void);
 void cpu68k_step(void);
 void cpu68k_framestep(void);
 t_ipclist *cpu68k_makeipclist(uint32 pc);
@@ -64,3 +68,5 @@ void cpu68k_clearcache(void);
 #define V_AUTO      25
 #define V_TRAP      32
 #define V_USER      64
+
+#endif /* CPU68K_HEADER_FILE */

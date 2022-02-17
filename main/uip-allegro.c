@@ -6,7 +6,6 @@
    platform specific code is contained here */
 
 #include <sys/nearptr.h>
-#include <stdio.h>
 
 #include "generator.h"
 #include <allegro.h>

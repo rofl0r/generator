@@ -1,9 +1,5 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "generator.h"
 #include "cpu68k.h"
 #include "mem68k.h"
@@ -406,6 +402,13 @@ void cpu68k_clearcache(void)
   }
 }
 
+void cpu68k_ram_clear(void)
+{
+  if (cpu68k_ram) {
+    memset(cpu68k_ram, 0, 0x10000);
+  }
+}
+
 void cpu68k_reset(void)
 {
   int i;
@@ -414,8 +417,8 @@ void cpu68k_reset(void)
     /* +4 due to bug in DIRECTRAM hdr/mem68k.h code over-run of buffer */
     if ((cpu68k_ram = malloc(0x10000 + 4)) == NULL)
       ui_err("Out of memory");
+    cpu68k_ram_clear();
   }
-  memset(cpu68k_ram, 0, 0x10000);
 
   regs.pc = fetchlong(4);
   regs.regs[15] = fetchlong(0);

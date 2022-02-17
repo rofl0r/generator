@@ -34,35 +34,37 @@ typedef struct {
   unsigned IFF1,IFF2,HALT,IM,I,R,R2;
 } EXECZ80_CONTEXT;
 
-// typedef BYTE (*EXECZ80_MEMREAD_PROC)(WORD);
-// typedef void (*EXECZ80_MEMWRITE_PROC)(WORD, BYTE);
-// typedef BYTE (*EXECZ80_PORTREAD_PROC)(BYTE);
-// typedef void (*EXECZ80_PORTWRITE_PROC)(BYTE, BYTE);
+#if 0
+typedef BYTE (*EXECZ80_MEMREAD_PROC)(WORD);
+typedef void (*EXECZ80_MEMWRITE_PROC)(WORD, BYTE);
+typedef BYTE (*EXECZ80_PORTREAD_PROC)(BYTE);
+typedef void (*EXECZ80_PORTWRITE_PROC)(BYTE, BYTE);
 
-// #define Z80_END_TABLE     ((EXECZ80_MEMREAD_PROC) 0xFFFFFFFF)
-// #define Z80_IGNORE_READ   ((EXECZ80_MEMREAD_PROC) 0xFFFFFFFE)
-// #define Z80_IGNORE_WRITE  ((EXECZ80_MEMWRITE_PROC)0xFFFFFFFE)
-// #define Z80_ILLEGAL_READ  ((EXECZ80_MEMREAD_PROC) 0xFFFFFFFD)
-// #define Z80_ILLEGAL_WRITE ((EXECZ80_MEMWRITE_PROC)0xFFFFFFFD)
+#define Z80_END_TABLE     ((EXECZ80_MEMREAD_PROC) 0xFFFFFFFF)
+#define Z80_IGNORE_READ   ((EXECZ80_MEMREAD_PROC) 0xFFFFFFFE)
+#define Z80_IGNORE_WRITE  ((EXECZ80_MEMWRITE_PROC)0xFFFFFFFE)
+#define Z80_ILLEGAL_READ  ((EXECZ80_MEMREAD_PROC) 0xFFFFFFFD)
+#define Z80_ILLEGAL_WRITE ((EXECZ80_MEMWRITE_PROC)0xFFFFFFFD)
 
-// typedef struct {
-//   DWORD dwAddrMin;
-//   DWORD dwAddrMax;
-//   DWORD dwFlags;
-//   EXECZ80_MEMREAD_PROC pfnMemRead;
-//   EXECZ80_MEMWRITE_PROC pfnMemWrite;
-// } EXECZ80_MEM_DESCRIPTOR;
+typedef struct {
+   DWORD dwAddrMin;
+   DWORD dwAddrMax;
+   DWORD dwFlags;
+   EXECZ80_MEMREAD_PROC pfnMemRead;
+   EXECZ80_MEMWRITE_PROC pfnMemWrite;
+} EXECZ80_MEM_DESCRIPTOR;
 
-// typedef struct {
-//   DWORD dwFlags;
-//   LPBYTE rgbMemory;
-//   const BYTE *rgbInstructions;
-//   EXECZ80_MEMREAD_PROC pfnMemRead;
-//   EXECZ80_MEMWRITE_PROC pfnMemWrite;
-//   EXECZ80_PORTREAD_PROC pfnPortRead;
-//   EXECZ80_PORTWRITE_PROC pfnPortWrite;
-//   const EXECZ80_MEM_DESCRIPTOR *pmd;
-// } EXECZ80_CREATE;
+typedef struct {
+   DWORD dwFlags;
+   LPBYTE rgbMemory;
+   const BYTE *rgbInstructions;
+   EXECZ80_MEMREAD_PROC pfnMemRead;
+   EXECZ80_MEMWRITE_PROC pfnMemWrite;
+   EXECZ80_PORTREAD_PROC pfnPortRead;
+   EXECZ80_PORTWRITE_PROC pfnPortWrite;
+   const EXECZ80_MEM_DESCRIPTOR *pmd;
+} EXECZ80_CREATE;
+#endif
 
 /* execz80i.h */
 #define ARITH_TABLES
@@ -128,8 +130,6 @@ void CallbackMemWriteWord(WORD wAddr, WORD wVal);
 /* inline */ BYTE Srl(BYTE b);
 /* inline */ BYTE Sla(BYTE b);
 /* inline */ BYTE Sra(BYTE b);
-/* inline */ BYTE Inc(BYTE b);
-/* inline */ BYTE Dec(BYTE b);
 
 /* inline */ WORD Add_2(WORD wArg1, WORD wArg2);
 /* inline */ WORD Adc_2(WORD wArg1, WORD wArg2);

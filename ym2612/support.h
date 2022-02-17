@@ -6,5 +6,5 @@
 #define INLINE inline
 #define HAS_YM2612 1
 #define YM2612UpdateRequest(x) 
-#define AY8910_set_clock(chip,clock) /* */
-#define logerror /* */
+#define AY8910_set_clock(chip,clock)
+#define logerror(x)

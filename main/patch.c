@@ -1,10 +1,5 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-
 #include "generator.h"
 
 #include "ui.h"
@@ -52,6 +47,31 @@
 
 static const char *patch_codestring = "ABCDEFGHJKLMNPRSTVWXYZ0123456789";
 
+static char *
+skip_spaces(const char *s)
+{
+  int c;
+  
+  for (/* NOTHING*/; (c = (unsigned char) *s) != '\0'; s++)
+    if (!isspace(c))
+      break;
+
+  return (char *) s; /* override const */
+}
+
+static char *
+skip_non_spaces(const char *s)
+{
+  int c;
+  
+  for (/* NOTHING*/; (c = (unsigned char) *s) != '\0'; s++)
+    if (isspace(c))
+      break;
+
+  return (char *) s; /* override const */
+}
+
+
 /*** externed ***/
 
 t_patchlist *patch_patchlist; /* patches */
@@ -68,8 +88,13 @@ int patch_savefile(const char *filename)
                   filename, strerror(errno)));
     return -1;
   }
-  for (ent = patch_patchlist; ent; ent = ent->next)
-    fprintf(f, "%s    %s\r\n", ent->code, ent->action);
+  for (ent = patch_patchlist; ent; ent = ent->next) {
+    fprintf(f, "%s%s%s\r\n",
+        ent->code,
+        ent->comment ? " # " : "",
+        ent->comment ? ent->comment : "");
+  }
+
   if (fclose(f) == EOF) {
     LOG_CRITICAL(("Failed to close '%s': %s", filename, strerror(errno)));
     return -1;
@@ -82,9 +107,9 @@ int patch_savefile(const char *filename)
 int patch_loadfile(const char *filename)
 {
   char linebuf[256];
-  char *p;
   FILE *f;
   t_patchlist *ent, **end;
+  int line = 0, loaded = 0;
 
   if ((f = fopen(filename, "rb")) == NULL) {
     LOG_CRITICAL(("Failed to open '%s': %s", filename, strerror(errno)));
@@ -93,26 +118,50 @@ int patch_loadfile(const char *filename)
   patch_clearlist();
   end = &patch_patchlist;
   while (fgets(linebuf, sizeof(linebuf), f)) {
-    if (linebuf[strlen(linebuf)-1] != '\n') {
-      LOG_CRITICAL(("Line too long in '%s': %s", filename, strerror(errno)));
-      return -1;
+    char *p, *code, *comment;
+    uint32 addr;
+    uint16 data;
+
+    line++;
+
+    /* Skip over empty lines and comments, or lines with NUL characters ... */
+    p = skip_spaces(linebuf);
+    if (*p == '\0' || *p == '#')
+      continue;
+
+    code = p; /* The code starts here */
+
+    /* Find the first the non-space character*/
+    p = skip_non_spaces(p);
+    if (*p != '\0')
+      *p++ = '\0'; /* Terminate the code */
+
+    if (0 != patch_genietoraw(code, &addr, &data)) {
+      LOG_CRITICAL(("Invalid genie code in line %d", line));
+      continue;
     }
-    linebuf[strlen(linebuf)-1] = '\0'; /* remove newline */
-    if (*linebuf && linebuf[strlen(linebuf)-1] == '\r')
-      linebuf[strlen(linebuf)-1] = '\0'; /* remove optional cr */
-    if (strlen(linebuf) < 11 && linebuf[6] != ':') {
-      LOG_CRITICAL(("Invalid patch file '%s'", filename));
-      return -1;
+
+    p = skip_spaces(p);
+    comment = *p == '#' ? skip_spaces(++p) : NULL;
+    if (comment) {
+      /* Discard trailing spaces from the comment */
+      p = strchr(comment, '\0');
+      while (p-- != comment && isspace((unsigned char) *p)) {
+        *p = '\0';
+      }
     }
-    if ((ent = malloc(sizeof(t_patchlist))) == NULL)
+    
+    if ((ent = malloc(sizeof(*ent))) == NULL)
       ui_err("out of memory");
-    snprintf(ent->code, 12, "%s", linebuf);
-    for (p = linebuf + 11; *p == ' '; p++) ;
-    if ((ent->action = strdup(p)) == NULL)
-      ui_err("out of memory");
+
+    strncpy(ent->code, code, sizeof ent->code);
+    ent->code[sizeof ent->code - 1] = '\0';
+    ent->comment = comment && *comment != '\0' ? strdup(comment) : NULL;
+    
     ent->next = NULL;
     *end = ent;
     end = &ent->next;
+    loaded++;
   }
   if (!feof(f)) {
     LOG_CRITICAL(("Error whilst reading patch file '%s'", filename));
@@ -122,6 +171,8 @@ int patch_loadfile(const char *filename)
     LOG_CRITICAL(("Failed to close '%s': %s", filename, strerror(errno)));
     return -1;
   }
+
+  LOG_NORMAL(("Loaded %d codes", loaded));
   return 0;
 }
 
@@ -133,49 +184,49 @@ void patch_clearlist(void)
   while (patch_patchlist) {
     ent = patch_patchlist;
     patch_patchlist = patch_patchlist->next;
-    free(ent->action);
+    free(ent->comment);
     free(ent);
   }
 }
 
-void patch_addcode(const char *code, const char *action)
+void patch_addcode(const char *code, const char *comment)
 {
   t_patchlist *ent, **end;
+  uint32 addr;
+  uint16 data;
+
+  if (0 != patch_genietoraw(code, &addr, &data))
+    return;
 
   /* where's the end of the list */
   for (end = &patch_patchlist; *end; end = &((*end)->next)) ;
 
   /* create and insert */
-  if ((ent = malloc(sizeof(t_patchlist))) == NULL)
+  if ((ent = malloc(sizeof(*ent))) == NULL)
     ui_err("out of memory");
-  snprintf(ent->code, sizeof(ent->code), "%s", code);
-  ent->action = strdup(action);
+
+  strncpy(ent->code, code, sizeof ent->code);
+  ent->code[sizeof ent->code - 1] = '\0';
+  ent->comment = comment && *comment != '\0' ? strdup(comment) : NULL;
   ent->next = NULL;
   *end = ent;
 }
 
-int patch_apply(const char *code, const char *action)
+int patch_apply(const char *code)
 {
   uint32 addr;
-  uint32 data;
-  char *end;
+  uint16 data;
 
-  (void)action;
-  addr = strtol(code, &end, 16);
-  if (*end++ != ':')
-    return -1;
-  data = strtol(end, &end, 16);
-  if (*end)
+  if (0 != patch_genietoraw(code, &addr, &data))
     return -1;
   if (addr & ~0xfffffe || data & ~0xffff)
     return -1;
+
   if (addr < cpu68k_romlen) {
-    printf("applied %X = %X\n", addr, data);
-    ((uint16 *)cpu68k_rom)[addr >> 1] = LOCENDIAN16((uint16)data);
+    ((uint16 *)cpu68k_rom)[addr >> 1] = LOCENDIAN16(data);
     gen_modifiedrom = 1;
   } else if ((addr & 0xe00000) == 0xe00000) {
-    printf("applied %X = %X\n", addr, data);
-    ((uint16 *)cpu68k_ram)[(addr & 0xfff) >> 1] = LOCENDIAN16((uint16)data);
+    ((uint16 *)cpu68k_ram)[(addr & 0xfff) >> 1] = LOCENDIAN16(data);
   } else {
     return -1;
   }
@@ -192,6 +243,9 @@ int patch_genietoraw(const char *code, uint32 *addr, uint16 *data)
 
   if (strlen(code) != 9 || code[4] != '-')
     return -1;
+
+  a = 0;
+  d = 0;
   for (i = 0; i < 9; i = (i == 3 ? i+2 : i+1)) {
     if ((p = strchr(patch_codestring, code[i])) == NULL)
       return -1;
@@ -217,7 +271,7 @@ int patch_genietoraw(const char *code, uint32 *addr, uint16 *data)
 
 int patch_rawtogenie(uint32 addr, uint16 data, char *code)
 {
-  uint8 v;
+  uint8 v = 0;
   int i;
 
   if (addr & 0xff000000)
@@ -238,3 +292,5 @@ int patch_rawtogenie(uint32 addr, uint16 data, char *code)
   }
   return 0;
 }
+
+/* vi: set ts=2 sw=2 et cindent: */

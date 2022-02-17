@@ -2,16 +2,6 @@
 
 /* user interface for X tcl/tk */
 
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <stdarg.h>
-
-#include <sys/types.h>          /* these three are for saving with -save */
-#include <sys/stat.h>
-#include <fcntl.h>
-
 #include "generator.h"
 
 #ifdef HAVE_TCL8_0_H
@@ -55,7 +45,7 @@ Status _XInitImageFuncPtrs(XImage *);
 
 int ui_loadimage(Tcl_Interp * interp, const char *filename);
 int ui_loadsavepos(Tcl_Interp * interp, const char *filename);
-int ui_redrawdump(Tcl_Interp * interp, char *textwidget);
+int ui_redrawdump(Tcl_Interp * interp, const char *textwidget);
 void ui_updateregs(void);
 void ui_updatestr(char *var, char *val);
 void ui_updateint(char *var, int val);
@@ -108,6 +98,7 @@ static uint32 ui_palcache[192];
 static int ui_vdpsimple = 1;    /* simple vdp enable/disable */
 static char *ui_initload = NULL;        /* filename to load on init */
 static unsigned int state = 0;  /* 0=stop,1=pause,2=play */
+static int ui_musicfile = -1;   /* fd of output file for GYM/GNM logging */
 
 #ifdef XF86DGA
 static int dga_major, dga_minor;
@@ -187,7 +178,8 @@ Gen_Save(ClientData cdata, Tcl_Interp * interp, int objc,
 
 /*** Gen_Dump widgetname yview <params from scrollbar> ***/
 
-int Gen_Dump(ClientData cdata, Tcl_Interp * interp, int argc, char *argv[])
+int
+Gen_Dump(ClientData cdata, Tcl_Interp * interp, int argc, const char *argv[])
 {
   int si_line, memtype, dumptype, offset, lines;
   double si_fraction;
@@ -303,8 +295,8 @@ int Gen_Dump(ClientData cdata, Tcl_Interp * interp, int argc, char *argv[])
   }
 
   if (!strcasecmp(argv[2], "yview")) {
-    switch (Tk_GetScrollInfo
-            (interp, argc - 1, argv + 1, &si_fraction, &si_line)) {
+    switch (Tk_GetScrollInfo(interp, argc - 1, &argv[1],
+              &si_fraction, &si_line)) {
     case TK_SCROLL_MOVETO:
       offset = (int)(si_fraction * mem_len) & (~1);
       break;
@@ -537,10 +529,6 @@ int
 Gen_Initialised(ClientData cdata, Tcl_Interp * interp, int objc,
                 Tcl_Obj * const objv[])
 {
-  char *p;
-  int f;
-  char buffer[256];
-
   (void)cdata;
   (void)objv;
   if (objc != 1) {
@@ -549,23 +537,42 @@ Gen_Initialised(ClientData cdata, Tcl_Interp * interp, int objc,
     return TCL_ERROR;
   }
   if (ui_initload) {
-    p = gen_loadimage(ui_initload);
-    if (p) {
-      Tcl_SetResult(interp, p, TCL_STATIC);
+    char *error;
+    
+    if (NULL != (error = gen_loadimage(ui_initload))) {
+      Tcl_SetResult(interp, error, TCL_STATIC);
       return TCL_ERROR;
     }
     ui_updateregs();
     if (save) {
-      snprintf(buffer, sizeof(buffer) - 1, "./%s (%X-%s)",
-               gen_cartinfo.name_overseas, gen_cartinfo.checksum,
-               gen_cartinfo.country);
-      f = 0;
-      if ((f = open(buffer, O_CREAT | O_EXCL | O_WRONLY, 0777)) == -1 ||
-          write(f, cpu68k_rom, cpu68k_romlen) == -1 || close(f) == -1) {
+      char filename[4096], *p = filename;
+      size_t size = sizeof filename;
+      FILE *f;
+
+      p = append_string(p, &size, "./");
+      p = append_string(p, &size, gen_cartinfo.name_overseas);
+      p = append_string(p, &size, " (");
+      p = append_uint_hex(p, &size, gen_cartinfo.checksum);
+      p = append_string(p, &size, "-");
+      p = append_string(p, &size, gen_cartinfo.country);
+      p = append_string(p, &size, ")");
+
+      f = fopen(filename, "wb");
+      if (!f) {
         Tcl_SetResult(interp, strerror(errno), TCL_STATIC);
         return TCL_ERROR;
+      } else {
+        size_t ret, n = cpu68k_romlen;
+
+        ret = fwrite(cpu68k_rom, 1, n,f );
+        fclose(f);
+
+        if (ret != n) {
+          Tcl_SetResult(interp, strerror(errno), TCL_STATIC);
+          return TCL_ERROR;
+        }
       }
-      LOG_REQUEST(("Saved '%s'", buffer));
+      LOG_REQUEST(("Saved \"%s\"", filename));
     }
   }
   return TCL_OK;
@@ -670,7 +677,8 @@ Gen_VDPDescribe(ClientData cdata, Tcl_Interp * interp, int objc,
   return TCL_OK;
 }
 
-int ui_redrawdump(Tcl_Interp * interp, char *textwidget)
+int
+ui_redrawdump(Tcl_Interp * interp, const char *textwidget)
 {
   int offset, line, listlen, words, memtype;
   char tmp[256], dumpline[128];
@@ -821,7 +829,7 @@ int ui_redrawdump(Tcl_Interp * interp, char *textwidget)
 
 /*** Program entry point ***/
 
-int ui_init(int argc, char *argv[])
+int ui_init(int argc, const char *argv[])
 {
   int i;
   unsigned long plane_masks[1];
@@ -1134,11 +1142,17 @@ void ui_updateint(char *var, int val)
   Tcl_DecrRefCount(valobj);
 }
 
+void ui_musiclog(uint8 *data, unsigned int length)
+{
+   if (-1 != ui_musicfile)
+        write(ui_musicfile, data, length);
+}
+
 /*** ui_loop - main UI loop ***/
 
 int ui_loop(void)
 {
-  char *trace;
+  const char *trace;
 
   ui_updateregs();
 
@@ -1630,7 +1644,7 @@ void ui_fullscreen(int onoff)
 /* logging is done this way because this was the best I could come up with
    whilst battling with macros that can only take fixed numbers of arguments */
 
-#define LOG_FUNC(name,level,txt) void ui_log_ ## name ## (const char *text, ...) \
+#define LOG_FUNC(name,level,txt) void ui_log_ ## name (const char *text, ...) \
 { \
   va_list ap; \
   if (gen_loglevel >= level) { \
@@ -1665,3 +1679,5 @@ void ui_err(const char *text, ...)
   putc(10, stderr);
   exit(1);
 }
+
+/* vi: set ts=2 sw=2 et cindent: */

@@ -1,3 +1,6 @@
+#ifndef CPUZ80_HEADER_FILE
+#define CPUZ80_HEADER_FILE
+
 #ifdef RAZE
 #  include "raze.h"
 #else
@@ -27,3 +30,5 @@ uint8 cpuz80_portread(uint8 port);
 void cpuz80_portwrite(uint8 port, uint8 value);
 int cpuz80_init(void);
 void cpuz80_updatecontext(void);
+
+#endif /* CPUZ80_HEADER_FILE */

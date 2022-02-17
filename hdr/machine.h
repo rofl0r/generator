@@ -6,6 +6,9 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#ifndef MACHINE_HEADER_FILE
+#define MACHINE_HEADER_FILE
+
 #include "config.h"
 
 /* get correct sizes for uint8, uint16 and uint32 */
@@ -72,3 +75,5 @@ typedef signed long long sint32;
 typedef unsigned int uint32;
 typedef signed int sint32;
 #endif
+
+#endif /* MACHINE_HEADER_FILE */

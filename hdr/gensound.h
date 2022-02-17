@@ -1,10 +1,13 @@
+#ifndef GENSOUND_HEADER_FILE
+#define GENSOUND_HEADER_FILE
+
 #ifndef JFM
 #  include "support.h"
 #  include "fm.h"
 #endif
 
-#define SOUND_MAXRATE 44100
-#define SOUND_SAMPLERATE 22050
+#define SOUND_MAXRATE 48000
+#define SOUND_SAMPLERATE 44100
 
 extern int sound_debug;
 extern int sound_feedback;
@@ -37,3 +40,5 @@ void sound_ym2612store(uint8 addr, uint8 data);
 void sound_sn76496store(uint8 data);
 void sound_genreset(void);
 void sound_line(void);
+
+#endif /* GENSOUND_HEADER_FILE */

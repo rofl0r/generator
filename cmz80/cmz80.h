@@ -43,7 +43,9 @@
 
 /* General z80 based defines */
 
-//#include "rccore/types.h"
+#if 0
+#include "rccore/types.h"
+#endif
 
 #ifndef	_MZ80_H_
 #define	_MZ80_H_
@@ -83,7 +85,7 @@ struct MemoryReadByte
 	void *pUserArea;
 };      
 
-#endif // _MEMORYREADWRITEBYTE_
+#endif /* _MEMORYREADWRITEBYTE_ */
 
 struct z80PortWrite
 {
@@ -158,4 +160,4 @@ typedef struct mz80context CONTEXTMZ80;
 };
 #endif
 
-#endif	// _MZ80_H_
+#endif	/* _MZ80_H_ */

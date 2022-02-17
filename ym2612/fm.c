@@ -93,10 +93,7 @@
 /*    YM2610B : PSG:3ch FM:6ch ADPCM(18.5KHz):6ch DeltaT ADPCM:1ch      */
 /************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
+#include "generator.h"
 #include <math.h>
 
 /* Generator */
@@ -357,7 +354,7 @@ typedef struct fm_state {
 
 /* some globals */
 #define TYPE_SSG    0x01    /* SSG support          */
-#define TYPE_OPN    0x02    /* OPN device           */	//this one is not used ????
+#define TYPE_OPN    0x02    /* OPN device           */	/* this one is not used ???? */
 #define TYPE_LFOPAN 0x04    /* OPN type LFO and PAN */
 #define TYPE_6CH    0x08    /* FM 6CH / 3CH         */
 #define TYPE_DAC    0x10    /* YM2612's DAC device  */
@@ -390,7 +387,7 @@ static INT32 pg_in2,pg_in3,pg_in4;	/* PG input of SLOTs */
 #define LOG_LEVEL LOG_INF
 
 #ifndef __RAINE__
-#define LOG(n,x) if( (n)>=LOG_LEVEL ) logerror x
+#define LOG(n,x) do { if( (n)>=LOG_LEVEL ) { logerror(x) } } while (0)
 #endif
 
 /* ----- limitter ----- */
@@ -695,6 +692,7 @@ INLINE void set_det_mul(FM_ST *ST,FM_CH *CH,FM_SLOT *SLOT,int v)
 /* set total level */
 INLINE void set_tl(FM_CH *CH,FM_SLOT *SLOT , int v,int csmflag)
 {
+	(void) CH;
 	SLOT->TL = (v&0x7f)<<(ENV_BITS-7); /*7bit TL*/
 	/* if it is not a CSM channel , latch the total level */
 	if( !csmflag )
@@ -806,7 +804,7 @@ INLINE unsigned int calc_eg(FM_SLOT *SLOT)
 	break;
 
 	case EG_DEC:	/* decay phase */
-		if ( (SLOT->volume += SLOT->delta_dr) >= SLOT->sl )
+		if ( (SLOT->volume += SLOT->delta_dr) >= (INT32) SLOT->sl )
 		{
 			SLOT->volume = SLOT->sl;	/* this is not quite correct (checked) */
 			SLOT->state = EG_SUS;
@@ -925,7 +923,7 @@ INLINE void CALC_FCSLOT(FM_SLOT *SLOT , int fc , int kc )
 /* ---------- update phase increments counters  ---------- */
 INLINE void OPN_CALC_FCOUNT(FM_CH *CH )
 {
-	if( CH->SLOT[SLOT1].Incr==-1){
+	if( CH->SLOT[SLOT1].Incr==(UINT32)-1){
 		int fc = CH->fc;
 		int kc = CH->kcode;
 		CALC_FCSLOT(&CH->SLOT[SLOT1] , fc , kc );
@@ -1296,10 +1294,12 @@ typedef struct opn_f {
 /* fnum higher 4bit -> keycode lower 2bit */
 static const UINT8 OPN_FKTABLE[16]={0,0,0,0,0,0,0,1,2,3,3,3,3,3,3,3};
 
-//#define LFO_ENT 512
-//#define LFO_SH (32-9)
-//#define LFO_RATE 0x10000
-//#define PMS_RATE 0x400
+#if 0
+#define LFO_ENT 512
+#define LFO_SH (32-9)
+#define LFO_RATE 0x10000
+#define PMS_RATE 0x400
+#endif /* 0 */
 
 static int OPNInitTable(void)
 {
@@ -1336,7 +1336,9 @@ static void OPNSetPres(FM_OPN *OPN , int pres , int TimerPres, int SSGpres)
 	/* Timer base time */
 	OPN->ST.TimerBase = 1.0/((double)OPN->ST.clock / (double)TimerPres);
 	/* SSG part  prescaler set */
-	if( SSGpres ) SSGClk( OPN->ST.index, OPN->ST.clock * 2 / SSGpres );
+	if( SSGpres ) {
+		SSGClk( OPN->ST.index, OPN->ST.clock * 2 / SSGpres );
+	}
 	/* make time tables */
 	init_timetables( &OPN->ST , OPN_DTTABLE );
 	/* calculate fnumber -> increment counter table */
@@ -2589,7 +2591,7 @@ void YM2608ResetChip(int num)
 	for(i = 0x26 ; i >= 0x20 ; i-- ) OPNWriteReg(OPN,i,0);
 	/* reset ADPCM unit */
 	/**** ADPCM work initial ****/
-	for( i = 0; i < 6; i++ ){		//this was i < 6+1 which must be a bug ???
+	for( i = 0; i < 6; i++ ){		/* this was i < 6+1 which must be a bug ??? */
 		F2608->adpcm[i].now_addr  = 0;
 		F2608->adpcm[i].now_step  = 0;
 		F2608->adpcm[i].step      = 0;
@@ -2598,7 +2600,7 @@ void YM2608ResetChip(int num)
 		/* F2608->adpcm[i].delta     = 21866; */
 		F2608->adpcm[i].vol_mul   = 0;
 		F2608->adpcm[i].pan       = &out_adpcm[OUTD_CENTER]; /* default center */
-		F2608->adpcm[i].flagMask  = 0; //(i == 6) ? 0x20 : 0;
+		F2608->adpcm[i].flagMask  = 0; /* (i == 6) ? 0x20 : 0; */
 		F2608->adpcm[i].flag      = 0;
 		F2608->adpcm[i].adpcm_acc = 0;
 		F2608->adpcm[i].adpcm_step= 0;
@@ -3134,6 +3136,7 @@ int YM2610Init(int num, int clock, int rate,
 	if( !OPNInitTable() )
 	{
 		free( FM2610 );
+    FM2610 = NULL;
 		return (-1);
 	}
 
@@ -3209,7 +3212,7 @@ void YM2610ResetChip(int num)
 	}
 	for(i = 0x26 ; i >= 0x20 ; i-- ) OPNWriteReg(OPN,i,0);
 	/**** ADPCM work initial ****/
-	for( i = 0; i < 6 ; i++ ){			// this was "i < 6+1" which is ... a bug ?
+	for( i = 0; i < 6 ; i++ ){			/* this was "i < 6+1" which is ... a bug ? */
 		F2610->adpcm[i].now_addr  = 0;
 		F2610->adpcm[i].now_step  = 0;
 		F2610->adpcm[i].step      = 0;
@@ -3218,7 +3221,7 @@ void YM2610ResetChip(int num)
 		/* F2610->adpcm[i].delta     = 21866; */
 		F2610->adpcm[i].vol_mul   = 0;
 		F2610->adpcm[i].pan       = &out_adpcm[OUTD_CENTER]; /* default center */
-		F2610->adpcm[i].flagMask  = 1<<i; //(i == 6) ? 0x80 : (1<<i);
+		F2610->adpcm[i].flagMask  = 1<<i; /* (i == 6) ? 0x80 : (1<<i); */
 		F2610->adpcm[i].flag      = 0;
 		F2610->adpcm[i].adpcm_acc = 0;
 		F2610->adpcm[i].adpcm_step= 0;
@@ -3422,7 +3425,7 @@ void YM2612UpdateOne(int num, INT16 **buffer, int length)
 	OPN_CALC_FCOUNT( cch[1] );
 	if( (State->mode & 0xc0) ){
 		/* 3SLOT MODE */
-		if( cch[2]->SLOT[SLOT1].Incr==-1){
+		if( cch[2]->SLOT[SLOT1].Incr==(UINT32)-1){
 			/* 3 slot mode */
 			CALC_FCSLOT(&cch[2]->SLOT[SLOT1] , OPN->SL3.fc[1] , OPN->SL3.kcode[1] );
 			CALC_FCSLOT(&cch[2]->SLOT[SLOT2] , OPN->SL3.fc[2] , OPN->SL3.kcode[2] );
@@ -3580,6 +3583,7 @@ int YM2612Init(int num, int clock, int rate,
 	if( !OPNInitTable() )
 	{
 		free( FM2612 );
+    FM2612 = NULL;
 		return (-1);
 	}
 
@@ -4224,6 +4228,7 @@ int OPMInit(int num, int clock, int rate,
 	if( !OPMInitTable() )
 	{
 		free( FMOPM );
+    FMOPM = NULL;
 		return (-1);
 	}
 	for ( i = 0 ; i < YM2151NumChips; i++ ) {
@@ -4375,3 +4380,4 @@ int YM2151TimerOver(int n,int c)
 }
 
 #endif /* BUILD_YM2151 */
+/* vi: set ts=2 sw=2 et cindent: */

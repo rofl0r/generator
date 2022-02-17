@@ -1,7 +1,5 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <stdlib.h>
-
 #include "generator.h"
 #include "gensound.h"
 #include "gensoundp.h"
@@ -61,20 +59,16 @@ static t_jfm_ctx *sound_ctx;
 
 int sound_init(void)
 {
-  int ret;
-
   /* The sound_minfields parameter specifies how many fields worth of sound we
      should try and keep around (a display field is 1/50th or 1/60th of a
      second) - generator works by trying to keep sound_minfields number of
      fields worth of sound around, and drops plotting frames to keep up on slow
      machines */
 
-  sound_sampsperfield = sound_speed / vdp_framerate;
-  sound_threshold = sound_sampsperfield * sound_minfields;
+  sound_threshold = sound_minfields * sound_sampsperfield;
 
-  ret = sound_start();
-  if (ret)
-    return ret;
+  sound_start();
+  
 #ifdef JFM
   if ((sound_ctx = jfm_init(0, 2612, vdp_clock / 7, sound_speed,
                             NULL, NULL)) == NULL) {
@@ -98,7 +92,7 @@ int sound_init(void)
   if (sound_logdata)
     free(sound_logdata);
   sound_logdata_size = 8192;
-  sound_logdata = malloc(sound_logdata_size);
+  sound_logdata = calloc(1, sound_logdata_size);
   if (!sound_logdata)
     ui_err("out of memory");
   LOG_VERBOSE(("YM2612 Initialised @ sample rate %d", sound_speed));
@@ -123,10 +117,12 @@ int sound_start(void)
 {
   if (sound_active)
     sound_stop();
+  sound_sampsperfield = sound_speed / vdp_framerate;
   LOG_VERBOSE(("Starting sound..."));
   if (soundp_start() != 0) {
-    LOG_VERBOSE(("Failed to start sound hardware"));
-    return -1;
+    LOG_CRITICAL(("Failed to start sound hardware"));
+    sound_active = 0;
+    return 1;
   }
   sound_active = 1;
   LOG_VERBOSE(("Started sound."));
@@ -220,20 +216,33 @@ void sound_endfield(void)
     /* sound_startfield resets everything */
   }
 
-  if (!sound_on) {
-    /* sound is turned off - let generator continue */
+  /* work out feedback from sound system */
+
+  if (!sound_active) {
     sound_feedback = 0;
     return;
   }
 
-  /* work out feedback from sound system */
-
-  if ((pending = soundp_samplesbuffered()) == -1)
+  if ((pending = soundp_samplesbuffered()) == -1) {
     ui_err("Failed to read pending bytes in output sound buffer");
+  }
   if ((unsigned int)pending < sound_threshold)
     sound_feedback = -1;
-  else
+  else {
+  /* XXX: I'm not sure why it's necessary to differ. Maybe because SDL uses
+   *      an extra audio thread(?). If sound_feedback is (much) bigger than
+   *      zero, the process becomes pretty CPU greedy without performing
+   *      any better, rather worse, just wasting CPU cycles!
+   * 
+   * cbiere, 2003-01-13
+   */
+#ifdef USE_SDL_AUDIO
+    /* calculate the time (in microseconds) to sleep */
+    sound_feedback = pending * 1000 / sound_sampsperfield;
+#else
     sound_feedback = 0;
+#endif
+  }
 
   if (sound_debug) {
     LOG_VERBOSE(("End of field - sound system says %d bytes buffered",
@@ -241,7 +250,18 @@ void sound_endfield(void)
     LOG_VERBOSE(("Threshold %d, therefore feedback = %d ", sound_threshold,
                  sound_feedback));
   }
-  soundp_output(sound_soundbuf[0], sound_soundbuf[1], sound_sampsperfield);
+  for (;;) {
+    struct timespec ts = { 0, 0 };
+    int ret;
+
+    ret = soundp_output(sound_soundbuf[0],
+ 	    sound_soundbuf[1], sound_sampsperfield);
+    if (!ret)
+      break;
+    nanosleep(&ts, NULL);
+    sound_feedback -= sound_sampsperfield;
+  } 
+  
 }
 
 /*** sound_ym2612fetch - fetch byte from ym2612 chip ***/
@@ -361,8 +381,8 @@ static void sound_process(void)
   uint32 factora = (0x10000 * sound_filter) / 100;
   uint32 factorb = 0x10000 - factora;
 
-  tbuf[0] = sound_soundbuf[0] + s1;
-  tbuf[1] = sound_soundbuf[1] + s1;
+  tbuf[0] = cast_to_void_ptr(&sound_soundbuf[0][s1]);
+  tbuf[1] = cast_to_void_ptr(&sound_soundbuf[1][s1]);
 
   if (s2 > s1) {
     if (sound_fm)

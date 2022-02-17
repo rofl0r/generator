@@ -52,8 +52,8 @@
   <type>GTK_WINDOW_TOPLEVEL</type>
   <position>GTK_WIN_POS_CENTER</position>
   <modal>False</modal>
-  <allow_shrink>False</allow_shrink>
-  <allow_grow>False</allow_grow>
+  <allow_shrink>True</allow_shrink>
+  <allow_grow>True</allow_grow>
   <auto_shrink>True</auto_shrink>
 
   <widget>
@@ -317,6 +317,11 @@
 	  <widget>
 	    <class>GtkMenuItem</class>
 	    <name>quit</name>
+	    <accelerator>
+	      <modifiers>GDK_CONTROL_MASK</modifiers>
+	      <key>GDK_Q</key>
+	      <signal>activate</signal>
+	    </accelerator>
 	    <signal>
 	      <name>activate</name>
 	      <handler>on_quit_activate</handler>
@@ -384,7 +389,12 @@
 
 	      <widget>
 		<class>GtkRadioMenuItem</class>
-		<name>100</name>
+		<name>zoom_100</name>
+		<accelerator>
+		  <modifiers>GDK_CONTROL_MASK</modifiers>
+		  <key>GDK_1</key>
+		  <signal>activate</signal>
+		</accelerator>
 		<signal>
 		  <name>activate</name>
 		  <handler>on_100_activate</handler>
@@ -398,13 +408,37 @@
 
 	      <widget>
 		<class>GtkRadioMenuItem</class>
-		<name>200</name>
+		<name>zoom_200</name>
+		<accelerator>
+		  <modifiers>GDK_CONTROL_MASK</modifiers>
+		  <key>GDK_2</key>
+		  <signal>activate</signal>
+		</accelerator>
 		<signal>
 		  <name>activate</name>
 		  <handler>on_200_activate</handler>
 		  <last_modification_time>Sun, 12 Aug 2001 00:33:09 GMT</last_modification_time>
 		</signal>
 		<label>200%</label>
+		<active>False</active>
+		<always_show_toggle>True</always_show_toggle>
+		<group>view</group>
+	      </widget>
+
+	      <widget>
+		<class>GtkRadioMenuItem</class>
+		<name>zoom_full</name>
+		<accelerator>
+		  <modifiers>GDK_CONTROL_MASK</modifiers>
+		  <key>GDK_F</key>
+		  <signal>activate</signal>
+		</accelerator>
+		<signal>
+		  <name>activate</name>
+		  <handler>on_fullscreen_activate</handler>
+		  <last_modification_time>Thu, 08 Jan 2004 11:21:23 GMT</last_modification_time>
+		</signal>
+		<label>Fullscreen</label>
 		<active>True</active>
 		<always_show_toggle>True</always_show_toggle>
 		<group>view</group>
@@ -465,6 +499,11 @@
 	      <widget>
 		<class>GtkMenuItem</class>
 		<name>reset_soft</name>
+		<accelerator>
+		  <modifiers>GDK_CONTROL_MASK</modifiers>
+		  <key>GDK_R</key>
+		  <signal>activate</signal>
+		</accelerator>
 		<signal>
 		  <name>activate</name>
 		  <handler>on_reset_soft_activate</handler>
@@ -477,6 +516,11 @@
 	      <widget>
 		<class>GtkMenuItem</class>
 		<name>reset_hard</name>
+		<accelerator>
+		  <modifiers>GDK_CONTROL_MASK | GDK_SHIFT_MASK</modifiers>
+		  <key>GDK_R</key>
+		  <signal>activate</signal>
+		</accelerator>
 		<signal>
 		  <name>activate</name>
 		  <handler>on_reset_hard_activate</handler>
@@ -760,7 +804,7 @@
   </signal>
   <title>Options</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
-  <position>GTK_WIN_POS_NONE</position>
+  <position>GTK_WIN_POS_MOUSE</position>
   <modal>False</modal>
   <allow_shrink>False</allow_shrink>
   <allow_grow>True</allow_grow>
@@ -3247,7 +3291,7 @@ http://www.squish.net/generator/</label>
   </signal>
   <title>VRAM tiles</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
-  <position>GTK_WIN_POS_NONE</position>
+  <position>GTK_WIN_POS_MOUSE</position>
   <modal>False</modal>
   <allow_shrink>False</allow_shrink>
   <allow_grow>False</allow_grow>
@@ -3332,7 +3376,7 @@ http://www.squish.net/generator/</label>
   </signal>
   <title>Debug console</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
-  <position>GTK_WIN_POS_NONE</position>
+  <position>GTK_WIN_POS_MOUSE</position>
   <modal>False</modal>
   <allow_shrink>False</allow_shrink>
   <allow_grow>True</allow_grow>
@@ -7651,7 +7695,7 @@ http://www.squish.net/generator/</label>
   </signal>
   <title>Disassembly</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
-  <position>GTK_WIN_POS_NONE</position>
+  <position>GTK_WIN_POS_MOUSE</position>
   <modal>False</modal>
   <allow_shrink>False</allow_shrink>
   <allow_grow>True</allow_grow>
@@ -7783,9 +7827,19 @@ http://www.squish.net/generator/</label>
 <widget>
   <class>GtkWindow</class>
   <name>codes</name>
+  <signal>
+    <name>destroy</name>
+    <handler>gtk_widget_hide</handler>
+    <last_modification_time>Mon, 10 Jan 2005 02:09:40 GMT</last_modification_time>
+  </signal>
+  <signal>
+    <name>destroy_event</name>
+    <handler>gtk_widget_hide</handler>
+    <last_modification_time>Mon, 10 Jan 2005 02:10:25 GMT</last_modification_time>
+  </signal>
   <title>Game Genie patch file manager</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
-  <position>GTK_WIN_POS_NONE</position>
+  <position>GTK_WIN_POS_MOUSE</position>
   <modal>False</modal>
   <allow_shrink>False</allow_shrink>
   <allow_grow>True</allow_grow>
@@ -7833,8 +7887,8 @@ http://www.squish.net/generator/</label>
 	    <class>GtkCList</class>
 	    <name>clist_codes</name>
 	    <border_width>2</border_width>
-	    <width>360</width>
-	    <height>192</height>
+	    <tooltip>Select one or more codes and click on &quot;Apply&quot; to activate them.</tooltip>
+	    <can_default>True</can_default>
 	    <can_focus>True</can_focus>
 	    <columns>2</columns>
 	    <column_widths>80,80</column_widths>
@@ -7858,8 +7912,8 @@ http://www.squish.net/generator/</label>
 	    <widget>
 	      <class>GtkLabel</class>
 	      <child_name>CList:title</child_name>
-	      <name>label_name</name>
-	      <label>Action</label>
+	      <name>label_comment</name>
+	      <label>Comment</label>
 	      <justify>GTK_JUSTIFY_CENTER</justify>
 	      <wrap>False</wrap>
 	      <xalign>0.5</xalign>
@@ -7880,23 +7934,6 @@ http://www.squish.net/generator/</label>
 	    <expand>False</expand>
 	    <fill>False</fill>
 	  </child>
-
-	  <widget>
-	    <class>GtkLabel</class>
-	    <name>label78</name>
-	    <label></label>
-	    <justify>GTK_JUSTIFY_CENTER</justify>
-	    <wrap>False</wrap>
-	    <xalign>0.5</xalign>
-	    <yalign>0.5</yalign>
-	    <xpad>0</xpad>
-	    <ypad>0</ypad>
-	    <child>
-	      <padding>0</padding>
-	      <expand>True</expand>
-	      <fill>True</fill>
-	    </child>
-	  </widget>
 
 	  <widget>
 	    <class>GtkButton</class>
@@ -7965,7 +8002,7 @@ http://www.squish.net/generator/</label>
 	      <handler>on_button_codes_apply_clicked</handler>
 	      <last_modification_time>Sun, 21 Oct 2001 16:12:51 GMT</last_modification_time>
 	    </signal>
-	    <label>APPLY</label>
+	    <label>Apply</label>
 	    <relief>GTK_RELIEF_NORMAL</relief>
 	    <child>
 	      <padding>0</padding>
@@ -7976,46 +8013,93 @@ http://www.squish.net/generator/</label>
 	</widget>
 
 	<widget>
-	  <class>GtkHBox</class>
-	  <name>hbox_addcode</name>
+	  <class>GtkTable</class>
+	  <name>table7</name>
+	  <border_width>2</border_width>
+	  <rows>2</rows>
+	  <columns>2</columns>
 	  <homogeneous>False</homogeneous>
-	  <spacing>0</spacing>
+	  <row_spacing>0</row_spacing>
+	  <column_spacing>0</column_spacing>
 	  <child>
 	    <padding>0</padding>
 	    <expand>False</expand>
-	    <fill>False</fill>
+	    <fill>True</fill>
 	  </child>
 
 	  <widget>
 	    <class>GtkLabel</class>
 	    <name>label_add</name>
-	    <label>Add:</label>
+	    <label>Game Genie code:</label>
 	    <justify>GTK_JUSTIFY_CENTER</justify>
 	    <wrap>False</wrap>
-	    <xalign>0.5</xalign>
+	    <xalign>1</xalign>
 	    <yalign>0.5</yalign>
 	    <xpad>6</xpad>
 	    <ypad>2</ypad>
 	    <child>
-	      <padding>0</padding>
-	      <expand>False</expand>
-	      <fill>False</fill>
+	      <left_attach>0</left_attach>
+	      <right_attach>1</right_attach>
+	      <top_attach>0</top_attach>
+	      <bottom_attach>1</bottom_attach>
+	      <xpad>0</xpad>
+	      <ypad>0</ypad>
+	      <xexpand>False</xexpand>
+	      <yexpand>False</yexpand>
+	      <xshrink>False</xshrink>
+	      <yshrink>False</yshrink>
+	      <xfill>True</xfill>
+	      <yfill>False</yfill>
+	    </child>
+	  </widget>
+
+	  <widget>
+	    <class>GtkLabel</class>
+	    <name>label_code_comment</name>
+	    <label>Comment:</label>
+	    <justify>GTK_JUSTIFY_CENTER</justify>
+	    <wrap>False</wrap>
+	    <xalign>1</xalign>
+	    <yalign>0.5</yalign>
+	    <xpad>6</xpad>
+	    <ypad>2</ypad>
+	    <child>
+	      <left_attach>0</left_attach>
+	      <right_attach>1</right_attach>
+	      <top_attach>1</top_attach>
+	      <bottom_attach>2</bottom_attach>
+	      <xpad>0</xpad>
+	      <ypad>0</ypad>
+	      <xexpand>False</xexpand>
+	      <yexpand>False</yexpand>
+	      <xshrink>False</xshrink>
+	      <yshrink>False</yshrink>
+	      <xfill>True</xfill>
+	      <yfill>False</yfill>
 	    </child>
 	  </widget>
 
 	  <widget>
 	    <class>GtkEntry</class>
-	    <name>entry_code</name>
-	    <width>84</width>
+	    <name>entry_comment</name>
 	    <can_focus>True</can_focus>
 	    <editable>True</editable>
 	    <text_visible>True</text_visible>
 	    <text_max_length>0</text_max_length>
-	    <text>000000:0000</text>
+	    <text></text>
 	    <child>
-	      <padding>0</padding>
-	      <expand>False</expand>
-	      <fill>False</fill>
+	      <left_attach>1</left_attach>
+	      <right_attach>2</right_attach>
+	      <top_attach>1</top_attach>
+	      <bottom_attach>2</bottom_attach>
+	      <xpad>4</xpad>
+	      <ypad>0</ypad>
+	      <xexpand>True</xexpand>
+	      <yexpand>False</yexpand>
+	      <xshrink>True</xshrink>
+	      <yshrink>False</yshrink>
+	      <xfill>True</xfill>
+	      <yfill>False</yfill>
 	    </child>
 	  </widget>
 
@@ -8025,14 +8109,37 @@ http://www.squish.net/generator/</label>
 	    <can_focus>True</can_focus>
 	    <editable>True</editable>
 	    <text_visible>True</text_visible>
-	    <text_max_length>0</text_max_length>
+	    <text_max_length>9</text_max_length>
 	    <text></text>
 	    <child>
-	      <padding>0</padding>
-	      <expand>True</expand>
-	      <fill>True</fill>
+	      <left_attach>1</left_attach>
+	      <right_attach>2</right_attach>
+	      <top_attach>0</top_attach>
+	      <bottom_attach>1</bottom_attach>
+	      <xpad>4</xpad>
+	      <ypad>0</ypad>
+	      <xexpand>False</xexpand>
+	      <yexpand>False</yexpand>
+	      <xshrink>True</xshrink>
+	      <yshrink>False</yshrink>
+	      <xfill>True</xfill>
+	      <yfill>False</yfill>
 	    </child>
 	  </widget>
+	</widget>
+
+	<widget>
+	  <class>GtkAlignment</class>
+	  <name>alignment2</name>
+	  <xalign>0.5</xalign>
+	  <yalign>0.5</yalign>
+	  <xscale>1</xscale>
+	  <yscale>1</yscale>
+	  <child>
+	    <padding>0</padding>
+	    <expand>False</expand>
+	    <fill>True</fill>
+	  </child>
 
 	  <widget>
 	    <class>GtkButton</class>
@@ -8044,23 +8151,20 @@ http://www.squish.net/generator/</label>
 	      <handler>on_button_codes_add_clicked</handler>
 	      <last_modification_time>Sun, 21 Oct 2001 15:12:59 GMT</last_modification_time>
 	    </signal>
-	    <label>Add</label>
+	    <label>Add the code</label>
 	    <relief>GTK_RELIEF_NORMAL</relief>
-	    <child>
-	      <padding>0</padding>
-	      <expand>False</expand>
-	      <fill>False</fill>
-	    </child>
 	  </widget>
 	</widget>
       </widget>
     </widget>
 
     <widget>
-      <class>GtkHBox</class>
-      <name>hbox_bottom</name>
-      <homogeneous>False</homogeneous>
-      <spacing>0</spacing>
+      <class>GtkAlignment</class>
+      <name>alignment1</name>
+      <xalign>0.5</xalign>
+      <yalign>0.5</yalign>
+      <xscale>0</xscale>
+      <yscale>1</yscale>
       <child>
 	<padding>0</padding>
 	<expand>False</expand>
@@ -8068,59 +8172,49 @@ http://www.squish.net/generator/</label>
       </child>
 
       <widget>
-	<class>GtkLabel</class>
-	<name>label77</name>
-	<label></label>
-	<justify>GTK_JUSTIFY_CENTER</justify>
-	<wrap>False</wrap>
-	<xalign>0.5</xalign>
-	<yalign>0.5</yalign>
-	<xpad>0</xpad>
-	<ypad>0</ypad>
-	<child>
-	  <padding>0</padding>
-	  <expand>True</expand>
-	  <fill>True</fill>
-	</child>
-      </widget>
+	<class>GtkHBox</class>
+	<name>hbox_bottom</name>
+	<homogeneous>False</homogeneous>
+	<spacing>0</spacing>
 
-      <widget>
-	<class>GtkButton</class>
-	<name>button_cancel</name>
-	<border_width>4</border_width>
-	<can_focus>True</can_focus>
-	<signal>
-	  <name>clicked</name>
-	  <handler>gtk_widget_hide</handler>
-	  <object>codes</object>
-	  <last_modification_time>Sun, 21 Oct 2001 15:07:46 GMT</last_modification_time>
-	</signal>
-	<label>Cancel</label>
-	<relief>GTK_RELIEF_NORMAL</relief>
-	<child>
-	  <padding>0</padding>
-	  <expand>False</expand>
-	  <fill>False</fill>
-	</child>
-      </widget>
+	<widget>
+	  <class>GtkButton</class>
+	  <name>button_cancel</name>
+	  <border_width>4</border_width>
+	  <can_focus>True</can_focus>
+	  <signal>
+	    <name>clicked</name>
+	    <handler>gtk_widget_hide</handler>
+	    <object>codes</object>
+	    <last_modification_time>Sun, 21 Oct 2001 15:07:46 GMT</last_modification_time>
+	  </signal>
+	  <label>Cancel</label>
+	  <relief>GTK_RELIEF_NORMAL</relief>
+	  <child>
+	    <padding>0</padding>
+	    <expand>False</expand>
+	    <fill>False</fill>
+	  </child>
+	</widget>
 
-      <widget>
-	<class>GtkButton</class>
-	<name>button_ok</name>
-	<border_width>4</border_width>
-	<can_focus>True</can_focus>
-	<signal>
-	  <name>clicked</name>
-	  <handler>on_button_codes_ok_clicked</handler>
-	  <last_modification_time>Sun, 21 Oct 2001 15:07:29 GMT</last_modification_time>
-	</signal>
-	<label>OK</label>
-	<relief>GTK_RELIEF_NORMAL</relief>
-	<child>
-	  <padding>0</padding>
-	  <expand>False</expand>
-	  <fill>False</fill>
-	</child>
+	<widget>
+	  <class>GtkButton</class>
+	  <name>button_ok</name>
+	  <border_width>4</border_width>
+	  <can_focus>True</can_focus>
+	  <signal>
+	    <name>clicked</name>
+	    <handler>on_button_codes_ok_clicked</handler>
+	    <last_modification_time>Sun, 21 Oct 2001 15:07:29 GMT</last_modification_time>
+	  </signal>
+	  <label>OK</label>
+	  <relief>GTK_RELIEF_NORMAL</relief>
+	  <child>
+	    <padding>0</padding>
+	    <expand>False</expand>
+	    <fill>False</fill>
+	  </child>
+	</widget>
       </widget>
     </widget>
   </widget>

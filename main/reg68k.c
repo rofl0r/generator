@@ -1,11 +1,9 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
+#define INCLUDE_REGISTERS_H
 #include "generator.h"
-#include "registers.h"
+#undef INCLUDE_REGISTERS_H
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <setjmp.h>
 
 #include "reg68k.h"
@@ -218,8 +216,10 @@ void reg68k_internal_autovector(int avno)
     regs.pending = 0;
   } else {
     LOG_USER(("%08X autovector %d pending", reg68k_pc, avno));
-    // if (!regs.pending || regs.pending < avno) - not sure about this
-    regs.pending = avno;
+#if 0
+    if (!regs.pending || regs.pending < avno) /* - not sure about this */
+#endif
+    	regs.pending = avno;
   }
 }
 

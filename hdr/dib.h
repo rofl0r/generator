@@ -1,3 +1,6 @@
+#ifndef DIB_HEADER_FILE
+#define DIB_HEADER_FILE
+
 /* bit map info header BITMAPINFOHEADER */
 
 typedef struct {
@@ -15,3 +18,5 @@ typedef struct {
 } t_bmih;
 
 void dib_setheader(t_bmih *bmih, uint32 x, uint32 y);
+
+#endif /* DIB_HEADER_FILE */

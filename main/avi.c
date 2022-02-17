@@ -1,11 +1,5 @@
 /* Generator is (c) James Ponder, 1997-2001 http://www.squish.net/generator/ */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-
 #include "generator.h"
 
 #include "vdp.h"
@@ -242,6 +236,7 @@ t_avi *avi_open(char *filename, t_aviinfo *info, int jpeg)
     jpeg_set_quality(&avi_cinfo, info->jpegquality, 0);
   } else {
 #endif
+    (void) jpeg;
     avi->jpeg = 0;
     avi->bgr = 1; /* uncompressed avi needs BGR data */
 #ifdef JPEG
@@ -249,8 +244,8 @@ t_avi *avi_open(char *filename, t_aviinfo *info, int jpeg)
 #endif
 
   /* pre-create ##db, ##wb chunk headers */
-  sprintf(avi->dibchunkh, "00db");
-  sprintf(avi->wavechunkh, "01wb");
+  strncpy(avi->dibchunkh, "00db", sizeof avi->dibchunkh);
+  strncpy(avi->wavechunkh, "01wb", sizeof avi->wavechunkh);
 
   avi->linebytes = ((3 * info->width) + 3) & ~3; /* round up */
   if (fwrite(&h, sizeof(h), 1, avi->fd) != 1) {
