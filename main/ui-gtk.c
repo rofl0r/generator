@@ -183,6 +183,18 @@ static void ui_sdl_events(void);
 static void ui_sdl_window_hack(int on);
 static gboolean ui_handle_sdl_events(gpointer data);
 
+static void resize_sdl_win(int w, int h)
+{
+  if (
+    !screen ||
+    (screen->w != w || screen->h != h) &&
+	SDL_VideoModeOK(w, h, screen->format->BitsPerPixel, SDL_RESIZABLE)
+  ) {
+    screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE);
+  }
+}
+
+
 /*** Program entry point ***/
 
 int ui_init(int argc, const char *argv[])
@@ -351,6 +363,9 @@ int ui_init(int argc, const char *argv[])
   ui_whichbank = 0;             /* viewing 0 */
   fprintf(stderr, "Please use the GTK menu to quit this program properly.\n");
   gtk_timeout_add(200, ui_handle_sdl_events, NULL);
+
+  resize_sdl_win(HSIZE, VSIZE);
+
   return 0;
 }
 
@@ -2725,24 +2740,20 @@ static void ui_sdl_events(void)
         LOG_NORMAL(("Unknown event type"));
     }
   }
-}	
+}
 
 void ui_gtk_resize_win(GtkWidget *widget, GtkAllocation *allocation,
     gpointer user_data)
 {
+  (void)user_data;
+  (void)widget;
+
   int w = allocation->width;
   int h = allocation->height;
 
-  (void)user_data;
-  (void)widget;
-  
-  if (
-    screen &&
-    (screen->w != w || screen->h != h) &&
-	  SDL_VideoModeOK(w, h, screen->format->BitsPerPixel, SDL_RESIZABLE)
-  ) {
-    screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE);
-  }
+  /* FIXME - we only need to resize the SDL window together with gtk ui
+     when SDL window is integrated via SDL_WINDOWID hack */
+  if(0) resize_sdl_win(w, h);
 }
 
 void ui_gtk_mainenter(void)
