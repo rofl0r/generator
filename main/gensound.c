@@ -250,18 +250,21 @@ void sound_endfield(void)
     LOG_VERBOSE(("Threshold %d, therefore feedback = %d ", sound_threshold,
                  sound_feedback));
   }
+#ifdef USE_SDL_AUDIO
   for (;;) {
     struct timespec ts = { 0, 0 };
+#endif
     int ret;
 
     ret = soundp_output(sound_soundbuf[0],
  	    sound_soundbuf[1], sound_sampsperfield);
+#ifdef USE_SDL_AUDIO
     if (!ret)
       break;
     nanosleep(&ts, NULL);
     sound_feedback -= sound_sampsperfield;
-  } 
-  
+  }
+#endif
 }
 
 /*** sound_ym2612fetch - fetch byte from ym2612 chip ***/
