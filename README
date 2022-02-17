@@ -1,5 +1,13 @@
 This directory contains Generator, a Sega Genesis (Mega Drive) emulator.
 
+this fork is based on generator 0.35+cbiere-r4+latest SVN snapshot,
+and replaces the GTK+1 backend with a GTK+2 one.
+the commit history also features all previously published releases.
+
+only tested configuration is:
+
+./configure --with-gtk --with-cmz80 --with-sdl-audio
+
 Generator is free software.  See the file COPYING for copying permission.
 Some parts of Generator are distributed under different terms; see the
 individual source files for details.
