@@ -17,7 +17,6 @@ the INSTALL file details information on installing the program from source.
 
 This distribution contains:
   cpu68k/                       68000 processor files
-  raze/                         RAZE Z80 files (i386 assembler - needs nasm)
   cmz80/                        C mz80 Z80 files (portable C)
   ym2612/                       YM2612 (yamaha FM) files
   sn76496/                      SN76496 (programmable sound generator) files

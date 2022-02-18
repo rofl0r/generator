@@ -1,12 +1,8 @@
 #ifndef CPUZ80_HEADER_FILE
 #define CPUZ80_HEADER_FILE
 
-#ifdef RAZE
-#  include "raze.h"
-#else
-#  include "cmz80.h"
+#include "cmz80.h"
 extern CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
-#endif
 
 #define LEN_SRAM 0x2000
 

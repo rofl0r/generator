@@ -10,7 +10,7 @@ AC_CONFIG_SRCDIR([cpu68k/def68k.c])
 
 dnl See what version we're compiling
 
-  MY_DIST_SUBDIRS="cpu68k raze cmz80 ym2612 sn76496 main glade gtkopts"
+  MY_DIST_SUBDIRS="cpu68k cmz80 ym2612 sn76496 main glade gtkopts"
   MY_SUBDIRS="cpu68k ym2612 sn76496 main"
   MY_LIBS=""
   UNDERSCORE=""
@@ -44,22 +44,15 @@ dnl See what version we're compiling
   else
     PROGRAM=$MY_PROG
   fi
-  AC_ARG_WITH(raze,
-              AS_HELP_STRING(--with-raze,Use RAZE z80 emulation),
-              Z80="raze")
   AC_ARG_WITH(cmz80,
               AS_HELP_STRING(--with-cmz80,Use C mz80 z80 emulation),
               Z80="cmz80")
-  if [[ "x$Z80" = "xraze" ]]; then
-    MY_SUBDIRS="raze $MY_SUBDIRS"
-    MY_LIBS="../raze/libraze.a $MY_LIBS"
-    AC_DEFINE(RAZE, 1, [Define to use RAZE z80 emulation])
-  elif [[ "x$Z80" = "xcmz80" ]]; then
+  if [[ "x$Z80" = "xcmz80" ]]; then
     MY_SUBDIRS="cmz80 $MY_SUBDIRS"
     MY_LIBS="../cmz80/libcmz80.a $MY_LIBS"
     AC_DEFINE(CMZ80, 1, [Define to use the portable C mz80 z80 emulation])
   else
-    AC_MSG_ERROR(You must select a z80 emulator: raze cmz80)
+    AC_MSG_ERROR(You must select a z80 emulator: cmz80)
   fi
   AC_DEFINE(DIRECTRAM, 1, [Define for direct ram writes (faster)])
   AC_SUBST(PROGRAM)
@@ -104,8 +97,6 @@ dnl Check for gcc options
               WARN=$withval, WARN=no)
   AC_ARG_WITH(gcc, AS_HELP_STRING(--with-gcc@<:@=VER@:>@,GCC optimisation setting),
               GCCVER=$withval)
-  AC_ARG_WITH(raze, AS_HELP_STRING(--with-raze,Use raze z80 emulation),
-              RAZE=$withval, DEBUG=no)
   AC_ARG_WITH(debug, AS_HELP_STRING(--with-debug,Turn debugging options on),
               DEBUG=$withval, DEBUG=no)
   AC_ARG_WITH(sdl-audio, AS_HELP_STRING(--with-sdl-audio,Use SDL for audio),
@@ -314,9 +305,9 @@ dnl Makefile substitutions
 
 dnl Final stuff
 
-  AC_CONFIG_FILES([Makefile cpu68k/Makefile raze/Makefile cmz80/Makefile
+  AC_CONFIG_FILES([Makefile cpu68k/Makefile cmz80/Makefile
              ym2612/Makefile main/Makefile sn76496/Makefile glade/Makefile
-             gtkopts/Makefile raze/raze.asm])
+             gtkopts/Makefile])
 AC_OUTPUT
 
 dnl Moooo.

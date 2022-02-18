@@ -1,11 +1,7 @@
 #include "generator.h"
 
-#ifdef RAZE
-#  include "cpuz80-raze.c"
+#ifdef CMZ80
+#  include "cpuz80-mz80.c"
 #else
-#  ifdef CMZ80
-#    include "cpuz80-mz80.c"
-#  else
-#    error "No z80 defined"
-#  endif
+#  error "No z80 defined"
 #endif
