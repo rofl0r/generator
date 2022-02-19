@@ -44,6 +44,9 @@ dnl See what version we're compiling
   else
     PROGRAM=$MY_PROG
   fi
+
+  # always use cmz80 for the moment.
+  Z80=cmz80
   AC_ARG_WITH(cmz80,
               AS_HELP_STRING(--with-cmz80,Use C mz80 z80 emulation),
               Z80="cmz80")
