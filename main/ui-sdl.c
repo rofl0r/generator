@@ -94,6 +94,8 @@ typedef enum {
 
 static SDL_Surface *screen = NULL;      /* SDL screen */
 static GLuint texture_id = 0;
+static float scale = 1.0;
+static int fullscreen = 0;
 
 static char ui_region_lock = 0;          /* lock region at startup -Trilkk */
 
@@ -130,14 +132,6 @@ do {				\
   ui_whichbank ^= 1;		\
 } while (0)
 
-typedef enum {
-  SCREEN_100,
-  SCREEN_200,
-  SCREEN_FULL
-} ui_screenmode_t;
-
-static ui_screenmode_t ui_screenmode = SCREEN_100;
-
 /* If non-zero, ui_sdl_sizechange refuses to change the mode. */
 static int screenmode_lock = 0;
 
@@ -159,6 +153,26 @@ static void ui_key_info(void);
 
 /*** Program entry point ***/
 
+static void setup_opengl(void) {
+  glEnable(GL_TEXTURE_2D);
+  glGenTextures(1, &texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture_id);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glViewport(0, 0, HSIZE*scale, VSIZE*scale);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_ALPHA_TEST);
+  glDisable(GL_BLEND);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_TEXTURE_3D_EXT);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0.0, HSIZE, VSIZE, 0.0, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+}
+
 int ui_init(int argc, const char *argv[])
 {
   int ch;
@@ -174,7 +188,7 @@ int ui_init(int argc, const char *argv[])
     switch (ch) {
     case 'a':                  /* arcade mode; play ROM at once */
       ui_arcade_mode = 1;
-      ui_screenmode = SCREEN_FULL;
+      fullscreen = 1;
       break;
     case 'd':                  /* turn on debug mode */
       gen_debugmode = 1;
@@ -279,23 +293,7 @@ int ui_init(int argc, const char *argv[])
   ui_newscreen = ui_screen[2];
   ui_whichbank = 0;             /* viewing 0 */
 
-  glEnable(GL_TEXTURE_2D);
-  glGenTextures(1, &texture_id);
-  glBindTexture(GL_TEXTURE_2D, texture_id);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-  glViewport(0, 0, HSIZE, VSIZE);
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_ALPHA_TEST);
-  glDisable(GL_BLEND);
-  glDisable(GL_LIGHTING);
-  glDisable(GL_TEXTURE_3D_EXT);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glOrtho(0.0, HSIZE, VSIZE, 0.0, -1.0, 1.0);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+  setup_opengl();
 
   return 0;
 }
@@ -703,6 +701,7 @@ void ui_rendertoscreen(void)
 {
   glPixelStorei(GL_UNPACK_ROW_LENGTH, HMAXSIZE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, HSIZE, VSIZE, 0, GL_BGRA, GL_UNSIGNED_BYTE, ui_newscreen);
+  glViewport(0, 0, HSIZE*scale, VSIZE*scale);
 
   glBegin(GL_QUADS);
   glTexCoord2f(1.0f, 1.0f);
@@ -913,47 +912,21 @@ static SDL_Surface *ui_sdl_set_fullscreen(int use_maximum)
   return NULL;
 }
 
+static void toggle_fullscreen(void) {
+  // TODO
+}
+
 /* set main window size from current parameters */
 
-void ui_sdl_sizechange(ui_screenmode_t newmode)
+void ui_sdl_sizechange(void)
 {
-  ui_screenmode_t oldmode = ui_screenmode;
-
   if (screenmode_lock)
     return;
 
-modeswitch:
-
-  switch (newmode) {
-  case SCREEN_100:
-    ui_arcade_mode = 0;
-    hborder = ui_hborder;
-    vborder = ui_vborder;
-    screen = SDL_SetVideoMode(HSIZE, VSIZE, 0, SDL_RESIZABLE | SDL_OPENGL);
-    ui_screenmode = SCREEN_100;
-    break;
-  case SCREEN_200:
-    ui_arcade_mode = 0;
-    hborder = ui_hborder;
-    vborder = ui_vborder;
-    screen = SDL_SetVideoMode(HSIZE * 2, VSIZE * 2, 0, SDL_RESIZABLE | SDL_OPENGL);
-    ui_screenmode = SCREEN_200;
-    break;
-  case SCREEN_FULL:
-    hborder = 0;
-    vborder = MIN(ui_vborder, 8);
-    screen = ui_sdl_set_fullscreen(0);
-    if (!screen) {
-      LOG_CRITICAL(("failed to initialise fullscreen mode"));
-      newmode = SCREEN_100;
-      goto modeswitch;
-    }
-    ui_screenmode = SCREEN_FULL;
-    gtkopts_setvalue("view", "fullscreen");
-    break;
-  default:
-    ui_err("invalid screen mode\n");
-  }
+  screen = SDL_SetVideoMode(HSIZE*scale, VSIZE*scale, 0, SDL_RESIZABLE | SDL_OPENGL);
+  ui_arcade_mode = 0;
+  hborder = ui_hborder;
+  vborder = ui_vborder;
 
   ui_locksurface = SDL_MUSTLOCK(screen);
   uiplot_setshifts(ui_topbit(screen->format->Rmask) - 4,
@@ -970,7 +943,6 @@ static void ui_sdl_newoptions(void)
 {
   const char *v;
   int i;
-  ui_screenmode_t screenmode = ui_screenmode;
   unsigned int old_sound_on = sound_on;
   unsigned int old_sound_minfields = sound_minfields;
   unsigned int old_sound_maxfields = sound_maxfields;
@@ -979,17 +951,17 @@ static void ui_sdl_newoptions(void)
   unsigned int old_ui_statusbar = ui_statusbar;
 
   if (ui_arcade_mode) {
-    screenmode = SCREEN_FULL;
+    fullscreen = 1;
   } else {
     v = gtkopts_getvalue("view");
     if (!strcasecmp(v, "fullscreen")) {
-      screenmode = SCREEN_FULL;
+      fullscreen=1;
     } else {
       i = atoi(v);
-      screenmode = i == 200 ? SCREEN_200 : SCREEN_100;
+      scale = i/ 100.0;
     }
   }
- 
+
   /*
    * Now if we have locked the region, let's set it here instead of loading
    * it from the configuration file.
@@ -1053,7 +1025,7 @@ static void ui_sdl_newoptions(void)
   if (ui_vborder > VBORDER_MAX)
     ui_vborder = VBORDER_MAX;
 
-  if (screenmode != SCREEN_FULL) {
+  if (!fullscreen) {
     hborder = ui_hborder;
     vborder = ui_vborder;
   } else {
@@ -1093,11 +1065,7 @@ static void ui_sdl_newoptions(void)
   v = gtkopts_getvalue("statusbar");
   ui_statusbar = !strcasecmp(v, "on");
 
-  if (screenmode != ui_screenmode ||
-      ui_hborder != old_ui_hborder ||
-      ui_vborder != old_ui_vborder || ui_statusbar != old_ui_statusbar) {
-    ui_sdl_sizechange(screenmode);
-  }
+  ui_sdl_sizechange();
 
   if (sound_minfields != old_sound_minfields ||
       sound_maxfields != old_sound_maxfields ||
@@ -1228,15 +1196,14 @@ static void ui_sdl_events(void)
           break;
         case SDLK_f:
           if (KPRESS(event) && event.key.keysym.mod & KMOD_CTRL) {
-            ui_sdl_sizechange(ui_screenmode != SCREEN_FULL
-                ? SCREEN_FULL : SCREEN_100);
+            toggle_fullscreen();
           }
           break;
         case SDLK_1:
         case SDLK_2:
           if (KPRESS(event) && event.key.keysym.mod & KMOD_CTRL) {
-            ui_sdl_sizechange(event.key.keysym.sym == SDLK_2
-                ? SCREEN_200 : SCREEN_100);
+            scale = event.key.keysym.sym == SDLK_2 ? 2.0 : 1.0;
+            ui_sdl_sizechange();
           }
           break;
         case SDLK_r:
@@ -1276,6 +1243,7 @@ static void ui_sdl_events(void)
       if (event.active.state == SDL_APPMOUSEFOCUS && event.active.gain)
         SDL_ShowCursor(SDL_DISABLE);
       break;
+#if 0
     case SDL_VIDEORESIZE: {
                             int w = MAX(event.resize.w, 100);
                             int h = MAX(event.resize.h, 100);
@@ -1287,6 +1255,7 @@ static void ui_sdl_events(void)
                             }
                             break;
                           }
+#endif
     case SDL_QUIT:
                           ui_sdl_quit();
                           break;
@@ -1303,17 +1272,6 @@ static void ui_sdl_events(void)
     default: ;
              LOG_NORMAL(("Unknown event type"));
     }
-  }
-}	
-
-void ui_sdl_resize_win(int w, int h)
-{
-  if (
-      screen &&
-      (screen->w != w || screen->h != h) &&
-	    SDL_VideoModeOK(w, h, screen->format->BitsPerPixel, SDL_RESIZABLE)
-  ) {
-    screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE | SDL_OPENGL);
   }
 }
 
