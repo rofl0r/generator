@@ -38,6 +38,6 @@ generator_sdl_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c \
     ui-sdl.c uiplot.c gensoundp-unix.c initcart.c patch.c \
     dib.c avi.c diss68k.c
-generator_sdl_LDADD = ${LDADD} @SDL_LIBS@ \
+generator_sdl_LDADD = ${LDADD} @SDL_LIBS@ -lGL -lGLU\
     ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
 

@@ -7,6 +7,7 @@
 #include <pwd.h>
 
 #include "SDL.h"
+#include <GL/glu.h>
 
 #include "ui.h"
 #include "uiplot.h"
@@ -94,6 +95,7 @@ typedef enum {
 static SDL_Surface *screen = NULL;      /* SDL screen */
 static SDL_Overlay *overlay = NULL;	/* SDL overlay */
 static uint32 overlay_format;	        /* SDL overlay fourcc (or alias) */
+static GLuint texture_id = 0;
 
 static char ui_region_lock = 0;          /* lock region at startup -Trilkk */
 
@@ -292,6 +294,25 @@ int ui_init(int argc, const char *argv[])
   ui_screen1 = ui_screen[1];
   ui_newscreen = ui_screen[2];
   ui_whichbank = 0;             /* viewing 0 */
+
+  glEnable(GL_TEXTURE_2D);
+  glGenTextures(1, &texture_id);
+  glBindTexture(GL_TEXTURE_2D, texture_id);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glViewport(0, 0, HSIZE, VSIZE);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_ALPHA_TEST);
+  glDisable(GL_BLEND);
+  glDisable(GL_LIGHTING);
+  glDisable(GL_TEXTURE_3D_EXT);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0.0, HSIZE, VSIZE, 0.0, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
   return 0;
 }
 
@@ -821,142 +842,24 @@ void ui_endfield(void)
 
 void ui_rendertoscreen(void)
 {
-  uint8 **oldscreenpp = ui_whichbank ? &ui_screen1 : &ui_screen0;
-  uint8 *newlinedata, *oldlinedata;
-  unsigned int line;
-  uint8 *location;
-  uint8 *evenscreen;            /* interlace: lines 0,2,etc. */
-  uint8 *oddscreen;             /*            lines 1,3,etc. */
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, HMAXSIZE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, HSIZE, VSIZE, 0, GL_BGRA, GL_UNSIGNED_BYTE, ui_newscreen);
 
-  if (overlay)
-    SDL_LockYUVOverlay(overlay);
-  else if (ui_locksurface && SDL_LockSurface(screen) != 0)
-    ui_err("Failed to lock SDL surface");
+  glBegin(GL_QUADS);
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex2f(HSIZE, VSIZE);
 
-  for (line = 0; line < VSIZE; line++) {
-    newlinedata = ui_newscreen +
-        line * HMAXSIZE * screen->format->BytesPerPixel;
-    oldlinedata = *oldscreenpp +
-        line * HMAXSIZE * screen->format->BytesPerPixel;
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex2f(HSIZE, 0.0);
 
-    if (overlay) {
-      memcpy(*overlay->pixels + line * overlay->pitches[0],
-	newlinedata, HSIZE*2);
-    } else {
+  glTexCoord2f(0.0f, 0.0f);
+  glVertex2f(0.0, 0.0);
 
+  glTexCoord2f(0.0f, 1.0f);
+  glVertex2f(0, VSIZE);
+  glEnd();
 
-    switch (ui_screenmode) {
-    case SCREEN_100:
-      location = screen->pixels + line * screen->pitch;
-      /* we could use uiplot_renderXX_x1 routines here, but SDL wouldn't
-         pick up our delta changes so we don't */
-      memcpy(location, newlinedata, HSIZE * screen->format->BytesPerPixel);
-      break;
-    case SCREEN_200:
-    case SCREEN_FULL:
-      location = screen->pixels + 2 * line * screen->pitch;
-      if (screen->format->BytesPerPixel != 2 &&
-          screen->format->BytesPerPixel != 4)
-        ui_err("unsupported mode for 200%% scaling\n");
-      switch ((vdp_reg[12] >> 1) & 3) { /* interlace mode */
-      case 0:
-      case 1:
-      case 2:
-        switch (screen->format->BytesPerPixel) {
-        case 2:
-          uiplot_render16_x2((uint16 *)newlinedata, NULL, location,
-                             screen->pitch, HSIZE);
-          break;
-        case 4:
-          uiplot_render32_x2((uint32 *)newlinedata, NULL, location,
-                             screen->pitch, HSIZE);
-          break;
-        }
-        break;
-      case 3:
-        /* work out which buffer contains the odd and even fields */
-        if (vdp_oddframe) {
-          oddscreen = ui_newscreen;
-          evenscreen = ui_whichbank ? ui_screen0 : ui_screen1;
-        } else {
-          evenscreen = ui_newscreen;
-          oddscreen = ui_whichbank ? ui_screen0 : ui_screen1;
-        }
-        switch (ui_interlace) {
-        case DEINTERLACE_BOB:
-          switch (screen->format->BytesPerPixel) {
-          case 2:
-            uiplot_render16_x2((uint16 *)newlinedata, NULL, location,
-                               screen->pitch, HSIZE);
-            break;
-          case 4:
-            uiplot_render32_x2((uint32 *)newlinedata, NULL, location,
-                               screen->pitch, HSIZE);
-            break;
-          }
-          break;
-        case DEINTERLACE_WEAVE:
-          evenscreen += line * HMAXSIZE * screen->format->BytesPerPixel;
-          oddscreen += line * HMAXSIZE * screen->format->BytesPerPixel;
-          switch (screen->format->BytesPerPixel) {
-          case 2:
-            uiplot_render16_x2h((uint16 *)evenscreen, NULL, location, HSIZE);
-            uiplot_render16_x2h((uint16 *)oddscreen, NULL,
-                                location + screen->pitch, HSIZE);
-            break;
-          case 4:
-            uiplot_render32_x2h((uint32 *)evenscreen, NULL, location, HSIZE);
-            uiplot_render32_x2h((uint32 *)oddscreen, NULL,
-                                location + screen->pitch, HSIZE);
-            break;
-          }
-          break;
-        case DEINTERLACE_WEAVEFILTER:
-          evenscreen += line * HMAXSIZE * screen->format->BytesPerPixel;
-          oddscreen += line * HMAXSIZE * screen->format->BytesPerPixel;
-          switch (screen->format->BytesPerPixel) {
-          case 2:
-            /* lines line+0 and line+1 */
-            uiplot_irender16_weavefilter((uint16 *)evenscreen,
-                                         (uint16 *)oddscreen,
-                                         location, HSIZE);
-            /* lines line+1 and line+2 */
-            uiplot_irender16_weavefilter((uint16 *)oddscreen,
-                                         ((uint16 *)evenscreen) + HMAXSIZE,
-                                         location + screen->pitch, HSIZE);
-            break;
-          case 4:
-            /* lines line+0 and line+1 */
-            uiplot_irender32_weavefilter((uint32 *)evenscreen,
-                                         (uint32 *)oddscreen,
-                                         location, HSIZE);
-            /* lines line+1 and line+2 */
-            uiplot_irender32_weavefilter((uint32 *)oddscreen,
-                                         ((uint32 *)evenscreen) + HMAXSIZE,
-                                         location + screen->pitch, HSIZE);
-            break;
-          }
-        }
-        break;
-      }
-      break;
-    default:
-      ui_err("invalid screen mode\n");
-    }
-  }
-
-  }
-
-  ui_sdl_redraw();
-  if (overlay)
-    SDL_UnlockYUVOverlay(overlay);
-  else if (ui_locksurface)
-    SDL_UnlockSurface(screen);
-#if 0
-  if (ui_vsync)
-    uip_vsync();
-#endif
-  ui_sdl_swapbanks();
+  SDL_GL_SwapBuffers();
 }
 
 /*** logging functions ***/
@@ -1182,7 +1085,7 @@ static SDL_Surface *ui_sdl_set_fullscreen(int use_maximum)
 
   LOG_NORMAL(("Switching to fullscreen (%d x %d)", w, h));
   if (w && h)
-    return SDL_SetVideoMode(w, h, 0, SDL_FULLSCREEN);
+    return SDL_SetVideoMode(w, h, 0, SDL_FULLSCREEN | SDL_OPENGL);
 
   LOG_CRITICAL(("No video mode for fullscreen available"));
   return NULL;
@@ -1205,14 +1108,14 @@ modeswitch:
     ui_arcade_mode = 0;
     hborder = ui_hborder;
     vborder = ui_vborder;
-    screen = SDL_SetVideoMode(HSIZE, VSIZE, 0, SDL_RESIZABLE);
+    screen = SDL_SetVideoMode(HSIZE, VSIZE, 0, SDL_RESIZABLE | SDL_OPENGL);
     ui_screenmode = SCREEN_100;
     break;
   case SCREEN_200:
     ui_arcade_mode = 0;
     hborder = ui_hborder;
     vborder = ui_vborder;
-    screen = SDL_SetVideoMode(HSIZE * 2, VSIZE * 2, 0, SDL_RESIZABLE);
+    screen = SDL_SetVideoMode(HSIZE * 2, VSIZE * 2, 0, SDL_RESIZABLE | SDL_OPENGL);
     ui_screenmode = SCREEN_200;
     break;
   case SCREEN_FULL:
@@ -1595,7 +1498,7 @@ static void ui_sdl_events(void)
                             if ((w != screen->w || h != screen->h) &&
                                 SDL_VideoModeOK(w, h, screen->format->BitsPerPixel, SDL_RESIZABLE))
                             {
-                              screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE);
+                              screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE | SDL_OPENGL);
                             }
                             break;
                           }
@@ -1625,7 +1528,7 @@ void ui_sdl_resize_win(int w, int h)
       (screen->w != w || screen->h != h) &&
 	    SDL_VideoModeOK(w, h, screen->format->BitsPerPixel, SDL_RESIZABLE)
   ) {
-    screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE);
+    screen = SDL_SetVideoMode(w, h, 0, SDL_RESIZABLE | SDL_OPENGL);
   }
 }
 
