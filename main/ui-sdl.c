@@ -1112,8 +1112,7 @@ void ui_sdl_saveoptions(void)
 
 static void ui_sdl_redraw(void)
 {
- SDL_Rect rect = { 0, 0, screen->w, screen->h };
- SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
+// SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
 }
 
 static void ui_sdl_events(void)
