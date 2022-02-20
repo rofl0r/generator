@@ -83,8 +83,6 @@ const char *ui_gtk_keys[] = {
 /*** static variables ***/
 
 static SDL_Surface *screen = NULL;      /* SDL screen */
-static SDL_Overlay *overlay = NULL;	/* SDL overlay */
-static uint32 overlay_format;	        /* SDL overlay fourcc (or alias) */
 
 static char ui_region_lock = 0;          /* lock region at startup -Trilkk */
 
@@ -147,20 +145,6 @@ static ui_screenmode_t ui_screenmode = SCREEN_100;
 /* If non-zero, ui_gtk_sizechange refuses to change the mode.
  * Otherwise, ui_gtk_opts_menu() would cause undesired mode changes. */
 static int screenmode_lock = 0;
-
-
-static const struct {
-  uint32 fourcc;
-  uint32 alias;
-} overlay_formats[] = {
-  { SDL_UYVY_OVERLAY, SDL_UYVY_OVERLAY },
-  { SDL_YUY2_OVERLAY, SDL_YUY2_OVERLAY },
-  { SDL_YVYU_OVERLAY, SDL_YVYU_OVERLAY },
-  { 0x56595559,       SDL_YUY2_OVERLAY },
-  { 0x564E5559,       SDL_YUY2_OVERLAY },
-  { 0x564E5955,       SDL_UYVY_OVERLAY },
-  { 0x32323459,       SDL_UYVY_OVERLAY }
-};
 
 t_interlace ui_interlace = DEINTERLACE_WEAVEFILTER;
 
@@ -543,48 +527,11 @@ void ui_line(int line)
   bg = vdp_reg[7] & 63;
   uiplot_checkpalcache(0);
 
-  if (overlay) {
-    bgpix = uiplot_palcache_yuv[bg];
-
-    switch (overlay_format) {
-    case SDL_YUY2_OVERLAY:
-      YUY2_SINGLE(bgpix, bgpix1, bgpix2);
-      uiplot_convertdata_yuy2(gfx, &location.u16[offset], width);
-      break;
-    case SDL_YVYU_OVERLAY:
-      YVYU_SINGLE(bgpix, bgpix1, bgpix2);
-      uiplot_convertdata_yvyu(gfx, &location.u16[offset], width);
-      break;
-    case SDL_UYVY_OVERLAY:
-      UYVY_SINGLE(bgpix, bgpix1, bgpix2);
-      uiplot_convertdata_uyvy(gfx, &location.u16[offset], width);
-      break;
-    default:
-      bgpix1 = bgpix2 = 0;
-      g_assert_not_reached();
-    }
-  } else {
-    bgpix = uiplot_palcache[bg];
-    bgpix1 = bgpix2 = 0; /* Dumb compiler */
-  }
+  bgpix = uiplot_palcache[bg];
+  bgpix1 = bgpix2 = 0; /* Dumb compiler */
 
   if (line < 0 || line >= (int)vdp_vislines) {
     /* in border */
-
-    if (overlay) {
-      Uint32 bg, *p = location.u32, *q = p + HSIZE / 2;
-
-      bg = bgpix1 | (bgpix2 << 16);
-
-      while (p < q)
-        *p++ = bg;
-
-#if 0
-        ((uint32 *)location)[i] = bgpix1 & 0;
-        ((uint32 *)location)[i + 1] = bgpix2 | 0xffff;
-#endif
-   
-    } else {
 
     switch (screen->format->BytesPerPixel) {
     case 2:
@@ -597,9 +544,7 @@ void ui_line(int line)
       break;
     }
 
-    }
     return;
-
   }
   /* normal line */
   switch ((vdp_reg[12] >> 1) & 3) {
@@ -612,29 +557,6 @@ void ui_line(int line)
     vdp_renderline(line, gfx, vdp_oddframe);
     break;
   }
-
-  if (overlay) {
-    switch (overlay_format) {
-    case SDL_YUY2_OVERLAY:
-      uiplot_convertdata_yuy2(gfx, &location.u16[offset], width);
-      break;
-    case SDL_YVYU_OVERLAY:
-      uiplot_convertdata_yvyu(gfx, &location.u16[offset], width);
-      break;
-    case SDL_UYVY_OVERLAY:
-      uiplot_convertdata_uyvy(gfx, &location.u16[offset], width);
-      break;
-    default:
-      bgpix1 = bgpix2 = 0;
-      g_assert_not_reached();
-    }
-    for (i = 0; i < offset; i += 2) {
-      location.u16[i] = bgpix1;
-      location.u16[i + 1] = bgpix2;
-      location.u16[i + offset + width] = bgpix1;
-      location.u16[i + 1 + offset + width] = bgpix2;
-    }
-  } else {
 
   switch (screen->format->BytesPerPixel) {
   case 2:
@@ -651,9 +573,6 @@ void ui_line(int line)
       location.u32[i + offset + width] = bgpix;
     }
     break;
-  }
-
-
   }
 }
 
@@ -681,44 +600,6 @@ static void ui_simpleplot(void)
   location.v = ui_newscreen +
       vborder * HMAXSIZE * screen->format->BytesPerPixel;
 
-  if (overlay) {
-    void (*convert_func)(uint8 *, uint16 *, unsigned int);
-
-    bgpix = uiplot_palcache_yuv[bg];
-
-    switch (overlay_format) {
-    case SDL_YUY2_OVERLAY:
-      YUY2_SINGLE(bgpix, bgpix1, bgpix2);
-      convert_func = uiplot_convertdata_yuy2;
-      break;
-    case SDL_YVYU_OVERLAY:
-      YUY2_SINGLE(bgpix, bgpix1, bgpix2);
-      convert_func = uiplot_convertdata_yuy2;
-    case SDL_UYVY_OVERLAY:
-      UYVY_SINGLE(bgpix, bgpix1, bgpix2);
-      convert_func = uiplot_convertdata_uyvy;
-      break;
-    default:
-      convert_func = NULL; 
-      g_assert_not_reached();
-    }
-
-    for (line = 0; line < vdp_vislines; line++) {
-
-      for (i = 0; i < offset; i+=2) {
-        location.u16[i] = bgpix1;
-        location.u16[i + 1] = bgpix2;
-        location.u16[width + offset + i] = bgpix1;
-        location.u16[width + offset + i + 1] = bgpix2;
-      }
-
-      convert_func(gfx + 8 + (line + 8) * (320 + 16),
-	&location.u16[offset], width);
-      location.u16 += HMAXSIZE;
-    }
-
-  } else {
-
   bgpix = uiplot_palcache[bg];
   switch (screen->format->BytesPerPixel) {
   case 2:
@@ -745,25 +626,7 @@ static void ui_simpleplot(void)
     break;
   }
 
-  }
-
   location.v = ui_newscreen;
-
-  if (overlay) {
-
-    location2.v = ui_newscreen + (vborder + vdp_vislines) * HMAXSIZE * 2;
-    for (line = 0; line < vborder; line++) {
-      for (i = 0; i < HSIZE; i += 2) {
-        location.u16[i] = bgpix1;
-        location.u16[i + 1] = bgpix2;
-        location2.u16[i] = bgpix1;
-        location2.u16[i + 1] = bgpix2;
-      }
-      location.u16 += HMAXSIZE;
-      location2.u16 += HMAXSIZE;
-    }
-
-  } else {
 
   location2.v = ui_newscreen + (vborder + vdp_vislines) *
       HMAXSIZE * screen->format->BytesPerPixel;
@@ -788,9 +651,6 @@ static void ui_simpleplot(void)
       location2.u32 += HMAXSIZE;
     }
     break;
-  }
-
-
   }
 }
 
@@ -1410,50 +1270,14 @@ void ui_gtk_hardreset(void)
   gen_reset();
 }
 
-static int
-create_overlay(int allow_software_overlay)
-{
-  unsigned int i;
-  
-  for (i = 0; i < sizeof overlay_formats / sizeof overlay_formats[0]; i++) {
-    overlay = SDL_CreateYUVOverlay(HSIZE, VSIZE,
-                  overlay_formats[i].fourcc, screen);
-    if (overlay) {
-      if (allow_software_overlay || overlay->hw_overlay) {
-        const uint8 *id = (uint8 *) &overlay_formats[i].fourcc;
-        LOG_REQUEST(("Using overlay with format fourcc=0x%08x (%c%c%c%c)",
-          overlay_formats[i].fourcc, id[0], id[1], id[2], id[3]));
-        overlay_format = overlay_formats[i].alias;
-        return 0;
-      }
-      
-      SDL_FreeYUVOverlay(overlay);
-      overlay = NULL;
-    }
-  }
-  return -1;
-}
- 
+
 int ui_create_overlay(void)
 {
-  if (0 == create_overlay(0)) {
-    LOG_REQUEST(("YUV overlay is hardware accelerated"));
-    return 0;
-  }
-  if (0 == create_overlay(1)) {
-    LOG_REQUEST(("YUV overlay is NOT hardware accelerated"));
-    return 0;
-  }
-  LOG_REQUEST(("No YUV overlay available"));
   return -1;
 }
 
 void ui_gtk_reinit_video(void)
 {
-    if (overlay) {
-      SDL_FreeYUVOverlay(overlay);
-      overlay = NULL;
-    }
     if (screen) {
       /* SDL doesn't want this to be freed */
       screen = NULL;
@@ -1527,7 +1351,6 @@ void ui_gtk_sizechange(ui_screenmode_t newmode)
 {
   GtkWidget *w;
   ui_screenmode_t oldmode = ui_screenmode;
-  int overlay_failed = 0;
 
   w = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_main),
                                      "drawingarea_main"));
@@ -1568,7 +1391,7 @@ modeswitch:
     gtk_widget_hide(ui_win_main);
     ui_sdl_window_hack(0);
     ui_gtk_reinit_video();
-    screen = ui_sdl_set_fullscreen(!overlay_failed);
+    screen = ui_sdl_set_fullscreen(0);
     if (!screen) {
       LOG_CRITICAL(("failed to initialise fullscreen mode"));
       newmode = SCREEN_100;
@@ -1581,33 +1404,6 @@ modeswitch:
     ui_err("invalid screen mode\n");
   }
 
-  if (overlay && (ui_screenmode != oldmode)) {
-    SDL_FreeYUVOverlay(overlay);
-    overlay = NULL;
-  }
-
-  if (!overlay && !overlay_failed && 0 != ui_create_overlay()) {
-    overlay_failed = 1;
-    goto modeswitch;
-  }
-
-#if 0
-  if (overlay) {
-	  int i;
-    Uint32 key;
-
-    printf("colorkey=%lx\n", (long) screen->format->colorkey);
-    key = SDL_MapRGB(screen->format, 0, 0, 0);
-    SDL_SetColorKey(screen, SDL_SRCCOLORKEY, key);
-    SDL_LockSurface(screen);
-    for (i = 0; i < screen->h; i++) {
-      memset((char *) screen->pixels + i * screen->pitch, 0, screen->pitch);
-    }
-    SDL_UnlockSurface(screen);
-    SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
-  }
-#endif
-
   w = GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(ui_win_main), "hbox_bottom"));
   if (ui_statusbar)
     gtk_widget_show(w);
@@ -1615,7 +1411,7 @@ modeswitch:
     gtk_widget_hide(w);
 
   gtk_window_set_policy(GTK_WINDOW(ui_win_main),
-    overlay != NULL, overlay != NULL, overlay != NULL);
+    0, 0, 0);
   ui_locksurface = SDL_MUSTLOCK(screen);
   uiplot_setshifts(ui_topbit(screen->format->Rmask) - 4,
                    ui_topbit(screen->format->Gmask) - 4,
@@ -1623,7 +1419,7 @@ modeswitch:
 
   /* Gimmick: Redraw overlay when paused. Otherwise, only a rectangle
    * with the colorkey is visible. */
-  if (!ui_running && overlay && ui_screen0 && ui_screen1 && ui_newscreen)
+  if (!ui_running && ui_screen0 && ui_screen1 && ui_newscreen)
     ui_rendertoscreen();
 }
 
@@ -2354,20 +2150,7 @@ void ui_gtk_redraw(void)
 {
   if(!screen) return;
 
-  SDL_Rect rect;
-
-  rect.x = 0;
-  rect.y = 0;
-  rect.w = screen->w;
-  rect.h = screen->h;
-
-  if (overlay) {
-    SDL_LockSurface(screen);
-    SDL_DisplayYUVOverlay(overlay, &rect);
-    SDL_UnlockSurface(screen);
-  } else
-    SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
-
+  SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
 }
 
 void ui_gtk_key(unsigned long key, int press)
