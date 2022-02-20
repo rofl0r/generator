@@ -247,59 +247,7 @@ state_dotransfer(unsigned int mode)
   state_transfer8("z80", "active", 0, &cpuz80_active, 1);
   state_transfer8("z80", "resetting", 0, &cpuz80_resetting, 1);
   state_transfer32("z80", "bank", 0, &cpuz80_bank, 1);
-#ifdef RAZE
-  if (state_transfermode == 0) {
-    uint16 i16;
-    
-    /* save */
-    i16 = z80_get_reg(Z80_REG_AF); state_transfer16("z80", "af", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_BC); state_transfer16("z80", "bc", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_DE); state_transfer16("z80", "de", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_HL); state_transfer16("z80", "hl", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_AF2); state_transfer16("z80", "af2", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_BC2); state_transfer16("z80", "bc2", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_DE2); state_transfer16("z80", "de2", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_HL2); state_transfer16("z80", "hl2", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_IX); state_transfer16("z80", "ix", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_IY); state_transfer16("z80", "iy", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_SP); state_transfer16("z80", "sp", 0, &i16, 1);
-    i16 = z80_get_reg(Z80_REG_PC); state_transfer16("z80", "pc", 0, &i16, 1);
-    i8 = (z80_get_reg(Z80_REG_IR) >> 8) & 0xff;
-    state_transfer8("z80", "i", 0, &i8, 1);
-    i8 = z80_get_reg(Z80_REG_IR) & 0xff;
-    state_transfer8("z80", "r", 0, &i8, 1);
-    i8 = z80_get_reg(Z80_REG_IFF1); state_transfer8("z80", "iff1", 0, &i8, 1);
-    i8 = z80_get_reg(Z80_REG_IFF2); state_transfer8("z80", "iff2", 0, &i8, 1);
-    i8 = z80_get_reg(Z80_REG_IM); state_transfer8("z80", "im", 0, &i8, 1);
-    i8 = z80_get_reg(Z80_REG_Halted);
-    state_transfer8("z80", "halted", 0, &i8, 1);
-  } else {
-    uint16 i16;
-    uint8 i8b;
-
-    /* load */
-    state_transfer16("z80", "af", 0, &i16, 1); z80_set_reg(Z80_REG_AF, i16);
-    state_transfer16("z80", "bc", 0, &i16, 1); z80_set_reg(Z80_REG_BC, i16);
-    state_transfer16("z80", "de", 0, &i16, 1); z80_set_reg(Z80_REG_DE, i16);
-    state_transfer16("z80", "hl", 0, &i16, 1); z80_set_reg(Z80_REG_HL, i16);
-    state_transfer16("z80", "af2", 0, &i16, 1); z80_set_reg(Z80_REG_AF2, i16);
-    state_transfer16("z80", "bc2", 0, &i16, 1); z80_set_reg(Z80_REG_BC2, i16);
-    state_transfer16("z80", "de2", 0, &i16, 1); z80_set_reg(Z80_REG_DE2, i16);
-    state_transfer16("z80", "hl2", 0, &i16, 1); z80_set_reg(Z80_REG_HL2, i16);
-    state_transfer16("z80", "ix", 0, &i16, 1); z80_set_reg(Z80_REG_IX, i16);
-    state_transfer16("z80", "iy", 0, &i16, 1); z80_set_reg(Z80_REG_IY, i16);
-    state_transfer16("z80", "sp", 0, &i16, 1); z80_set_reg(Z80_REG_SP, i16);
-    state_transfer16("z80", "pc", 0, &i16, 1); z80_set_reg(Z80_REG_PC, i16);
-    state_transfer8("z80", "i", 0, &i8, 1);
-    state_transfer8("z80", "r", 0, &i8b, 1);
-    z80_set_reg(Z80_REG_IR, ((uint16)i8 << 8) | i8b);
-    state_transfer8("z80", "iff1", 0, &i8, 1); z80_set_reg(Z80_REG_IFF1, i8);
-    state_transfer8("z80", "iff2", 0, &i8, 1); z80_set_reg(Z80_REG_IFF2, i8);
-    state_transfer8("z80", "im", 0, &i8, 1); z80_set_reg(Z80_REG_IM, i8);
-    state_transfer8("z80", "halted", 0, &i8, 1);
-    z80_set_reg(Z80_REG_Halted, i8);
-  }
-#else
+#ifdef CMZ80
   state_transfer16("z80", "af", 0, &cpuz80_z80.z80af, 1);
   state_transfer16("z80", "bc", 0, &cpuz80_z80.z80bc, 1);
   state_transfer16("z80", "de", 0, &cpuz80_z80.z80de, 1);
@@ -335,6 +283,8 @@ state_dotransfer(unsigned int mode)
     state_transfer8("z80", "halted", 0, &i8, 1);
     cpuz80_z80.z80halted = i8;
   }
+#else
+# error no z80 cpu selected
 #endif
   YM2612_save_state();
 
