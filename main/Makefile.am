@@ -31,8 +31,9 @@ generator_allegro_LDADD = ${LDADD} -lalleg
 generator_gtk_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c \
     ui-gtk.c uiplot.c gensoundp-unix.c initcart.c patch.c \
-    dib.c avi.c diss68k.c
-generator_gtk_LDADD = ${LDADD} @GTK_LIBS@ @SDL_LIBS@ ../glade/libglade.a ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
+    dib.c avi.c diss68k.c opengl.c
+generator_gtk_LDADD = ${LDADD} @GTK_LIBS@ @SDL_LIBS@ -lGL -lGLU\
+    ../glade/libglade.a ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
 
 generator_sdl_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c \
