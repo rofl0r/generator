@@ -110,7 +110,7 @@ void cpuz80_unresetcpu(void)
 
 void cpuz80_bankwrite(uint8 data)
 {
-  //cpuz80_bank = (((cpuz80_bank >> 1) | ((data & 1) << 23)) & 0xff8000);
+  cpuz80_bank = (((cpuz80_bank >> 1) | ((data & 1) << 23)) & 0xff8000);
 }
 
 /*** cpuz80_stop - stop the processor ***/
@@ -155,8 +155,14 @@ void cpuz80_sync(void)
   if (cpuz80_on && cpuz80_active && !cpuz80_resetting) {
     /* ui_log(LOG_USER, "executing %d z80 clocks @ %X", wanted,
        cpuz80_z80.z80pc); */
-    achieved = wanted;
-    while(wanted--) z80_step(&cpuz80_z80);
+    
+    int curcyc = cpuz80_z80.cyc;
+    
+    while(achieved < wanted) {
+        z80_step(&cpuz80_z80);
+        achieved = cpuz80_z80.cyc - curcyc;
+    }
+    
     cpuz80_lastsync = cpuz80_lastsync + achieved * 15 / 7;
   } else {
     cpuz80_lastsync = cpu68k_clocks;
@@ -174,7 +180,7 @@ void cpuz80_interrupt(void)
     z80_raise_IRQ(0xff);
     z80_lower_IRQ();
 #endif
-    z80_gen_int(&cpuz80_z80, 0);
+    z80_gen_int(&cpuz80_z80, 0xff);
   }
 }
 
