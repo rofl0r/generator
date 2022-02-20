@@ -30,7 +30,7 @@ dnl See what version we're compiling
               MY_PROG="generator-tcltk")
   AC_ARG_WITH(gtk,
               AS_HELP_STRING(--with-gtk,Create gtk version),
-              MY_PROG="generator-gtk")
+              [MY_PROG="generator-gtk"; USE_SDL_AUDIO=yes])
   AC_ARG_WITH(sdl,
               AS_HELP_STRING(--with-sdl,Create SDL version),
               [MY_PROG="generator-sdl"; USE_SDL_AUDIO=yes])
