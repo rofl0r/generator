@@ -47,11 +47,6 @@
 
 #define DISSWIN_MAX 64
 
-/* Used if hardware supports *any* resolution or as preferred fullscreen
- * resolution if supported */
-#define DEFAULT_FULLSCREEN_WIDTH 640
-#define DEFAULT_FULLSCREEN_HEIGHT 480
-
 static struct {
   unsigned int a;
   unsigned int b;
@@ -858,64 +853,6 @@ void ui_sdl_reinit_video(void)
       SDL_ShowCursor(SDL_DISABLE);
 }
 
-static SDL_Surface *ui_sdl_set_fullscreen(int use_maximum)
-{
-  SDL_Rect **modes;
-  int i;
-  int w = 0, h = 0;
-
-  modes = SDL_ListModes(NULL, SDL_FULLSCREEN);
-  if (modes == (SDL_Rect **) -1) {
-    w = DEFAULT_FULLSCREEN_WIDTH;
-    h = DEFAULT_FULLSCREEN_HEIGHT;
-    LOG_VERBOSE(("Hardware supports any resolution; using defaults."));
-  } else {
-
-    for (i = 0; modes[i]; i++) {
-      LOG_VERBOSE(("%dx%d", modes[i]->w, modes[i]->h));
-      if (
-          (
-            (use_maximum && modes[i]->w >= DEFAULT_FULLSCREEN_WIDTH) ||
-            (!use_maximum && modes[i]->w == DEFAULT_FULLSCREEN_WIDTH)
-          ) &&
-          3 * modes[i]->w == 4 * modes[i]->h
-      ) {
-        w = modes[i]->w;
-        h = modes[i]->h;
-        break;
-      }
-    }
-         
-    for (i = 0; !w && !h && modes[i]; i++) {
-
-      /* Use the first best mode with 4:3 aspect ratio */
-      if (3 * modes[i]->w == 4 * modes[i]->h) {
-        w = modes[i]->w;
-        h = modes[i]->h;
-        break;
-      }
-    }
-
-    /* Use first best mode if there's no 4:3 mode available */
-    if (!w && !h && i) {
-      LOG_NORMAL(("No video mode with 4:3 aspect ratio found", w, h));
-      w = modes[0]->w;
-      h = modes[0]->h;
-    }
-  }
-
-  LOG_NORMAL(("Switching to fullscreen (%d x %d)", w, h));
-  if (w && h)
-    return SDL_SetVideoMode(w, h, 0, SDL_FULLSCREEN | SDL_OPENGL);
-
-  LOG_CRITICAL(("No video mode for fullscreen available"));
-  return NULL;
-}
-
-static void toggle_fullscreen(void) {
-  // TODO
-}
-
 /* set main window size from current parameters */
 
 void ui_sdl_sizechange(void)
@@ -923,7 +860,9 @@ void ui_sdl_sizechange(void)
   if (screenmode_lock)
     return;
 
-  screen = SDL_SetVideoMode(HSIZE*scale, VSIZE*scale, 0, SDL_RESIZABLE | SDL_OPENGL);
+  unsigned flags = fullscreen ? SDL_FULLSCREEN : 0;
+
+  screen = SDL_SetVideoMode(HSIZE*scale, VSIZE*scale, 0, flags | SDL_OPENGL);
   ui_arcade_mode = 0;
   hborder = ui_hborder;
   vborder = ui_vborder;
@@ -937,6 +876,11 @@ void ui_sdl_sizechange(void)
    * with the colorkey is visible. */
   if (!ui_running && ui_screen0 && ui_screen1 && ui_newscreen)
     ui_rendertoscreen();
+}
+
+static void toggle_fullscreen(void) {
+  fullscreen = !fullscreen;
+  ui_sdl_sizechange();
 }
 
 static void ui_sdl_newoptions(void)
