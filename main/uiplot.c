@@ -8,38 +8,16 @@
 #include "uiplot.h"
 
 uint32 uiplot_palcache[192];
-uint32 uiplot_palcache_yuv[192];
-
-static uint32 uiplot_yuvcache[512];
 
 static int uiplot_redshift;
 static int uiplot_greenshift;
 static int uiplot_blueshift;
 
-static uint32 rgb2yuv(uint32 r, uint32 g, uint32 b)
-{
-  uint32 y, u, v;
-
-  y = (( (  66 * r + 129 * g +  25 * b + 128) >> 8) +  16) & 0xff;
-  u = (( ( -38 * r -  74 * g + 112 * b + 128) >> 8) + 128) & 0xff;
-  v = (( ( 112 * r -  94 * g -  18 * b + 128) >> 8) + 128) & 0xff;
-
-  return (v << 16) | (u << 8) | y;
-}
-
 void uiplot_setshifts(int redshift, int greenshift, int blueshift)
 {
-  unsigned int r, g, b;
-
   uiplot_redshift = redshift;
   uiplot_greenshift = greenshift;
   uiplot_blueshift = blueshift;
-
-  for (b = 0; b < 8; b++)
-    for (g = 0; g < 8; g++)
-      for (r = 0; r < 8; r++)
-        uiplot_yuvcache[(r << 6) | (g << 3) | b] =
-		rgb2yuv(r << 5, g << 5, b << 5);
 }
 
 /* uiplot_checkpalcache goes through the CRAM memory in the Genesis and 
@@ -69,13 +47,6 @@ void uiplot_checkpalcache(int flag)
       continue;
     vdp_cramf[col] = 0;
     p = (uint8 *)vdp_cram + 2 * col;  /* point p to the two-byte CRAM entry */
-    r = (p[1] & 0xE) << 3;
-    g = (p[1] & 0xE0) >> 1;
-    b = (p[0] & 0xE) << 3;
-
-    uiplot_palcache_yuv[col] = rgb2yuv(r << 1, g << 1, b << 1);
-    uiplot_palcache_yuv[col + 64] = rgb2yuv(r | 128, g | 128, b | 128);
-    uiplot_palcache_yuv[col + 128] = rgb2yuv(r, g, b);
 
     r = (p[1] & 0xE) << uiplot_redshift;
     g = ((p[1] & 0xE0) >> 4) << uiplot_greenshift;
@@ -120,169 +91,6 @@ void uiplot_convertdata16(uint8 *indata, uint16 *outdata, unsigned int pixels)
 #endif
   }
 }
-
-/*
-#define UNROLL(t, code) 			\
-do { 						\
-if ((t) > 0) { code }				\
-if ((t) > 1) { code }				\
-if ((t) > 2) { code }				\
-if ((t) > 3) { code }				\
-if ((t) > 4) { code }				\
-if ((t) > 5) { code }				\
-if ((t) > 6) { code }				\
-if ((t) > 7) { code }				\
-} while (0)
-*/
-
-#define UNROLL(t, code)	\
-do {			\
-  switch (t) {		\
-  case 16: { code }	\
-  case 15: { code }	\
-  case 14: { code }	\
-  case 13: { code }	\
-  case 12: { code }	\
-  case 11: { code }	\
-  case 10: { code }	\
-  case  9: { code }	\
-  case  8: { code }	\
-  case  7: { code }	\
-  case  6: { code }	\
-  case  5: { code }	\
-  case  4: { code }	\
-  case  3: { code }	\
-  case  2: { code }	\
-  case  1: { code }	\
-  }			\
-} while(0)
-
-/* Valid values: 1, 2, 4 */
-#define UNROLL_TIMES 4 
-
-/* Prefetching is only effective if supported by architecture i.e.,
- * you must use -march (e.g., -march=athlon)!  
- */
-#if defined(__GNUC__) && defined(__GNUC_MINOR__) && \
-	(__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-
-#define PREFETCH_R(x) __builtin_prefetch((x), 0)
-#define PREFETCH_W(x) __builtin_prefetch((x), 1)
-
-#else /* !(GCC >= 3.1) */
-
-#define PREFETCH_R(x)
-#define PREFETCH_W(x)
-#endif /* GCC >= 3.1 */
-
-void uiplot_convertdata_yuy2(uint8 *indata, uint16 *out, unsigned int pixels)
-{
-  unsigned int i;
-  uint32 a, b, uy, *out32 = (uint32 *) out;
-
-#ifdef WORDS_BIGENDIAN
-  uint8 u, v;
-#define PACK_PIXELS()	do {						\
-    u = ((a & 0xff00) + (b & 0xff00)) >> 9;				\
-    *out++ = (a << 8) | u;						\
-    v = ((a & 0xff0000) + (b & 0xff0000)) >> 17;			\
-    *out++ = (b << 8) | v;						\
-} while (0)
-#else /* !WORDS_BIGENDIAN */
-  uint32 v;
-#define PACK_PIXELS()	do {						\
-    v = (((a + b) & 0x1fe0000) << 7) | (a & 0xff) | ((b & 0xff) << 16);	\
-    uy = ((((a & 0xff00) + (b & 0xff00)) >> 1) & 0xff00);		\
-    *out32++ = v | uy;							\
-} while (0)
-#endif /* WORDS_BIGENDIAN */
-
-  /* not scaled, 16bpp - we do 2 pixels at a time */
-  PREFETCH_W(out);
-  for (i = pixels; i != 0; i -= 2 * UNROLL_TIMES) {
-    UNROLL(UNROLL_TIMES,
-    	a = uiplot_palcache_yuv[*indata++];
-    	b = uiplot_palcache_yuv[*indata++];
-	PACK_PIXELS();
-    ); /* UNROLL */
-    PREFETCH_R(indata + 32);
-  }
-
-#undef PACK_PIXELS
-}
-
-void uiplot_convertdata_uyvy(uint8 *indata, uint16 *out, unsigned int pixels)
-{
-  uint32 a, b;
-  unsigned int i;
-  uint32 vy, uy, *out32 = (uint32 *)out;
-
-#ifdef WORDS_BIGENDIAN
-  uint32 u, v;
-#define PACK_PIXELS()	do {						\
-    u = ((a & 0xff00) + (b & 0xff00)) >> 1;				\
-    *out++ = (a & 0xff) | (u & 0xff00);					\
-    v = ((a & 0xff0000) + (b & 0xff0000)) >> 9;				\
-    *out++ = (b & 0xff) | (v & 0xff00);					\
-} while (0)
-#else
-#define PACK_PIXELS()	do {						\
-    uy = (((a & 0xff00) + (b & 0xff00)) >> 9) | ((a & 0xff) << 8);	\
-    vy = (((a + b) >> 1) & 0xff0000) | (b << 24);			\
-    *out32++ = uy | vy;							\
-} while (0)
-#endif
-
-  PREFETCH_W(out);
-  /* not scaled, 16bpp - we do 2 pixels at a time */
-  for (i = pixels; i != 0; i -= 2 * UNROLL_TIMES) {
-    UNROLL(UNROLL_TIMES,
-    	a = uiplot_palcache_yuv[*indata++];
-   	b = uiplot_palcache_yuv[*indata++];
-	PACK_PIXELS();
-    ); /* UNROLL */
-   PREFETCH_R(indata + 32);
-  }
-
-#undef PACK_PIXELS
-}
-
-void uiplot_convertdata_yvyu(uint8 *indata, uint16 *out, unsigned int pixels)
-{
-  unsigned int i;
-  uint32 a, b, yu, yv, *out32 = (uint32 *) out;
-
-#ifdef WORDS_BIGENDIAN
-  uint8 u, v;
-
-#define PACK_PIXELS()	do {						\
-    v = ((a & 0xff0000) + (b & 0xff0000)) >> 17;			\
-    *out++ = (a << 8) | v;						\
-    u = ((a & 0xff00) + (b & 0xff00)) >> 9;				\
-    *out++ = (b << 8) | u;						\
-} while (0)
-#else /* !WORDS_BIGENDIAN */
-#define PACK_PIXELS()	do {						 \
-    yu = (((a + b) & 0x1fe0000) << 7) | (a & 0xff) | ((b & 0xff) << 16); \
-    yv = ((((a & 0xff00) + (b & 0xff00)) >> 1) & 0xff00);		 \
-    *out32++ = yv | yu;							 \
-} while (0)
-#endif /* WORDS_BIGENDIAN */
-
-  /* not scaled, 16bpp - we do 2 pixels at a time */
-  PREFETCH_W(out);
-  for (i = pixels; i != 0; i -= 2 * UNROLL_TIMES) {
-    UNROLL(UNROLL_TIMES,
-    	a = uiplot_palcache_yuv[*indata++];
-    	b = uiplot_palcache_yuv[*indata++];
-	PACK_PIXELS();
-    ); /* UNROLL */
-    PREFETCH_R(indata + 32);
-  }
-
-#undef PACK_PIXELS
-}
-
 
 /*** uiplot_convertdata - convert genesis data to 32 bit colour ***/
 
