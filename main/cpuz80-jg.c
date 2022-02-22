@@ -155,10 +155,7 @@ void cpuz80_sync(void)
   if (cpuz80_on && cpuz80_active && !cpuz80_resetting) {
     /* ui_log(LOG_USER, "executing %d z80 clocks @ %X", wanted,
        cpuz80_z80.z80pc); */
-
-    while(achieved < wanted) {
-        achieved += z80_step(&cpuz80_z80);
-    }
+    achieved = z80_step_n(&cpuz80_z80, wanted);
     cpuz80_lastsync = cpuz80_lastsync + achieved * 15 / 7;
   } else {
     cpuz80_lastsync = cpu68k_clocks;
