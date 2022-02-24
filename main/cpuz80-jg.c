@@ -1,9 +1,13 @@
 #include "generator.h"
 
-#include "cpuz80.h"
 #include "cpu68k.h"
 #include "memz80.h"
-#include "z80.h"
+
+#define Z80_READ_BYTE(U, A) memz80_fetchbyte(A)
+#define Z80_WRITE_BYTE(U, A, V) memz80_storebyte(A, V)
+#define Z80_EXPORT static
+#include "cpuz80.h"
+#include "z80.c"
 
 #define BANK_INIT 0
 

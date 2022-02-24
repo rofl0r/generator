@@ -55,10 +55,12 @@ dnl See what version we're compiling
     MY_SUBDIRS="cmz80 $MY_SUBDIRS"
     MY_LIBS="../cmz80/libcmz80.a $MY_LIBS"
     AC_DEFINE(CMZ80, 1, [Define to use the portable C mz80 z80 emulation])
+    Z80_INC=-I../cmz80
   elif test "x$Z80" = "xjgz80" ; then
     MY_SUBDIRS="jgz80 $MY_SUBDIRS"
     MY_LIBS="../jgz80/libjgz80.a $MY_LIBS"
     AC_DEFINE(JGZ80, 1, [Define to use the portable C jollygood z80 emulation])
+    Z80_INC=-I../jgz80
   else
     AC_MSG_ERROR(You must select a z80 emulator: cmz80)
   fi
@@ -316,6 +318,9 @@ dnl Final stuff
   AC_CONFIG_FILES([Makefile cpu68k/Makefile cmz80/Makefile jgz80/Makefile
              ym2612/Makefile main/Makefile sn76496/Makefile glade/Makefile
              gtkopts/Makefile])
+
+AC_SUBST(Z80_INC, $Z80_INC)
+
 AC_OUTPUT
 
 dnl Moooo.
