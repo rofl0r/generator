@@ -10,7 +10,7 @@ AC_CONFIG_SRCDIR([cpu68k/def68k.c])
 
 dnl See what version we're compiling
 
-  MY_DIST_SUBDIRS="cpu68k cmz80 jgz80 ym2612 sn76496 main glade gtkopts"
+  MY_DIST_SUBDIRS="cpu68k jgz80 ym2612 sn76496 main glade gtkopts"
   MY_SUBDIRS="cpu68k ym2612 sn76496 main"
   MY_LIBS=""
   UNDERSCORE=""
@@ -45,24 +45,10 @@ dnl See what version we're compiling
     PROGRAM=$MY_PROG
   fi
 
-  AC_ARG_WITH(jgz80,
-              AS_HELP_STRING(--with-jgz80,Use C jollygood z80 emulation),
-              Z80="jgz80")
-  AC_ARG_WITH(cmz80,
-              AS_HELP_STRING(--with-cmz80,Use C mz80 z80 emulation),
-              Z80="cmz80")
-  if test "x$Z80" = "xcmz80" ; then
-    MY_SUBDIRS="cmz80 $MY_SUBDIRS"
-    MY_LIBS="../cmz80/libcmz80.a $MY_LIBS"
-    AC_DEFINE(CMZ80, 1, [Define to use the portable C mz80 z80 emulation])
-    Z80_INC=-I../cmz80
-  elif test "x$Z80" = "xjgz80" ; then
-    MY_SUBDIRS="jgz80 $MY_SUBDIRS"
-    AC_DEFINE(JGZ80, 1, [Define to use the portable C jollygood z80 emulation])
-    Z80_INC=-I../jgz80
-  else
-    AC_MSG_ERROR(You must select a z80 emulator: cmz80)
-  fi
+  Z80="jgz80"
+  MY_SUBDIRS="jgz80 $MY_SUBDIRS"
+  AC_DEFINE(JGZ80, 1, [Define to use the portable C jollygood z80 emulation])
+  Z80_INC=-I../jgz80
   AC_DEFINE(DIRECTRAM, 1, [Define for direct ram writes (faster)])
   AC_SUBST(PROGRAM)
   AC_SUBST(ASMOUTPUT)
@@ -315,7 +301,7 @@ dnl Makefile substitutions
 
 dnl Final stuff
 
-  AC_CONFIG_FILES([Makefile cpu68k/Makefile cmz80/Makefile jgz80/Makefile
+  AC_CONFIG_FILES([Makefile cpu68k/Makefile jgz80/Makefile
              ym2612/Makefile main/Makefile sn76496/Makefile glade/Makefile
              gtkopts/Makefile])
 

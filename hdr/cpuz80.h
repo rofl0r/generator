@@ -1,12 +1,8 @@
 #ifndef CPUZ80_HEADER_FILE
 #define CPUZ80_HEADER_FILE
 
-#ifdef CMZ80
-#include "cmz80.h"
-#else
 #include "z80.h"
 typedef struct z80 CONTEXTMZ80;
-#endif
 extern CONTEXTMZ80 cpuz80_z80; /* extern'd for save state code */
 
 #define LEN_SRAM 0x2000
