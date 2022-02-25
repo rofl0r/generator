@@ -767,9 +767,7 @@ INLINE signed int op_calc1(UINT32 phase, unsigned int env, signed int pm)
 	return tl_tab[p];
 }
 
-
-
-INLINE unsigned int calc_eg(FM_SLOT *SLOT)
+static INLINE unsigned int calc_eg(FM_SLOT *SLOT)
 {
 	unsigned int out;
 
@@ -836,7 +834,7 @@ INLINE unsigned int calc_eg(FM_SLOT *SLOT)
 
 
 /* ---------- calculate one of channel ---------- */
-INLINE void FM_CALC_CH( FM_CH *CH )
+static INLINE void FM_CALC_CH( FM_CH *CH )
 {
 	unsigned int eg_out1,eg_out2,eg_out3,eg_out4;  /*envelope output*/
 
@@ -921,7 +919,7 @@ void CALC_FCSLOT(FM_SLOT *SLOT , int fc , int kc )
 }
 
 /* ---------- update phase increments counters  ---------- */
-INLINE void OPN_CALC_FCOUNT(FM_CH *CH )
+static INLINE void OPN_CALC_FCOUNT(FM_CH *CH )
 {
 	if( CH->SLOT[SLOT1].Incr==(UINT32)-1){
 		int fc = CH->fc;
@@ -1098,7 +1096,7 @@ static void FMCloseTable( void )
 }
 
 /* OPN/OPM Mode  Register Write */
-INLINE void FMSetMode( FM_ST *ST ,int n,int v )
+static INLINE void FMSetMode( FM_ST *ST ,int n,int v )
 {
 	/* b7 = CSM MODE */
 	/* b6 = 3 slot mode */
