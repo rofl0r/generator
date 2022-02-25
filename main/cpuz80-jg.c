@@ -35,14 +35,14 @@ static void cpuz80_write(void *user, uint16 addr, uint8 data) {
 	memz80_storebyte((uint16)addr, (uint8)data);
 }
 
-static uint8 cpuz80_portread_actual(void* user, uint8 port)
+static uint8 cpuz80_portread_actual(CONTEXTMZ80* user, uint16 port)
 {
   (void) user;
   LOG_VERBOSE(("[Z80] Port read to %X", port));
   return 0;
 }
 
-static void cpuz80_portwrite_actual(void* user, uint8 port, uint8 value)
+static void cpuz80_portwrite_actual(CONTEXTMZ80* user, uint16 port, uint8 value)
 {
   (void) user;
   LOG_VERBOSE(("[Z80] Port write to %X of %X", port, value));
@@ -55,8 +55,8 @@ static void jgz80_init() {
   z80_init(&cpuz80_z80);
   cpuz80_z80.read_byte = cpuz80_read;
   cpuz80_z80.write_byte = cpuz80_write;
-  cpuz80_z80.port_in = cpuz80_portread;
-  cpuz80_z80.port_out = cpuz80_portwrite;
+  cpuz80_z80.port_in = cpuz80_portread_actual;
+  cpuz80_z80.port_out = cpuz80_portwrite_actual;
 }
 
 

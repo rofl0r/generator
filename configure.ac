@@ -58,7 +58,6 @@ dnl See what version we're compiling
     Z80_INC=-I../cmz80
   elif test "x$Z80" = "xjgz80" ; then
     MY_SUBDIRS="jgz80 $MY_SUBDIRS"
-    MY_LIBS="../jgz80/libjgz80.a $MY_LIBS"
     AC_DEFINE(JGZ80, 1, [Define to use the portable C jollygood z80 emulation])
     Z80_INC=-I../jgz80
   else
