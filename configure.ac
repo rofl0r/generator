@@ -263,6 +263,7 @@ dnl Checks for programs.
   AC_ISC_POSIX
   AC_PROG_INSTALL
   AC_TYPE_SIGNAL
+  AC_CHECK_LIBM
 
 dnl Checks for header files.
 
@@ -318,6 +319,7 @@ dnl Final stuff
              ym2612/Makefile main/Makefile sn76496/Makefile glade/Makefile
              gtkopts/Makefile])
 
+AC_SUBST([LIBM])
 AC_SUBST(Z80_INC, $Z80_INC)
 
 AC_OUTPUT

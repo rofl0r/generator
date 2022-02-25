@@ -16,12 +16,12 @@ LDADD = ../cpu68k/lib68k.a ../ym2612/libym2612.a @MY_LIBS@ \
 generator_svgalib_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     logo.c font.c generator.c state.c cpuz80.c vdp.c gensound.c \
     memz80.c ui-console.c uip-svgalib.c uiplot.c gensoundp-unix.c
-generator_svgalib_LDADD = ${LDADD} -lvga
+generator_svgalib_LDADD = ${LDADD} @LIBM@ -lvga
 
 generator_tcltk_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c \
     ui-tcltk.c diss68k.c gensoundp-unix.c
-generator_tcltk_LDADD = ${LDADD} -ltk -ltcl ../cpu68k/tab68k.o
+generator_tcltk_LDADD = ${LDADD} @LIBM@ -ltk -ltcl ../cpu68k/tab68k.o
 
 generator_allegro_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     logo.c font.c generator.c state.c cpuz80.c vdp.c gensound.c \
@@ -32,13 +32,12 @@ generator_gtk_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c \
     ui-gtk.c uiplot.c gensoundp-unix.c initcart.c patch.c \
     dib.c avi.c diss68k.c opengl.c
-generator_gtk_LDADD = ${LDADD} @GTK_LIBS@ @SDL_LIBS@ -lGL -lGLU\
+generator_gtk_LDADD = ${LDADD} @GTK_LIBS@ @LIBM@ @SDL_LIBS@ -lGL -lGLU \
     ../glade/libglade.a ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
 
 generator_sdl_SOURCES = cpu68k.c mem68k.c reg68k.c event.c \
     generator.c state.c cpuz80.c vdp.c gensound.c memz80.c \
     ui-sdl.c uiplot.c gensoundp-unix.c initcart.c patch.c \
     dib.c avi.c diss68k.c opengl.c
-generator_sdl_LDADD = ${LDADD} @SDL_LIBS@ -lGL -lGLU\
+generator_sdl_LDADD = ${LDADD} @LIBM@ @SDL_LIBS@ -lGL -lGLU \
     ../gtkopts/libgtkopts.a ../cpu68k/tab68k.o
-
