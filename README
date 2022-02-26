@@ -4,9 +4,10 @@ this fork is based on generator 0.35+cbiere-r4+latest SVN snapshot,
 and replaces the GTK+1 backend with a GTK+2 one.
 the commit history also features all previously published releases.
 
-only tested configuration is:
+Tested configurations:
 
-./configure --with-gtk --with-cmz80 --with-sdl-audio
+./configure --with-gtk --with-sdl-audio
+./configure --with-sdl --with-sdl-audio
 
 Generator is free software.  See the file COPYING for copying permission.
 Some parts of Generator are distributed under different terms; see the
@@ -17,7 +18,7 @@ the INSTALL file details information on installing the program from source.
 
 This distribution contains:
   cpu68k/                       68000 processor files
-  cmz80/                        C mz80 Z80 files (portable C)
+  jgz80/                        Jolly Good Z80 (Portable C)
   ym2612/                       YM2612 (yamaha FM) files
   sn76496/                      SN76496 (programmable sound generator) files
   hdr/                          header files
