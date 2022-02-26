@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = -I../hdr -I. -I../cpu68k -I../ym2612 @Z80_INC@ \
+AM_CPPFLAGS = -I../hdr -I. -I../cpu68k -I../ym2612 @Z80_INC@ \
            -I../sn76496 -I../gtkopts \
            -DFNAME_TCLSCRIPT=\"${datadir}/generator/gen.tcl\" \
            @GTK_CFLAGS@ @SDL_CFLAGS@
