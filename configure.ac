@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
   GCC_VERSION=no
   AC_MSG_CHECKING([for GCC 2])
-  AC_COMPILE_IFELSE([
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 #if ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 0))
 int main(void) { return 0; }
 #else
@@ -165,10 +165,10 @@ int main(void) { return 0; }
 #endif
 ],
   [AC_MSG_RESULT([yes]); GCC_VERSION=2],
-  [AC_MSG_RESULT([no])])
+  [AC_MSG_RESULT([no])])])
 
   AC_MSG_CHECKING([for GCC 3 or newer])
-  AC_COMPILE_IFELSE([
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 #if ((__GNUC__ >= 3) && (__GNUC_MINOR__ >= 0))
 int main(void) { return 0; }
 #else
@@ -176,7 +176,7 @@ int main(void) { return 0; }
 #endif
 ],
   [AC_MSG_RESULT([yes]); GCC_VERSION=3],
-  [AC_MSG_RESULT([no])])
+  [AC_MSG_RESULT([no])])])
 
   if [[ "x$GCCVER" != "xno" ]]; then
     GCCVER="$GCC_VERSION"
