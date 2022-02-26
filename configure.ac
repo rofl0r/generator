@@ -1,10 +1,10 @@
 dnl Generator configure.in file - process with autoconf
 
-  AC_INIT
-AC_CONFIG_SRCDIR([cpu68k/def68k.c])
+  AC_INIT([generator], [0.35])
+  AC_CONFIG_SRCDIR([cpu68k/def68k.c])
   AC_PREREQ(2.59)
   AC_CANONICAL_TARGET([])
-  AM_INIT_AUTOMAKE(generator, 0.35)
+  AM_INIT_AUTOMAKE
   AC_CONFIG_HEADERS([config.h])
   optimum=yes
 
