@@ -15,6 +15,46 @@
 #undef DEBUG_RAM
 #undef DEBUG_BANK
 
+#ifdef DEBUG_SRAM
+#define SRAM_LOG(x) LOG_VERBOSE(x)
+#else
+#define SRAM_LOG(x) do {} while(0)
+#endif
+
+#ifdef DEBUG_VDP
+#define VDP_LOG(x) LOG_VERBOSE(x)
+#define VDP_LOG_CR(x) LOG_CRITICAL(x)
+#else
+#define VDP_LOG(x) do {} while(0)
+#define VDP_LOG_CR(x) do {} while(0)
+#endif
+
+#ifdef DEBUG_BUS
+#define BUS_CHECK(S) if (addr & 1) { \
+    LOG_CRITICAL(("%08X [" S "] Bus error 0x%X", regs.pc, addr)); \
+    return 0; }
+#else
+#define BUS_CHECK(S) do {} while(0)
+#endif
+
+static inline uint32 read_long(uint8 *mem, unsigned addr) {
+#ifdef ALIGNLONGS
+    return (LOCENDIAN16(*(uint16 *)(mem + addr)) << 16) |
+      LOCENDIAN16(*(uint16 *)(mem + addr + 2));
+#else
+    return LOCENDIAN32(*(uint32 *)(mem + addr));
+#endif
+}
+
+static inline void store_long(uint8 *mem, unsigned addr, uint32 data) {
+#ifdef ALIGNLONGS
+  *(uint16 *)(mem + addr) = LOCENDIAN16((uint16)(data >> 16));
+  *(uint16 *)(mem + addr + 2) = LOCENDIAN16((uint16)(data));
+#else
+  *(uint32 *)(mem + addr) = LOCENDIAN32(data);
+#endif
+}
+
 /*** forward references ***/
 
 uint8 *mem68k_memptr_bad(uint32 addr);
@@ -254,12 +294,7 @@ uint8 mem68k_fetch_rom_byte(uint32 addr)
 
 uint16 mem68k_fetch_rom_word(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [ROM] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
+  BUS_CHECK("ROM");
   if (addr < cpu68k_romlen) {
     return LOCENDIAN16(*(uint16 *)(cpu68k_rom + addr));
   }
@@ -270,19 +305,9 @@ uint16 mem68k_fetch_rom_word(uint32 addr)
 
 uint32 mem68k_fetch_rom_long(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [ROM] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
+  BUS_CHECK("ROM");
   if (addr < cpu68k_romlen) {
-#ifdef ALIGNLONGS
-    return (LOCENDIAN16(*(uint16 *)(cpu68k_rom + addr)) << 16) |
-      LOCENDIAN16(*(uint16 *)(cpu68k_rom + addr + 2));
-#else
-    return LOCENDIAN32(*(uint32 *)(cpu68k_rom + addr));
-#endif
+    return read_long(cpu68k_rom, addr);
   }
   LOG_CRITICAL(("%08X [ROM] Invalid memory fetch (long) 0x%X", regs.pc,
                 addr));
@@ -312,9 +337,7 @@ void mem68k_store_rom_long(uint32 addr, uint32 data)
 
 uint8 mem68k_fetch_sram_byte(uint32 addr)
 {
-#ifdef DEBUG_SRAM
-  LOG_VERBOSE(("%08X [SRAM] Fetch byte from %X", regs.pc, addr));
-#endif
+  SRAM_LOG(("%08X [SRAM] Fetch byte from %X", regs.pc, addr));
   addr &= 0x1fff;
   return (*(uint8 *)(cpuz80_ram + addr));
 }
@@ -322,15 +345,8 @@ uint8 mem68k_fetch_sram_byte(uint32 addr)
 uint16 mem68k_fetch_sram_word(uint32 addr)
 {
   uint8 data;
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [SRAM] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
-#ifdef DEBUG_SRAM
-  LOG_VERBOSE(("%08X [SRAM] Fetch word from %X", regs.pc, addr));
-#endif
+  BUS_CHECK("SRAM");
+  SRAM_LOG(("%08X [SRAM] Fetch word from %X", regs.pc, addr));
   addr &= 0x1fff;
   /* sram word fetches are fetched with duplicated low byte data */
   data = *(uint8 *)(cpuz80_ram + addr);
@@ -339,29 +355,15 @@ uint16 mem68k_fetch_sram_word(uint32 addr)
 
 uint32 mem68k_fetch_sram_long(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [SRAM] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
-#ifdef DEBUG_SRAM
-  LOG_VERBOSE(("%08X [SRAM] Fetch long from %X", regs.pc, addr));
-#endif
+  BUS_CHECK("SRAM");
+  SRAM_LOG(("%08X [SRAM] Fetch long from %X", regs.pc, addr));
   addr &= 0x1fff;
-#ifdef ALIGNLONGS
-  return (LOCENDIAN16(*(uint16 *)(cpuz80_ram + addr)) << 16) |
-    LOCENDIAN16(*(uint16 *)(cpuz80_ram + addr + 2));
-#else
-  return LOCENDIAN32(*(uint32 *)(cpuz80_ram + addr));
-#endif
+  return read_long(cpuz80_ram, addr);
 }
 
 void mem68k_store_sram_byte(uint32 addr, uint8 data)
 {
-#ifdef DEBUG_SRAM
-  LOG_VERBOSE(("%08X [SRAM] Store byte to %X", regs.pc, addr));
-#endif
+  SRAM_LOG(("%08X [SRAM] Store byte to %X", regs.pc, addr));
   addr &= 0x1fff;
   *(uint8 *)(cpuz80_ram + addr) = data;
   return;
@@ -369,15 +371,8 @@ void mem68k_store_sram_byte(uint32 addr, uint8 data)
 
 void mem68k_store_sram_word(uint32 addr, uint16 data)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [SRAM] Bus error 0x%X", regs.pc, addr));
-    return;
-  }
-#endif
-#ifdef DEBUG_SRAM
-  LOG_VERBOSE(("%08X [SRAM] Store word to %X", regs.pc, addr));
-#endif
+  BUS_CHECK("SRAM");
+  SRAM_LOG(("%08X [SRAM] Store word to %X", regs.pc, addr));
   addr &= 0x1fff;
   /* word writes are stored with low byte cleared */
   *(uint8 *)(cpuz80_ram + addr) = data >> 8;
@@ -386,22 +381,10 @@ void mem68k_store_sram_word(uint32 addr, uint16 data)
 
 void mem68k_store_sram_long(uint32 addr, uint32 data)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [SRAM] Bus error 0x%X", regs.pc, addr));
-    return;
-  }
-#endif
-#ifdef DEBUG_SRAM
-  LOG_VERBOSE(("%08X [SRAM] Store byte to %X", regs.pc, addr));
-#endif
+  BUS_CHECK("SRAM");
+  SRAM_LOG(("%08X [SRAM] Store byte to %X", regs.pc, addr));
   addr &= 0x1fff;
-#ifdef ALIGNLONGS
-  *(uint16 *)(cpuz80_ram + addr) = LOCENDIAN16((uint16)(data >> 16));
-  *(uint16 *)(cpuz80_ram + addr + 2) = LOCENDIAN16((uint16)(data));
-#else
-  *(uint32 *)(cpuz80_ram + addr) = LOCENDIAN32(data);
-#endif
+  store_long(cpuz80_ram, addr, data);
   return;
 }
 
@@ -422,12 +405,7 @@ uint8 mem68k_fetch_yam_byte(uint32 addr)
 
 uint16 mem68k_fetch_yam_word(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [YAM] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
+  BUS_CHECK("YAM");
   addr -= 0xA04000;
   LOG_CRITICAL(("%08X [YAM] Invalid memory fetch (word) 0x%X", regs.pc,
                 addr));
@@ -436,12 +414,7 @@ uint16 mem68k_fetch_yam_word(uint32 addr)
 
 uint32 mem68k_fetch_yam_long(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [YAM] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
+  BUS_CHECK("YAM");
   addr -= 0xA04000;
   /* no longs please */
   LOG_CRITICAL(("%08X [YAM] Invalid memory fetch (long) 0x%X", regs.pc,
@@ -462,12 +435,7 @@ void mem68k_store_yam_byte(uint32 addr, uint8 data)
 
 void mem68k_store_yam_word(uint32 addr, uint16 data)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [YAM] Bus error 0x%X", regs.pc, addr));
-    return;
-  }
-#endif
+  BUS_CHECK("YAM");
   addr -= 0xA04000;
   LOG_CRITICAL(("%08X [YAM] Invalid memory store (word) 0x%X = %X", regs.pc,
                 addr, data));
@@ -475,12 +443,7 @@ void mem68k_store_yam_word(uint32 addr, uint16 data)
 
 void mem68k_store_yam_long(uint32 addr, uint32 data)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [YAM] Bus error 0x%X", regs.pc, addr));
-    return;
-  }
-#endif
+  BUS_CHECK("YAM");
   addr -= 0xA04000;
   /* no longs please */
   LOG_CRITICAL(("%08X [YAM] Invalid memory store (long) 0x%X = %X", regs.pc,
@@ -518,9 +481,7 @@ void mem68k_store_bank_byte(uint32 addr, uint8 data)
 {
   addr -= 0xA06000;
   if (addr == 0x000) {
-#ifdef DEBUG_SRAM
-    LOG_VERBOSE(("%08X [BANK] Store byte to %X", regs.pc, addr));
-#endif
+    SRAM_LOG(("%08X [BANK] Store byte to %X", regs.pc, addr));
     cpuz80_bankwrite(data);
   } else {
     LOG_CRITICAL(("%08X [BANK] Invalid memory store (byte) 0x%X", regs.pc,
@@ -532,9 +493,7 @@ void mem68k_store_bank_word(uint32 addr, uint16 data)
 {
   addr -= 0xA06000;
   if (addr == 0x000) {
-#ifdef DEBUG_SRAM
-    LOG_VERBOSE(("%08X [BANK] Store word to %X", regs.pc, addr));
-#endif
+    SRAM_LOG(("%08X [BANK] Store word to %X", regs.pc, addr));
     cpuz80_bankwrite(data >> 8);
   } else {
     LOG_CRITICAL(("%08X [BANK] Invalid memory store (word) 0x%X", regs.pc,
@@ -800,28 +759,19 @@ uint8 mem68k_fetch_vdp_byte(uint32 addr)
 
 uint16 mem68k_fetch_vdp_word(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [VDP] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
+  BUS_CHECK("VDP");
   addr -= 0xC00000;
   switch (addr >> 1) {
   case 0:
   case 1:
     /* data port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Word fetch from data port 0x%X", regs.pc, addr));
-#endif
+    VDP_LOG(("%08X [VDP] Word fetch from data port 0x%X", regs.pc, addr));
     return vdp_fetchdata();
   case 2:
   case 3:
     /* control port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Word fetch from control port "
+    VDP_LOG(("%08X [VDP] Word fetch from control port "
                  "(status) 0x%X", regs.pc, addr));
-#endif
     return vdp_status();
   case 4:
     /* hv counter */
@@ -832,10 +782,8 @@ uint16 mem68k_fetch_vdp_word(uint32 addr)
       /* line counter advances at H-int */
       line8 = (vdp_line - vdp_visstartline + (vdp_event > 2 ? 1 : 0)) & 0xff;
 
-#ifdef DEBUG_VDP
-      LOG_VERBOSE(("%08X [VDP] Word fetch from hv counter 0x%X",
+      VDP_LOG(("%08X [VDP] Word fetch from hv counter 0x%X",
                    regs.pc, addr));
-#endif
       if ((vdp_reg[12] >> 1) & 3) {
         /* interlace mode - replace lowest bit with highest bit */
         hvcount = ((line8 & ~1) << 8) | (line8 & 0x100) | vdp_gethpos();
@@ -860,28 +808,17 @@ uint16 mem68k_fetch_vdp_word(uint32 addr)
 
 uint32 mem68k_fetch_vdp_long(uint32 addr)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [VDP] Bus error 0x%X", regs.pc, addr));
-    return 0;
-  }
-#endif
+  BUS_CHECK("VDP");
   addr -= 0xC00000;
   switch (addr >> 1) {
   case 0:
     /* data port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Long fetch from data port 0x%X", regs.pc, addr));
-#endif
+    VDP_LOG(("%08X [VDP] Long fetch from data port 0x%X", regs.pc, addr));
     return (vdp_fetchdata() << 16) | vdp_fetchdata();
   case 2:
     /* control port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Long fetch from control port 0x%X",
+    VDP_LOG_CR(("%08X [VDP] Long fetch from control port 0x%X",
                  regs.pc, addr));
-    LOG_CRITICAL(("%08X [VDP] Long fetch from control port 0x%X",
-                  regs.pc, addr));
-#endif
     return 0;
   case 4:
     /* hv counter ish */
@@ -904,10 +841,8 @@ void mem68k_store_vdp_byte(uint32 addr, uint8 data)
   case 2:
   case 3:
     /* data port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Byte store to DATA of %X [%d][%X]", regs.pc,
+    VDP_LOG(("%08X [VDP] Byte store to DATA of %X [%d][%X]", regs.pc,
                  data, vdp_reg[23] >> 6, vdp_reg[1]));
-#endif
     vdp_storedata(data | (data << 8));
     return;
   case 4:
@@ -915,10 +850,8 @@ void mem68k_store_vdp_byte(uint32 addr, uint8 data)
   case 6:
   case 7:
 
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Byte store to CONTROL of %X [%d][%X]",
+    VDP_LOG(("%08X [VDP] Byte store to CONTROL of %X [%d][%X]",
                  regs.pc, data, vdp_reg[23] >> 6, vdp_reg[1]));
-#endif
     /* control port */
     vdp_storectrl(data | (data << 8));
     return;
@@ -939,29 +872,20 @@ void mem68k_store_vdp_byte(uint32 addr, uint8 data)
 
 void mem68k_store_vdp_word(uint32 addr, uint16 data)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [VDP] Bus error 0x%X", regs.pc, addr));
-    return;
-  }
-#endif
+  BUS_CHECK("VDP");
   addr -= 0xC00000;
   switch (addr >> 1) {
   case 0:
   case 1:
     /* data port */
-#ifdef DEBUG_VDP
-    LOG_CRITICAL(("%08X [VDP] Word store to DATA of %X [%d][%X]", regs.pc,
+    VDP_LOG_CR(("%08X [VDP] Word store to DATA of %X [%d][%X]", regs.pc,
                   data, vdp_reg[23] >> 6, vdp_reg[1]));
-#endif
     vdp_storedata(data);
     return;
   case 2:
   case 3:
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Word store to CONTROL of %X [%d][%X]",
+    VDP_LOG(("%08X [VDP] Word store to CONTROL of %X [%d][%X]",
                  regs.pc, data, vdp_reg[23] >> 6, vdp_reg[1]));
-#endif
     /* control port */
     vdp_storectrl(data);
     return;
@@ -981,29 +905,20 @@ void mem68k_store_vdp_word(uint32 addr, uint16 data)
 
 void mem68k_store_vdp_long(uint32 addr, uint32 data)
 {
-#ifdef DEBUG_BUS
-  if (addr & 1) {
-    LOG_CRITICAL(("%08X [VDP] Bus error 0x%X", regs.pc, addr));
-    return;
-  }
-#endif
+  BUS_CHECK("VDP");
   addr -= 0xC00000;
   switch (addr >> 1) {
   case 0:
     /* data port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Long store to DATA of %X [%d][%X]", regs.pc,
+    VDP_LOG(("%08X [VDP] Long store to DATA of %X [%d][%X]", regs.pc,
                  data, vdp_reg[23] >> 6, vdp_reg[1]));
-#endif
     vdp_storedata((uint16)(data >> 16));
     vdp_storedata((uint16)(data));
     return;
   case 2:
     /* control port */
-#ifdef DEBUG_VDP
-    LOG_VERBOSE(("%08X [VDP] Long store to CONTROL of %X [%d][%X]",
+    VDP_LOG(("%08X [VDP] Long store to CONTROL of %X [%d][%X]",
                  regs.pc, data, vdp_reg[23] >> 6, vdp_reg[1]));
-#endif
     vdp_storectrl((uint16)(data >> 16));
     vdp_storectrl((uint16)(data));
     return;
@@ -1036,12 +951,7 @@ uint16 mem68k_fetch_ram_word(uint32 addr)
 uint32 mem68k_fetch_ram_long(uint32 addr)
 {
   addr &= 0xffff;
-#ifdef ALIGNLONGS
-  return (LOCENDIAN16(*(uint16 *)(cpu68k_ram + addr)) << 16) |
-    LOCENDIAN16(*(uint16 *)(cpu68k_ram + addr + 2));
-#else
-  return LOCENDIAN32(*(uint32 *)(cpu68k_ram + addr));
-#endif
+  return read_long(cpu68k_ram, addr);
 }
 
 void mem68k_store_ram_byte(uint32 addr, uint8 data)
@@ -1061,11 +971,6 @@ void mem68k_store_ram_word(uint32 addr, uint16 data)
 void mem68k_store_ram_long(uint32 addr, uint32 data)
 {
   addr &= 0xffff;
-#ifdef ALIGNLONGS
-  *(uint16 *)(cpu68k_ram + addr) = LOCENDIAN16((uint16)(data >> 16));
-  *(uint16 *)(cpu68k_ram + addr + 2) = LOCENDIAN16((uint16)(data));
-#else
-  *(uint32 *)(cpu68k_ram + addr) = LOCENDIAN32(data);
-#endif
+  store_long(cpu68k_ram, addr, data);
   return;
 }
