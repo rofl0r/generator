@@ -61,62 +61,6 @@ uint8 *mem68k_memptr_bad(uint32 addr);
 uint8 *mem68k_memptr_rom(uint32 addr);
 uint8 *mem68k_memptr_ram(uint32 addr);
 
-uint8 mem68k_fetch_bad_byte(uint32 addr);
-uint16 mem68k_fetch_bad_word(uint32 addr);
-uint32 mem68k_fetch_bad_long(uint32 addr);
-uint8 mem68k_fetch_rom_byte(uint32 addr);
-uint16 mem68k_fetch_rom_word(uint32 addr);
-uint32 mem68k_fetch_rom_long(uint32 addr);
-uint8 mem68k_fetch_sram_byte(uint32 addr);
-uint16 mem68k_fetch_sram_word(uint32 addr);
-uint32 mem68k_fetch_sram_long(uint32 addr);
-uint8 mem68k_fetch_yam_byte(uint32 addr);
-uint16 mem68k_fetch_yam_word(uint32 addr);
-uint32 mem68k_fetch_yam_long(uint32 addr);
-uint8 mem68k_fetch_bank_byte(uint32 addr);
-uint16 mem68k_fetch_bank_word(uint32 addr);
-uint32 mem68k_fetch_bank_long(uint32 addr);
-uint8 mem68k_fetch_io_byte(uint32 addr);
-uint16 mem68k_fetch_io_word(uint32 addr);
-uint32 mem68k_fetch_io_long(uint32 addr);
-uint8 mem68k_fetch_ctrl_byte(uint32 addr);
-uint16 mem68k_fetch_ctrl_word(uint32 addr);
-uint32 mem68k_fetch_ctrl_long(uint32 addr);
-uint8 mem68k_fetch_vdp_byte(uint32 addr);
-uint16 mem68k_fetch_vdp_word(uint32 addr);
-uint32 mem68k_fetch_vdp_long(uint32 addr);
-uint8 mem68k_fetch_ram_byte(uint32 addr);
-uint16 mem68k_fetch_ram_word(uint32 addr);
-uint32 mem68k_fetch_ram_long(uint32 addr);
-
-void mem68k_store_bad_byte(uint32 addr, uint8 data);
-void mem68k_store_bad_word(uint32 addr, uint16 data);
-void mem68k_store_bad_long(uint32 addr, uint32 data);
-void mem68k_store_rom_byte(uint32 addr, uint8 data);
-void mem68k_store_rom_word(uint32 addr, uint16 data);
-void mem68k_store_rom_long(uint32 addr, uint32 data);
-void mem68k_store_sram_byte(uint32 addr, uint8 data);
-void mem68k_store_sram_word(uint32 addr, uint16 data);
-void mem68k_store_sram_long(uint32 addr, uint32 data);
-void mem68k_store_yam_byte(uint32 addr, uint8 data);
-void mem68k_store_yam_word(uint32 addr, uint16 data);
-void mem68k_store_yam_long(uint32 addr, uint32 data);
-void mem68k_store_bank_byte(uint32 addr, uint8 data);
-void mem68k_store_bank_word(uint32 addr, uint16 data);
-void mem68k_store_bank_long(uint32 addr, uint32 data);
-void mem68k_store_io_byte(uint32 addr, uint8 data);
-void mem68k_store_io_word(uint32 addr, uint16 data);
-void mem68k_store_io_long(uint32 addr, uint32 data);
-void mem68k_store_ctrl_byte(uint32 addr, uint8 data);
-void mem68k_store_ctrl_word(uint32 addr, uint16 data);
-void mem68k_store_ctrl_long(uint32 addr, uint32 data);
-void mem68k_store_vdp_byte(uint32 addr, uint8 data);
-void mem68k_store_vdp_word(uint32 addr, uint16 data);
-void mem68k_store_vdp_long(uint32 addr, uint32 data);
-void mem68k_store_ram_byte(uint32 addr, uint8 data);
-void mem68k_store_ram_word(uint32 addr, uint16 data);
-void mem68k_store_ram_long(uint32 addr, uint32 data);
-
 t_keys mem68k_cont[2];
 
 static uint8 mem68k_cont1ctrl;
@@ -130,57 +74,31 @@ static uint8 mem68k_contEoutput;
 
 t_mem68k_def mem68k_def[] = {
 
-  {0x000, 0x400, mem68k_memptr_rom,
-   mem68k_fetch_rom_byte, mem68k_fetch_rom_word, mem68k_fetch_rom_long,
-   mem68k_store_rom_byte, mem68k_store_rom_word, mem68k_store_rom_long},
+  {0x000, 0x400, mem68k_memptr_rom},
 
-  {0x400, 0x1000, mem68k_memptr_bad,
-   mem68k_fetch_bad_byte, mem68k_fetch_bad_word, mem68k_fetch_bad_long,
-   mem68k_store_bad_byte, mem68k_store_bad_word, mem68k_store_bad_long},
+  {0x400, 0x1000, mem68k_memptr_bad},
 
-  {0xA00, 0xA10, mem68k_memptr_bad,     /* note overlaps blocks below */
-   mem68k_fetch_sram_byte, mem68k_fetch_sram_word, mem68k_fetch_sram_long,
-   mem68k_store_sram_byte, mem68k_store_sram_word, mem68k_store_sram_long},
+  {0xA00, 0xA10, mem68k_memptr_bad},     /* note overlaps blocks below */
 
-  {0xA04, 0xA05, mem68k_memptr_bad,
-   mem68k_fetch_yam_byte, mem68k_fetch_yam_word, mem68k_fetch_yam_long,
-   mem68k_store_yam_byte, mem68k_store_yam_word, mem68k_store_yam_long},
+  {0xA04, 0xA05, mem68k_memptr_bad},
 
-  {0xA06, 0xA07, mem68k_memptr_bad,
-   mem68k_fetch_bank_byte, mem68k_fetch_bank_word, mem68k_fetch_bank_long,
-   mem68k_store_bank_byte, mem68k_store_bank_word, mem68k_store_bank_long},
+  {0xA06, 0xA07, mem68k_memptr_bad},
 
-  {0xA0C, 0xA10, mem68k_memptr_bad,     /* this is probably more yam/bank stuff */
-   mem68k_fetch_bad_byte, mem68k_fetch_bad_word, mem68k_fetch_bad_long,
-   mem68k_store_bad_byte, mem68k_store_bad_word, mem68k_store_bad_long},
+  {0xA0C, 0xA10, mem68k_memptr_bad},     /* this is probably more yam/bank stuff */
 
-  {0xA10, 0xA11, mem68k_memptr_bad,
-   mem68k_fetch_io_byte, mem68k_fetch_io_word, mem68k_fetch_io_long,
-   mem68k_store_io_byte, mem68k_store_io_word, mem68k_store_io_long},
+  {0xA10, 0xA11, mem68k_memptr_bad},
 
-  {0xA11, 0xA12, mem68k_memptr_bad,
-   mem68k_fetch_ctrl_byte, mem68k_fetch_ctrl_word, mem68k_fetch_ctrl_long,
-   mem68k_store_ctrl_byte, mem68k_store_ctrl_word, mem68k_store_ctrl_long},
+  {0xA11, 0xA12, mem68k_memptr_bad},
 
-  {0xC00, 0xC01, mem68k_memptr_bad,
-   mem68k_fetch_vdp_byte, mem68k_fetch_vdp_word, mem68k_fetch_vdp_long,
-   mem68k_store_vdp_byte, mem68k_store_vdp_word, mem68k_store_vdp_long},
+  {0xC00, 0xC01, mem68k_memptr_bad},
 
-  {0xE00, 0x1000, mem68k_memptr_ram,
-   mem68k_fetch_ram_byte, mem68k_fetch_ram_word, mem68k_fetch_ram_long,
-   mem68k_store_ram_byte, mem68k_store_ram_word, mem68k_store_ram_long},
+  {0xE00, 0x1000, mem68k_memptr_ram},
 
-  {0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
+  {0, 0, NULL}
 
 };
 
 uint8 *(*mem68k_memptr[0x1000]) (uint32 addr);
-uint8 (*mem68k_fetch_byte[0x1000]) (uint32 addr);
-uint16 (*mem68k_fetch_word[0x1000]) (uint32 addr);
-uint32 (*mem68k_fetch_long[0x1000]) (uint32 addr);
-void (*mem68k_store_byte[0x1000]) (uint32 addr, uint8 data);
-void (*mem68k_store_word[0x1000]) (uint32 addr, uint16 data);
-void (*mem68k_store_long[0x1000]) (uint32 addr, uint32 data);
 
 /*** initialise memory tables ***/
 
@@ -192,12 +110,6 @@ int mem68k_init(void)
   do {
     for (j = mem68k_def[i].start; j < mem68k_def[i].end; j++) {
       mem68k_memptr[j] = mem68k_def[i].memptr;
-      mem68k_fetch_byte[j] = mem68k_def[i].fetch_byte;
-      mem68k_fetch_word[j] = mem68k_def[i].fetch_word;
-      mem68k_fetch_long[j] = mem68k_def[i].fetch_long;
-      mem68k_store_byte[j] = mem68k_def[i].store_byte;
-      mem68k_store_word[j] = mem68k_def[i].store_word;
-      mem68k_store_long[j] = mem68k_def[i].store_long;
     }
     i++;
   }

@@ -9,12 +9,6 @@ typedef struct {
   uint16 start;
   uint16 end;
   uint8 *(*memptr)(uint32 addr);
-  uint8 (*fetch_byte)(uint32 addr);
-  uint16 (*fetch_word)(uint32 addr);
-  uint32 (*fetch_long)(uint32 addr);
-  void (*store_byte)(uint32 addr, uint8 data);
-  void (*store_word)(uint32 addr, uint16 data);
-  void (*store_long)(uint32 addr, uint32 data);
 } t_mem68k_def;
 
 typedef struct {
@@ -28,12 +22,9 @@ typedef struct {
   unsigned int start;
 } t_keys;
 
-extern t_mem68k_def mem68k_def[];
 extern t_keys mem68k_cont[2];
 
 int mem68k_init(void);
-
-#ifdef MEM68K_IMPL
 
 extern uint8 mem68k_fetch_bad_byte(uint32 addr);
 extern uint16 mem68k_fetch_bad_word(uint32 addr);
@@ -91,6 +82,7 @@ extern void mem68k_store_ram_byte(uint32 addr, uint8 data);
 extern void mem68k_store_ram_word(uint32 addr, uint16 data);
 extern void mem68k_store_ram_long(uint32 addr, uint32 data);
 
+#ifdef MEM68K_IMPL
 
 #ifndef UNLIKELY
 #ifdef __GNUC__
@@ -197,18 +189,7 @@ static inline void storelong(uint32 addr, uint32 data) {
 	MEM68K_STORE_SWITCH(store, long)
 }
 
-
 extern uint8 *(*mem68k_memptr[0x1000])(uint32 addr);
-extern uint8 (*mem68k_fetch_byte[0x1000])(uint32 addr);
-extern uint16 (*mem68k_fetch_word[0x1000])(uint32 addr);
-extern uint32 (*mem68k_fetch_long[0x1000])(uint32 addr);
-extern void (*mem68k_store_byte[0x1000])(uint32 addr, uint8 data);
-extern void (*mem68k_store_word[0x1000])(uint32 addr, uint16 data);
-extern void (*mem68k_store_long[0x1000])(uint32 addr, uint32 data);
-
-/* XXX BUG: these direct routines do not check for over-run of the 64k
-   cpu68k_ram block - so writing a long at $FFFF corrupts 3 bytes of data -
-   this is compensated for in the malloc() but is bad nonetheless. */
 
 #endif /* MEM68K_IMPL */
 
