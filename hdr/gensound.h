@@ -2,8 +2,8 @@
 #define GENSOUND_HEADER_FILE
 
 #ifndef JFM
-#  include "support.h"
-#  include "fm.h"
+#  include "ym2612/support.h"
+#  include "ym2612/fm.h"
 #endif
 
 #define SOUND_MAXRATE 48000

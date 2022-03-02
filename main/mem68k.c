@@ -3,23 +3,19 @@
 #include "generator.h"
 
 #include "cpu68k.h"
-#include "mem68k.h"
 #include "vdp.h"
 #include "cpuz80.h"
 #include "gensound.h"
 #include "ui.h"
+
+#define MEM68K_IMPL
+#include "mem68k.h"
 
 #undef DEBUG_VDP
 #undef DEBUG_BUS
 #undef DEBUG_SRAM
 #undef DEBUG_RAM
 #undef DEBUG_BANK
-
-#ifdef DEBUG_SRAM
-#define SRAM_LOG(x) LOG_VERBOSE(x)
-#else
-#define SRAM_LOG(x) do {} while(0)
-#endif
 
 #ifdef DEBUG_VDP
 #define VDP_LOG(x) LOG_VERBOSE(x)
@@ -29,31 +25,6 @@
 #define VDP_LOG_CR(x) do {} while(0)
 #endif
 
-#ifdef DEBUG_BUS
-#define BUS_CHECK(S) if (addr & 1) { \
-    LOG_CRITICAL(("%08X [" S "] Bus error 0x%X", regs.pc, addr)); \
-    return 0; }
-#else
-#define BUS_CHECK(S) do {} while(0)
-#endif
-
-static inline uint32 read_long(uint8 *mem, unsigned addr) {
-#ifdef ALIGNLONGS
-    return (LOCENDIAN16(*(uint16 *)(mem + addr)) << 16) |
-      LOCENDIAN16(*(uint16 *)(mem + addr + 2));
-#else
-    return LOCENDIAN32(*(uint32 *)(mem + addr));
-#endif
-}
-
-static inline void store_long(uint8 *mem, unsigned addr, uint32 data) {
-#ifdef ALIGNLONGS
-  *(uint16 *)(mem + addr) = LOCENDIAN16((uint16)(data >> 16));
-  *(uint16 *)(mem + addr + 2) = LOCENDIAN16((uint16)(data));
-#else
-  *(uint32 *)(mem + addr) = LOCENDIAN32(data);
-#endif
-}
 
 /*** forward references ***/
 
@@ -192,39 +163,7 @@ void mem68k_store_bad_long(uint32 addr, uint32 data)
 }
 
 
-/*** ROM fetch/store ***/
-
-uint8 mem68k_fetch_rom_byte(uint32 addr)
-{
-  if (addr < cpu68k_romlen) {
-    return (*(uint8 *)(cpu68k_rom + addr));
-  }
-  LOG_CRITICAL(("%08X [ROM] Invalid memory fetch (byte) 0x%X", regs.pc,
-                addr));
-  return 0;
-}
-
-uint16 mem68k_fetch_rom_word(uint32 addr)
-{
-  BUS_CHECK("ROM");
-  if (addr < cpu68k_romlen) {
-    return LOCENDIAN16(*(uint16 *)(cpu68k_rom + addr));
-  }
-  LOG_CRITICAL(("%08X [ROM] Invalid memory fetch (word) 0x%X", regs.pc,
-                addr));
-  return 0;
-}
-
-uint32 mem68k_fetch_rom_long(uint32 addr)
-{
-  BUS_CHECK("ROM");
-  if (addr < cpu68k_romlen) {
-    return read_long(cpu68k_rom, addr);
-  }
-  LOG_CRITICAL(("%08X [ROM] Invalid memory fetch (long) 0x%X", regs.pc,
-                addr));
-  return 0;
-}
+/*** ROM store ***/
 
 void mem68k_store_rom_byte(uint32 addr, uint8 data)
 {
@@ -244,76 +183,7 @@ void mem68k_store_rom_long(uint32 addr, uint32 data)
                 addr, data));
 }
 
-
-/*** SRAM fetch/store ***/
-
-uint8 mem68k_fetch_sram_byte(uint32 addr)
-{
-  SRAM_LOG(("%08X [SRAM] Fetch byte from %X", regs.pc, addr));
-  addr &= 0x1fff;
-  return (*(uint8 *)(cpuz80_ram + addr));
-}
-
-uint16 mem68k_fetch_sram_word(uint32 addr)
-{
-  uint8 data;
-  BUS_CHECK("SRAM");
-  SRAM_LOG(("%08X [SRAM] Fetch word from %X", regs.pc, addr));
-  addr &= 0x1fff;
-  /* sram word fetches are fetched with duplicated low byte data */
-  data = *(uint8 *)(cpuz80_ram + addr);
-  return data | (data << 8);
-}
-
-uint32 mem68k_fetch_sram_long(uint32 addr)
-{
-  BUS_CHECK("SRAM");
-  SRAM_LOG(("%08X [SRAM] Fetch long from %X", regs.pc, addr));
-  addr &= 0x1fff;
-  return read_long(cpuz80_ram, addr);
-}
-
-void mem68k_store_sram_byte(uint32 addr, uint8 data)
-{
-  SRAM_LOG(("%08X [SRAM] Store byte to %X", regs.pc, addr));
-  addr &= 0x1fff;
-  *(uint8 *)(cpuz80_ram + addr) = data;
-  return;
-}
-
-void mem68k_store_sram_word(uint32 addr, uint16 data)
-{
-  BUS_CHECK("SRAM");
-  SRAM_LOG(("%08X [SRAM] Store word to %X", regs.pc, addr));
-  addr &= 0x1fff;
-  /* word writes are stored with low byte cleared */
-  *(uint8 *)(cpuz80_ram + addr) = data >> 8;
-  return;
-}
-
-void mem68k_store_sram_long(uint32 addr, uint32 data)
-{
-  BUS_CHECK("SRAM");
-  SRAM_LOG(("%08X [SRAM] Store byte to %X", regs.pc, addr));
-  addr &= 0x1fff;
-  store_long(cpuz80_ram, addr, data);
-  return;
-}
-
-
-/*** YAM fetch/store ***/
-
-uint8 mem68k_fetch_yam_byte(uint32 addr)
-{
-  addr -= 0xA04000;
-  /* LOG_USER(("%08X [YAM] fetch (byte) 0x%X", regs.pc, addr)); */
-  if (addr < 4) {
-    return sound_ym2612fetch(addr);
-  } else {
-    LOG_CRITICAL(("%08X [YAM] Invalid YAM fetch (byte) 0x%X", regs.pc, addr));
-    return 0;
-  }
-}
+/*** YAM invalid fetch/store ***/
 
 uint16 mem68k_fetch_yam_word(uint32 addr)
 {
@@ -334,17 +204,6 @@ uint32 mem68k_fetch_yam_long(uint32 addr)
   return 0;
 }
 
-void mem68k_store_yam_byte(uint32 addr, uint8 data)
-{
-  addr -= 0xA04000;
-  /* LOG_USER(("%08X [YAM] (68k) store (byte) 0x%X (%d)", regs.pc, addr,
-     data)); */
-  if (addr < 4)
-    sound_ym2612store(addr, data);
-  else
-    LOG_CRITICAL(("%08X [YAM] Invalid YAM store (byte) 0x%X", regs.pc, addr));
-}
-
 void mem68k_store_yam_word(uint32 addr, uint16 data)
 {
   BUS_CHECK("YAM");
@@ -363,7 +222,7 @@ void mem68k_store_yam_long(uint32 addr, uint32 data)
 }
 
 
-/*** BANK fetch/store ***/
+/*** BANK fetch / invalid store ***/
 
 uint8 mem68k_fetch_bank_byte(uint32 addr)
 {
@@ -389,29 +248,6 @@ uint32 mem68k_fetch_bank_long(uint32 addr)
   return 0;
 }
 
-void mem68k_store_bank_byte(uint32 addr, uint8 data)
-{
-  addr -= 0xA06000;
-  if (addr == 0x000) {
-    SRAM_LOG(("%08X [BANK] Store byte to %X", regs.pc, addr));
-    cpuz80_bankwrite(data);
-  } else {
-    LOG_CRITICAL(("%08X [BANK] Invalid memory store (byte) 0x%X", regs.pc,
-                  addr));
-  }
-}
-
-void mem68k_store_bank_word(uint32 addr, uint16 data)
-{
-  addr -= 0xA06000;
-  if (addr == 0x000) {
-    SRAM_LOG(("%08X [BANK] Store word to %X", regs.pc, addr));
-    cpuz80_bankwrite(data >> 8);
-  } else {
-    LOG_CRITICAL(("%08X [BANK] Invalid memory store (word) 0x%X", regs.pc,
-                  addr));
-  }
-}
 
 void mem68k_store_bank_long(uint32 addr, uint32 data)
 {
@@ -549,31 +385,7 @@ void mem68k_store_io_long(uint32 addr, uint32 data)
 }
 
 
-/*** CTRL fetch/store ***/
-
-uint8 mem68k_fetch_ctrl_byte(uint32 addr)
-{
-  addr -= 0xA11000;
-  /* 0x000 mode (write only), 0x100 z80 busreq, 0x200 z80 reset (write only) */
-  if (addr == 0x100) {
-    return cpuz80_active ? 1 : 0;
-  }
-  LOG_CRITICAL(("%08X [CTRL] Invalid memory fetch (byte) 0x%X",
-                regs.pc, addr));
-  return 0;
-}
-
-uint16 mem68k_fetch_ctrl_word(uint32 addr)
-{
-  addr -= 0xA11000;
-  /* 0x000 mode (write only), 0x100 z80 busreq, 0x200 z80 reset (write only) */
-  if (addr == 0x100) {
-    return cpuz80_active ? 0x100 : 0;
-  }
-  LOG_CRITICAL(("%08X [CTRL] Invalid memory fetch (word) 0x%X",
-                regs.pc, addr));
-  return 0;
-}
+/*** CTRL store/invalid fetch ***/
 
 uint32 mem68k_fetch_ctrl_long(uint32 addr)
 {
@@ -662,12 +474,6 @@ void mem68k_store_ctrl_long(uint32 addr, uint32 data)
 
 
 /*** VDP fetch/store ***/
-
-uint8 mem68k_fetch_vdp_byte(uint32 addr)
-{
-  uint16 data = mem68k_fetch_vdp_word(addr & ~1);
-  return ((addr & 1) ? (data & 0xff) : ((data >> 8) & 0xff));
-}
 
 uint16 mem68k_fetch_vdp_word(uint32 addr)
 {
@@ -846,43 +652,3 @@ void mem68k_store_vdp_long(uint32 addr, uint32 data)
   }
 }
 
-/*** RAM fetch/store ***/
-
-uint8 mem68k_fetch_ram_byte(uint32 addr)
-{
-  addr &= 0xffff;
-  return (*(uint8 *)(cpu68k_ram + addr));
-}
-
-uint16 mem68k_fetch_ram_word(uint32 addr)
-{
-  addr &= 0xffff;
-  return LOCENDIAN16(*(uint16 *)(cpu68k_ram + addr));
-}
-
-uint32 mem68k_fetch_ram_long(uint32 addr)
-{
-  addr &= 0xffff;
-  return read_long(cpu68k_ram, addr);
-}
-
-void mem68k_store_ram_byte(uint32 addr, uint8 data)
-{
-  addr &= 0xffff;
-  *(uint8 *)(cpu68k_ram + addr) = data;
-  return;
-}
-
-void mem68k_store_ram_word(uint32 addr, uint16 data)
-{
-  addr &= 0xffff;
-  *(uint16 *)(cpu68k_ram + addr) = LOCENDIAN16(data);
-  return;
-}
-
-void mem68k_store_ram_long(uint32 addr, uint32 data)
-{
-  addr &= 0xffff;
-  store_long(cpu68k_ram, addr, data);
-  return;
-}

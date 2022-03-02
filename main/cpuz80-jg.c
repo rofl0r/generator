@@ -7,6 +7,7 @@
 #define Z80_READ_BYTE(U, A) memz80_fetchbyte(A)
 #define Z80_WRITE_BYTE(U, A, V) memz80_storebyte(A, V)
 #define Z80_EXPORT static
+#include "cpuz80-jg.h"
 #include "cpuz80.h"
 #include "z80.c"
 
