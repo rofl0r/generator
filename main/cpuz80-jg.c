@@ -1,6 +1,7 @@
 #include "generator.h"
 
 #include "cpu68k.h"
+#define MEMZ80_IMPL
 #include "memz80.h"
 
 #define Z80_READ_BYTE(U, A) memz80_fetchbyte(A)

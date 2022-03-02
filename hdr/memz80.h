@@ -9,6 +9,8 @@
 
 extern int memz80_init(void);
 
+#ifdef MEMZ80_IMPL
+
 static uint8 memz80_invalid_read(uint16 addr, const char *reason) {
 	LOG_CRITICAL(("[Z80] invalid %s fetch (byte) 0x%X", reason, addr));
 	return 0;
@@ -104,4 +106,5 @@ static inline void memz80_storebyte(uint16 addr, uint8 data) {
 	}
 }
 
+#endif /* MEMZ80_IMPL */
 #endif /* MEMZ80_HEADER_FILE */
