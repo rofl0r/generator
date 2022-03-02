@@ -4,12 +4,13 @@
 #include "ui.h"
 #include "cpuz80.h"
 #include "cpu68k.h"
-#include "mem68k.h"
 #include "gensound.h"
 
 extern int memz80_init(void);
 
 #ifdef MEMZ80_IMPL
+#define MEM68K_IMPL
+#include "mem68k.h"
 
 static uint8 memz80_invalid_read(uint16 addr, const char *reason) {
 	LOG_CRITICAL(("[Z80] invalid %s fetch (byte) 0x%X", reason, addr));

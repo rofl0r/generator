@@ -9,6 +9,7 @@
 #undef INCLUDE_REGISTERS_H
 
 #include "cpu68k.h"
+#define MEM68K_IMPL
 #include "mem68k.h"
 #include "reg68k.h"
 

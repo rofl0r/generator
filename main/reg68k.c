@@ -8,6 +8,7 @@
 
 #include "reg68k.h"
 #include "cpu68k.h"
+#define MEM68K_IMPL
 #include "mem68k.h"
 #include "diss68k.h"
 #include "cpuz80.h"

@@ -2,6 +2,7 @@
 
 #include "generator.h"
 #include "cpu68k.h"
+#define MEM68K_IMPL
 #include "mem68k.h"
 #include "vdp.h"
 #include "ui.h"
