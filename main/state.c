@@ -6,6 +6,9 @@
 #include "ui.h"
 #include "cpu68k.h"
 #include "cpuz80.h"
+#if defined(JGZ80)
+#include "cpuz80-jg.h"
+#endif
 #include "vdp.h"
 #include "gensound.h"
 #include "fm.h"
@@ -248,44 +251,53 @@ state_dotransfer(unsigned int mode)
   state_transfer8("z80", "resetting", 0, &cpuz80_resetting, 1);
   state_transfer32("z80", "bank", 0, &cpuz80_bank, 1);
 #if defined(JGZ80)
- #warning state save/load for jgz80 not implemented yet
- #if 0
-  state_transfer16("z80", "af", 0, &cpuz80_z80.z80af, 1);
-  state_transfer16("z80", "bc", 0, &cpuz80_z80.z80bc, 1);
-  state_transfer16("z80", "de", 0, &cpuz80_z80.z80de, 1);
-  state_transfer16("z80", "hl", 0, &cpuz80_z80.z80hl, 1);
-  state_transfer16("z80", "af2", 0, &cpuz80_z80.z80afprime, 1);
-  state_transfer16("z80", "bc2", 0, &cpuz80_z80.z80bcprime, 1);
-  state_transfer16("z80", "de2", 0, &cpuz80_z80.z80deprime, 1);
-  state_transfer16("z80", "hl2", 0, &cpuz80_z80.z80hlprime, 1);
-  state_transfer16("z80", "ix", 0, &cpuz80_z80.z80ix, 1);
-  state_transfer16("z80", "iy", 0, &cpuz80_z80.z80iy, 1);
-  state_transfer16("z80", "sp", 0, &cpuz80_z80.z80sp, 1);
-  state_transfer16("z80", "pc", 0, &cpuz80_z80.z80pc, 1);
-  state_transfer8("z80", "i", 0, &cpuz80_z80.z80i, 1);
-  state_transfer8("z80", "r", 0, &cpuz80_z80.z80r, 1);
+  state_transfer16("z80", "af", 0, &cpuz80_z80.af, 1);
+  state_transfer16("z80", "bc", 0, &cpuz80_z80.bc, 1);
+  state_transfer16("z80", "de", 0, &cpuz80_z80.de, 1);
+  state_transfer16("z80", "hl", 0, &cpuz80_z80.hl, 1);
+  state_transfer16("z80", "af2", 0, &cpuz80_z80.a_f_, 1);
+  state_transfer16("z80", "bc2", 0, &cpuz80_z80.b_c_, 1);
+  state_transfer16("z80", "de2", 0, &cpuz80_z80.d_e_, 1);
+  state_transfer16("z80", "hl2", 0, &cpuz80_z80.h_l_, 1);
+  state_transfer16("z80", "ix", 0, &cpuz80_z80.ix, 1);
+  state_transfer16("z80", "iy", 0, &cpuz80_z80.iy, 1);
+  state_transfer16("z80", "sp", 0, &cpuz80_z80.sp, 1);
+  state_transfer16("z80", "pc", 0, &cpuz80_z80.pc, 1);
+  state_transfer8("z80", "i", 0, &cpuz80_z80.i, 1);
+  state_transfer8("z80", "r", 0, &cpuz80_z80.r, 1);
   if (state_transfermode == 0) {
     /* save */
-    i8 = cpuz80_z80.z80inInterrupt;
+    i8 = cpuz80_z80.iff1;
     state_transfer8("z80", "iff1", 0, &i8, 1);
-    i8 = cpuz80_z80.z80interruptState;
+    i8 = cpuz80_z80.iff2;
     state_transfer8("z80", "iff2", 0, &i8, 1);
-    i8 = cpuz80_z80.z80interruptMode;
+    i8 = cpuz80_z80.interrupt_mode;
     state_transfer8("z80", "im", 0, &i8, 1);
-    i8 = cpuz80_z80.z80halted;
+    i8 = cpuz80_z80.halted;
     state_transfer8("z80", "halted", 0, &i8, 1);
+    i8 = cpuz80_z80.int_data;
+    state_transfer8("z80", "intdata", 0, &i8, 1);
+    i8 = cpuz80_z80.int_pending;
+    state_transfer8("z80", "intpend", 0, &i8, 1);
+    i8 = cpuz80_z80.nmi_pending;
+    state_transfer8("z80", "nmipend", 0, &i8, 1);
   } else {
     /* load */
     state_transfer8("z80", "iff1", 0, &i8, 1);
-    cpuz80_z80.z80inInterrupt = i8;
+    cpuz80_z80.iff1 = i8;
     state_transfer8("z80", "iff2", 0, &i8, 1);
-    cpuz80_z80.z80interruptState = i8;
+    cpuz80_z80.iff2 = i8;
     state_transfer8("z80", "im", 0, &i8, 1);
-    cpuz80_z80.z80interruptMode = i8;
+    cpuz80_z80.interrupt_mode = i8;
     state_transfer8("z80", "halted", 0, &i8, 1);
-    cpuz80_z80.z80halted = i8;
+    cpuz80_z80.halted = i8;
+    state_transfer8("z80", "intdata", 0, &i8, 1);
+    cpuz80_z80.int_data = i8;
+    state_transfer8("z80", "intpend", 0, &i8, 1);
+    cpuz80_z80.int_pending = i8;
+    state_transfer8("z80", "nmipend", 0, &i8, 1);
+    cpuz80_z80.nmi_pending = i8;
   }
- #endif
 #else
 # error no z80 cpu selected
 #endif
