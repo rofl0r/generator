@@ -190,12 +190,12 @@ int main(void) { return 0; }
   fi
   if [[ "x$DEBUG" != "xno" ]]; then
     AC_MSG_RESULT(Turning on debug flags)
-    CFLAGS="$CFLAGS -g -O"
+    CFLAGS="-g -O $CFLAGS"
     optimum=no
   else
     if [[ "x$GCCVER" != "xno" ]]; then
       AC_MSG_RESULT(Turning on gcc optimisations)
-      CFLAGS="$CFLAGS -O3 -fomit-frame-pointer"
+      CFLAGS="-O3 -fomit-frame-pointer $CFLAGS"
       if [[ "x$GCCVER" = "x3" ]]; then
         AC_MSG_RESULT(Turning on gcc 3 optimisations)
         CFLAGS="$CFLAGS -fno-math-errno"
