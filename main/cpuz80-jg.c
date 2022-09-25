@@ -179,13 +179,13 @@ void cpuz80_interrupt(void)
     z80_raise_IRQ(0xff);
     z80_lower_IRQ();
 #endif
-    z80_gen_int(&cpuz80_z80, 0xff);
+    z80_assert_irq(&cpuz80_z80, 0xff);
   }
 }
 
 void cpuz80_uninterrupt(void)
 {
-  z80_clr_int(&cpuz80_z80);
+  z80_clr_irq(&cpuz80_z80);
 }
 
 

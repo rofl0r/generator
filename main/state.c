@@ -275,9 +275,9 @@ state_dotransfer(unsigned int mode)
     state_transfer8("z80", "im", 0, &i8, 1);
     i8 = cpuz80_z80.halted;
     state_transfer8("z80", "halted", 0, &i8, 1);
-    i8 = cpuz80_z80.int_data;
+    i8 = cpuz80_z80.irq_data;
     state_transfer8("z80", "intdata", 0, &i8, 1);
-    i8 = cpuz80_z80.int_pending;
+    i8 = cpuz80_z80.irq_pending;
     state_transfer8("z80", "intpend", 0, &i8, 1);
     i8 = cpuz80_z80.nmi_pending;
     state_transfer8("z80", "nmipend", 0, &i8, 1);
@@ -292,9 +292,9 @@ state_dotransfer(unsigned int mode)
     state_transfer8("z80", "halted", 0, &i8, 1);
     cpuz80_z80.halted = i8;
     state_transfer8("z80", "intdata", 0, &i8, 1);
-    cpuz80_z80.int_data = i8;
+    cpuz80_z80.irq_data = i8;
     state_transfer8("z80", "intpend", 0, &i8, 1);
-    cpuz80_z80.int_pending = i8;
+    cpuz80_z80.irq_pending = i8;
     state_transfer8("z80", "nmipend", 0, &i8, 1);
     cpuz80_z80.nmi_pending = i8;
   }
